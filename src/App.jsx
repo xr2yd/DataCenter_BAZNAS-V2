@@ -79,15 +79,46 @@ function PortalFallbackSkeleton() {
   );
 }
 
+function getInitialPage() {
+  if (typeof window === 'undefined') return 'portal';
+  const hostname = window.location.hostname.toLowerCase();
+  const pathname = window.location.pathname.toLowerCase();
+  const searchParams = new URLSearchParams(window.location.search);
+  
+  if (searchParams.get('page')) {
+    return searchParams.get('page');
+  }
+  if (hostname.startsWith('portal.') || pathname.startsWith('/portal')) {
+    return 'portal';
+  }
+  return 'utama';
+}
+
 function App() {
-  const [activePage, setActivePage] = useState('portal');
+  const [activePage, setActivePage] = useState(getInitialPage);
+
+  // Update document title dynamically
+  if (typeof document !== 'undefined') {
+    if (activePage === 'portal' || activePage === 'portal_publik') {
+      document.title = "Portal Layanan Mustahik - BAZNAS Kota Tangerang";
+    } else {
+      document.title = "Data Center & Dashboard Internal - BAZNAS Kota Tangerang";
+    }
+  }
 
   // If in portal mode, show standalone public portal view with Suspense fallback (100% independent without Sidebar wrapper)
   if (activePage === 'portal' || activePage === 'portal_publik') {
     return (
       <Suspense fallback={<PortalFallbackSkeleton />}>
         <PublicPortalPage 
-          onNavigateToDashboard={(page) => setActivePage(page || 'utama')} 
+          onNavigateToDashboard={(page) => {
+            const hostname = window.location.hostname.toLowerCase();
+            if (hostname.startsWith('portal.')) {
+              window.location.href = 'http://muhammadrofiq.my.id/';
+            } else {
+              setActivePage(page || 'utama');
+            }
+          }} 
           onNavigate={setActivePage} 
         />
       </Suspense>
