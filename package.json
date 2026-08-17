@@ -29,6 +29,7 @@
     "multer": "^2.2.0",
     "node-telegram-bot-api": "^1.2.0",
     "ollama": "^0.6.3",
+    "pg": "^8.23.0",
     "radix-ui": "^1.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

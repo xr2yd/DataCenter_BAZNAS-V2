@@ -1,7 +1,46 @@
 import { getDb, MUSTAHIK_COLUMNS } from './db.js';
-export { getDb } from './db.js';
+export { getDb, MUSTAHIK_COLUMNS } from './db.js';
 
-// Format: MST-YYYYMM-XXXX (e.g. MST-202608-0001)
+/**
+ * Utility to safely parse JSON or return a fallback
+ */
+export function safeJsonParse(value, fallback = null) {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Normalizes mustahik row data types for PostgreSQL numeric/integer output
+ */
+export function formatMustahikRow(r) {
+  if (!r) return null;
+  return {
+    ...r,
+    family_dependents: r.family_dependents !== null && r.family_dependents !== undefined ? parseInt(r.family_dependents, 10) : 0,
+    monthly_income: r.monthly_income !== null && r.monthly_income !== undefined ? parseFloat(r.monthly_income) : 0,
+    monthly_expense: r.monthly_expense !== null && r.monthly_expense !== undefined ? parseFloat(r.monthly_expense) : 0,
+    remaining_income: r.remaining_income !== null && r.remaining_income !== undefined ? parseFloat(r.remaining_income) : 0,
+    application_count: r.application_count !== null && r.application_count !== undefined ? parseInt(r.application_count, 10) : 1,
+    beneficiary_count: r.beneficiary_count !== null && r.beneficiary_count !== undefined ? parseInt(r.beneficiary_count, 10) : 1,
+    recommended_amount: r.recommended_amount !== null && r.recommended_amount !== undefined ? parseFloat(r.recommended_amount) : 0,
+    approved_amount: r.approved_amount !== null && r.approved_amount !== undefined ? parseFloat(r.approved_amount) : 0,
+    desil_score: r.desil_score !== null && r.desil_score !== undefined ? parseInt(r.desil_score, 10) : null,
+    house_index: r.house_index !== null && r.house_index !== undefined ? parseInt(r.house_index, 10) : null,
+    asset_index: r.asset_index !== null && r.asset_index !== undefined ? parseInt(r.asset_index, 10) : null,
+    income_index: r.income_index !== null && r.income_index !== undefined ? parseInt(r.income_index, 10) : null,
+    spiritual_score: r.spiritual_score !== null && r.spiritual_score !== undefined ? parseInt(r.spiritual_score, 10) : null,
+    overall_score: r.overall_score !== null && r.overall_score !== undefined ? parseFloat(r.overall_score) : null
+  };
+}
+
+/**
+ * Format: MST-YYYYMM-XXXX (e.g. MST-202608-0001)
+ */
 export async function generateNextFileNo(date = new Date()) {
   const db = await getDb();
   const d = new Date(date);
@@ -10,7 +49,7 @@ export async function generateNextFileNo(date = new Date()) {
   const prefix = `MST-${year}${month}-`;
 
   const latest = await db.get(
-    `SELECT file_no FROM mustahik WHERE file_no LIKE ? ORDER BY file_no DESC LIMIT 1`,
+    `SELECT file_no FROM mustahik WHERE file_no ILIKE $1 ORDER BY file_no DESC LIMIT 1`,
     [`${prefix}%`]
   );
 
@@ -28,6 +67,9 @@ export async function generateNextFileNo(date = new Date()) {
   return `${prefix}${String(nextSeq).padStart(4, '0')}`;
 }
 
+/**
+ * List all mustahik records with dynamic filtering and ILIKE search
+ */
 export async function listMustahik(filters = {}) {
   const db = await getDb();
   let query = 'SELECT * FROM mustahik';
@@ -35,18 +77,23 @@ export async function listMustahik(filters = {}) {
   const params = [];
 
   if (filters.status) {
-    conditions.push('status = ?');
     params.push(filters.status);
+    conditions.push(`status = $${params.length}`);
   }
 
   if (filters.program) {
-    conditions.push('program = ?');
     params.push(filters.program);
+    conditions.push(`program = $${params.length}`);
   }
 
   if (filters.search) {
-    conditions.push('(name LIKE ? OR file_no LIKE ? OR nik LIKE ? OR phone LIKE ? OR kecamatan LIKE ?)');
     const term = `%${filters.search}%`;
+    const p1 = `$${params.length + 1}`;
+    const p2 = `$${params.length + 2}`;
+    const p3 = `$${params.length + 3}`;
+    const p4 = `$${params.length + 4}`;
+    const p5 = `$${params.length + 5}`;
+    conditions.push(`(name ILIKE ${p1} OR file_no ILIKE ${p2} OR nik ILIKE ${p3} OR phone ILIKE ${p4} OR kecamatan ILIKE ${p5})`);
     params.push(term, term, term, term, term);
   }
 
@@ -55,37 +102,58 @@ export async function listMustahik(filters = {}) {
   }
 
   query += ' ORDER BY created_at DESC';
-  return db.all(query, params);
+  const rows = await db.all(query, params);
+  return rows.map(formatMustahikRow);
 }
 
+/**
+ * Get Mustahik detail along with all related applications, assessments, mpzis, ppd, documents, wa_logs
+ */
 export async function getMustahikById(id) {
   const db = await getDb();
-  const mustahik = await db.get('SELECT * FROM mustahik WHERE id = ?', id);
+  const mustahik = await db.get('SELECT * FROM mustahik WHERE id = $1', [id]);
   if (!mustahik) return null;
 
-  const applications = await db.all('SELECT * FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC', id);
-  const assessments = await db.all('SELECT * FROM assessments WHERE mustahik_id = ? ORDER BY created_at DESC', id);
-  const mpzis = await db.all('SELECT * FROM mpzis WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?) ORDER BY created_at DESC', id, id);
-  const ppd = await db.all('SELECT * FROM ppd WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?) ORDER BY created_at DESC', id, id);
-  const documents = await db.all('SELECT * FROM documents WHERE mustahik_id = ? ORDER BY uploaded_at DESC', id);
-  const waLogs = await db.all('SELECT * FROM wa_logs WHERE mustahik_id = ? ORDER BY sent_at DESC', id);
+  const applications = await db.all('SELECT * FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC', [id]);
+  const assessments = await db.all('SELECT * FROM assessments WHERE mustahik_id = $1 ORDER BY created_at DESC', [id]);
+  const mpzis = await db.all('SELECT * FROM mpzis WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2) ORDER BY created_at DESC', [id, id]);
+  const ppd = await db.all('SELECT * FROM ppd WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2) ORDER BY created_at DESC', [id, id]);
+  const documents = await db.all('SELECT * FROM documents WHERE mustahik_id = $1 ORDER BY uploaded_at DESC', [id]);
+  const waLogs = await db.all('SELECT * FROM wa_logs WHERE mustahik_id = $1 ORDER BY sent_at DESC', [id]);
+
+  const formattedAssessments = assessments.map(a => ({
+    ...a,
+    photos: safeJsonParse(a.photos, a.photos ? [a.photos] : [])
+  }));
+
+  const formattedPpd = ppd.map(p => ({
+    ...p,
+    fund_source: safeJsonParse(p.fund_source, p.fund_source)
+  }));
 
   return {
-    ...mustahik,
+    ...formatMustahikRow(mustahik),
     applications,
-    assessments,
+    assessments: formattedAssessments,
     mpzis,
-    ppd,
+    ppd: formattedPpd,
     documents,
     wa_logs: waLogs
   };
 }
 
+/**
+ * Get Mustahik by unique file_no
+ */
 export async function getMustahikByFileNo(fileNo) {
   const db = await getDb();
-  return db.get('SELECT * FROM mustahik WHERE file_no = ?', fileNo);
+  const row = await db.get('SELECT * FROM mustahik WHERE file_no = $1', [fileNo]);
+  return row ? formatMustahikRow(row) : null;
 }
 
+/**
+ * Create a new mustahik and initial application atomically using RETURNING id
+ */
 export async function createMustahik(data) {
   const db = await getDb();
 
@@ -120,27 +188,27 @@ export async function createMustahik(data) {
   for (const col of allowedCols) {
     if (payload[col] !== undefined) {
       cols.push(col);
-      placeholders.push('?');
       values.push(payload[col]);
+      placeholders.push(`$${values.length}`);
     }
   }
 
-  const result = await db.run(
-    `INSERT INTO mustahik (${cols.join(',')}) VALUES (${placeholders.join(',')})`,
-    values
-  );
-
+  const query = `INSERT INTO mustahik (${cols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+  const result = await db.run(query, values);
   const mustahikId = result.lastID;
 
   // Create initial application
   await db.run(
-    `INSERT INTO applications (mustahik_id, application_number, program, request_title, status) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO applications (mustahik_id, application_number, program, request_title, status) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
     [mustahikId, fileNo, payload.program || '', payload.request_title || '', payload.status]
   );
 
   return mustahikId;
 }
 
+/**
+ * Update Mustahik record
+ */
 export async function updateMustahik(id, data) {
   const db = await getDb();
 
@@ -149,22 +217,22 @@ export async function updateMustahik(id, data) {
   const updates = [];
   const values = [];
 
-  // Compute remaining_income if income or expense updated
+  // Compute remaining_income if income or expense is updated
   let newIncome = data.monthly_income;
   let newExpense = data.monthly_expense;
   if ((newIncome !== undefined || newExpense !== undefined) && data.remaining_income === undefined) {
-    const current = await db.get('SELECT monthly_income, monthly_expense FROM mustahik WHERE id = ?', id);
+    const current = await db.get('SELECT monthly_income, monthly_expense FROM mustahik WHERE id = $1', [id]);
     if (current) {
-      const inc = newIncome !== undefined ? parseFloat(newIncome) : (current.monthly_income || 0);
-      const exp = newExpense !== undefined ? parseFloat(newExpense) : (current.monthly_expense || 0);
+      const inc = newIncome !== undefined ? parseFloat(newIncome) : (parseFloat(current.monthly_income) || 0);
+      const exp = newExpense !== undefined ? parseFloat(newExpense) : (parseFloat(current.monthly_expense) || 0);
       data.remaining_income = inc - exp;
     }
   }
 
   for (const col of allowedCols) {
     if (data[col] !== undefined) {
-      updates.push(`${col} = ?`);
       values.push(data[col]);
+      updates.push(`${col} = $${values.length}`);
     }
   }
 
@@ -172,34 +240,40 @@ export async function updateMustahik(id, data) {
 
   updates.push('updated_at = CURRENT_TIMESTAMP');
   values.push(id);
+  const whereParamIdx = values.length;
 
-  await db.run(`UPDATE mustahik SET ${updates.join(', ')} WHERE id = ?`, values);
+  await db.run(`UPDATE mustahik SET ${updates.join(', ')} WHERE id = $${whereParamIdx}`, values);
 
   // Sync status to latest application
   if (data.status) {
-    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC LIMIT 1', id);
+    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC LIMIT 1', [id]);
     if (latestApp) {
-      await db.run('UPDATE applications SET status = ? WHERE id = ?', [data.status, latestApp.id]);
+      await db.run('UPDATE applications SET status = $1 WHERE id = $2', [data.status, latestApp.id]);
     }
   }
 
   return true;
 }
 
+/**
+ * Permanently delete mustahik and associated cascade records
+ */
 export async function deleteMustahik(id) {
   const db = await getDb();
-  await db.run('DELETE FROM wa_logs WHERE mustahik_id = ?', id);
-  await db.run('DELETE FROM documents WHERE mustahik_id = ?', id);
-  await db.run('DELETE FROM ppd WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?)', id, id);
-  await db.run('DELETE FROM mpzis WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?)', id, id);
-  await db.run('DELETE FROM assessments WHERE mustahik_id = ?', id);
-  await db.run('DELETE FROM applications WHERE mustahik_id = ?', id);
-  await db.run('DELETE FROM mustahik WHERE id = ?', id);
+  await db.run('DELETE FROM wa_logs WHERE mustahik_id = $1', [id]);
+  await db.run('DELETE FROM documents WHERE mustahik_id = $1', [id]);
+  await db.run('DELETE FROM ppd WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2)', [id, id]);
+  await db.run('DELETE FROM mpzis WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2)', [id, id]);
+  await db.run('DELETE FROM assessments WHERE mustahik_id = $1', [id]);
+  await db.run('DELETE FROM applications WHERE mustahik_id = $1', [id]);
+  await db.run('DELETE FROM mustahik WHERE id = $1', [id]);
   return true;
 }
 
+/**
+ * Public application submission with file attachments and WA generation
+ */
 export async function createPublicApplication(data, files = []) {
-  const db = await getDb();
   const fileNo = await generateNextFileNo();
   const today = new Date().toISOString().split('T')[0];
 
@@ -297,32 +371,45 @@ export async function createPublicApplication(data, files = []) {
   };
 }
 
+/**
+ * Track status and full timeline by file_no, NIK, or phone using case-insensitive search
+ */
 export async function trackApplication(query) {
   const db = await getDb();
   if (!query) return null;
 
   const q = String(query).trim();
   const mustahik = await db.get(
-    `SELECT * FROM mustahik WHERE file_no = ? OR nik = ? OR phone = ? OR kk_number = ? ORDER BY id DESC LIMIT 1`,
+    `SELECT * FROM mustahik WHERE file_no ILIKE $1 OR nik ILIKE $2 OR phone ILIKE $3 OR kk_number ILIKE $4 ORDER BY id DESC LIMIT 1`,
     [q, q, q, q]
   );
 
   if (!mustahik) {
-    // Try partial file_no match
+    // Try partial search
     const partial = await db.get(
-      `SELECT * FROM mustahik WHERE file_no LIKE ? OR nik LIKE ? ORDER BY id DESC LIMIT 1`,
+      `SELECT * FROM mustahik WHERE file_no ILIKE $1 OR nik ILIKE $2 ORDER BY id DESC LIMIT 1`,
       [`%${q}%`, `%${q}%`]
     );
     if (!partial) return null;
     return trackApplication(partial.file_no);
   }
 
-  const applications = await db.all('SELECT * FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC', mustahik.id);
-  const assessments = await db.all('SELECT * FROM assessments WHERE mustahik_id = ? ORDER BY created_at DESC', mustahik.id);
-  const mpzis = await db.all('SELECT * FROM mpzis WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?) ORDER BY created_at DESC', mustahik.id, mustahik.id);
-  const ppd = await db.all('SELECT * FROM ppd WHERE mustahik_id = ? OR application_id IN (SELECT id FROM applications WHERE mustahik_id = ?) ORDER BY created_at DESC', mustahik.id, mustahik.id);
-  const documents = await db.all('SELECT * FROM documents WHERE mustahik_id = ? ORDER BY uploaded_at DESC', mustahik.id);
-  const waLogs = await db.all('SELECT * FROM wa_logs WHERE mustahik_id = ? ORDER BY sent_at DESC', mustahik.id);
+  const applications = await db.all('SELECT * FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC', [mustahik.id]);
+  const assessments = await db.all('SELECT * FROM assessments WHERE mustahik_id = $1 ORDER BY created_at DESC', [mustahik.id]);
+  const mpzis = await db.all('SELECT * FROM mpzis WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2) ORDER BY created_at DESC', [mustahik.id, mustahik.id]);
+  const ppd = await db.all('SELECT * FROM ppd WHERE mustahik_id = $1 OR application_id IN (SELECT id FROM applications WHERE mustahik_id = $2) ORDER BY created_at DESC', [mustahik.id, mustahik.id]);
+  const documents = await db.all('SELECT * FROM documents WHERE mustahik_id = $1 ORDER BY uploaded_at DESC', [mustahik.id]);
+  const waLogs = await db.all('SELECT * FROM wa_logs WHERE mustahik_id = $1 ORDER BY sent_at DESC', [mustahik.id]);
+
+  const formattedAssessments = assessments.map(a => ({
+    ...a,
+    photos: safeJsonParse(a.photos, a.photos ? [a.photos] : [])
+  }));
+
+  const formattedPpd = ppd.map(p => ({
+    ...p,
+    fund_source: safeJsonParse(p.fund_source, p.fund_source)
+  }));
 
   // Define 5-phase timeline
   const statusHierarchy = [
@@ -356,17 +443,17 @@ export async function trackApplication(query) {
     {
       phase: 3,
       name: 'Survey & Penilaian Lapangan',
-      description: assessments[0]
-        ? `Survey lapangan oleh ${assessments[0].surveyor_name || 'Petugas'} (${assessments[0].recommendation || 'Diproses'})`
+      description: formattedAssessments[0]
+        ? `Survey lapangan oleh ${formattedAssessments[0].surveyor_name || 'Petugas'} (${formattedAssessments[0].recommendation || 'Diproses'})`
         : 'Survey faktual ke kediaman mustahik (Form F-BPP/04).',
-      date: mustahik.survey_date || assessments[0]?.survey_date || null,
+      date: mustahik.survey_date || formattedAssessments[0]?.survey_date || null,
       status: isRejected ? 'rejected' : (currentIndex >= 2 ? 'completed' : (currentIndex === 1 ? 'active' : 'pending'))
     },
     {
       phase: 4,
       name: 'Persetujuan MPZIS & Pengajuan Dana',
       description: mustahik.approved_amount
-        ? `Disetujui MPZIS: Rp ${mustahik.approved_amount.toLocaleString('id-ID')} (Form F-BPP/06 & F-PKP/03)`
+        ? `Disetujui MPZIS: Rp ${Number(mustahik.approved_amount).toLocaleString('id-ID')} (Form F-BPP/06 & F-PKP/03)`
         : 'Sidang pleno MPZIS dan penerbitan Form Pengajuan Dana.',
       date: mustahik.mpzis_date || mpzis[0]?.mpzis_date || null,
       status: isRejected ? 'rejected' : (currentIndex >= 4 ? 'completed' : (currentIndex === 3 ? 'active' : 'pending'))
@@ -377,31 +464,43 @@ export async function trackApplication(query) {
       description: mustahik.disbursement_date
         ? `Dana telah disalurkan pada ${mustahik.disbursement_date} via ${mustahik.payment_method || 'Transfer'}.`
         : 'Pencairan dan serah terima dana bantuan ke mustahik.',
-      date: mustahik.disbursement_date || ppd[0]?.disbursement_date || null,
+      date: mustahik.disbursement_date || formattedPpd[0]?.disbursement_date || null,
       status: isRejected ? 'rejected' : (currentIndex >= 5 ? 'completed' : (currentIndex === 4 ? 'active' : 'pending'))
     }
   ];
 
   return {
-    mustahik,
+    mustahik: formatMustahikRow(mustahik),
     status: currentStatus,
     is_rejected: isRejected,
     rejection_reason: mustahik.rejection_reason || '',
     timeline,
     applications,
-    assessments,
+    assessments: formattedAssessments,
     mpzis,
-    ppd,
+    ppd: formattedPpd,
     documents,
     wa_logs: waLogs
   };
 }
 
+/**
+ * Add Assessment (F-BPP/04) with RETURNING id and JSON-safe photo array serialization
+ */
 export async function addAssessment(mustahikId, data) {
   const db = await getDb();
 
-  const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC LIMIT 1', mustahikId);
+  const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC LIMIT 1', [mustahikId]);
   const applicationId = latestApp?.id || data.application_id || null;
+
+  let photosJson = null;
+  if (data.photos !== undefined && data.photos !== null) {
+    if (typeof data.photos === 'string') {
+      photosJson = data.photos;
+    } else if (Array.isArray(data.photos) || typeof data.photos === 'object') {
+      photosJson = JSON.stringify(data.photos);
+    }
+  }
 
   const result = await db.run(
     `INSERT INTO assessments (
@@ -409,7 +508,8 @@ export async function addAssessment(mustahikId, data) {
       narrative_family, narrative_income, narrative_request, narrative_conclusion,
       house_index, asset_index, income_index, spiritual_score, overall_score,
       priority, recommendation, notes, photos
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+    RETURNING id`,
     [
       mustahikId,
       applicationId,
@@ -421,21 +521,21 @@ export async function addAssessment(mustahikId, data) {
       data.narrative_income || null,
       data.narrative_request || null,
       data.narrative_conclusion || null,
-      data.house_index !== undefined ? parseInt(data.house_index, 10) : null,
-      data.asset_index !== undefined ? parseInt(data.asset_index, 10) : null,
-      data.income_index !== undefined ? parseInt(data.income_index, 10) : null,
-      data.spiritual_score !== undefined ? parseInt(data.spiritual_score, 10) : null,
-      data.overall_score !== undefined ? parseFloat(data.overall_score) : null,
+      data.house_index !== undefined && data.house_index !== null ? parseInt(data.house_index, 10) : null,
+      data.asset_index !== undefined && data.asset_index !== null ? parseInt(data.asset_index, 10) : null,
+      data.income_index !== undefined && data.income_index !== null ? parseInt(data.income_index, 10) : null,
+      data.spiritual_score !== undefined && data.spiritual_score !== null ? parseInt(data.spiritual_score, 10) : null,
+      data.overall_score !== undefined && data.overall_score !== null ? parseFloat(data.overall_score) : null,
       data.priority ? String(data.priority) : null,
       data.recommendation || data.survey_recommendation || 'Layak',
       data.notes || data.survey_notes || null,
-      data.photos ? JSON.stringify(data.photos) : null
+      photosJson
     ]
   );
 
   // Update mustahik with survey details and status = 'Survey'
-  const monthlyInc = data.monthly_income !== undefined ? parseFloat(data.monthly_income) : undefined;
-  const monthlyExp = data.monthly_expense !== undefined ? parseFloat(data.monthly_expense) : undefined;
+  const monthlyInc = data.monthly_income !== undefined && data.monthly_income !== null ? parseFloat(data.monthly_income) : undefined;
+  const monthlyExp = data.monthly_expense !== undefined && data.monthly_expense !== null ? parseFloat(data.monthly_expense) : undefined;
   const remInc = (monthlyInc !== undefined && monthlyExp !== undefined) ? (monthlyInc - monthlyExp) : undefined;
 
   const updateFields = {
@@ -446,18 +546,18 @@ export async function addAssessment(mustahikId, data) {
     survey_recommendation: data.recommendation || data.survey_recommendation,
     survey_notes: data.notes || data.survey_notes,
     house_ownership: data.house_ownership,
-    family_dependents: data.family_dependents !== undefined ? parseInt(data.family_dependents, 10) : undefined,
+    family_dependents: data.family_dependents !== undefined && data.family_dependents !== null ? parseInt(data.family_dependents, 10) : undefined,
     monthly_income: monthlyInc,
     monthly_expense: monthlyExp,
     remaining_income: remInc,
-    house_index: data.house_index !== undefined ? parseInt(data.house_index, 10) : undefined,
-    asset_index: data.asset_index !== undefined ? parseInt(data.asset_index, 10) : undefined,
-    income_index: data.income_index !== undefined ? parseInt(data.income_index, 10) : undefined,
-    spiritual_score: data.spiritual_score !== undefined ? parseInt(data.spiritual_score, 10) : undefined,
-    overall_score: data.overall_score !== undefined ? parseFloat(data.overall_score) : undefined,
+    house_index: data.house_index !== undefined && data.house_index !== null ? parseInt(data.house_index, 10) : undefined,
+    asset_index: data.asset_index !== undefined && data.asset_index !== null ? parseInt(data.asset_index, 10) : undefined,
+    income_index: data.income_index !== undefined && data.income_index !== null ? parseInt(data.income_index, 10) : undefined,
+    spiritual_score: data.spiritual_score !== undefined && data.spiritual_score !== null ? parseInt(data.spiritual_score, 10) : undefined,
+    overall_score: data.overall_score !== undefined && data.overall_score !== null ? parseFloat(data.overall_score) : undefined,
     priority: data.priority ? String(data.priority) : undefined,
-    recommended_amount: data.recommended_amount !== undefined ? parseFloat(data.recommended_amount) : undefined,
-    desil_score: data.desil_score !== undefined ? parseInt(data.desil_score, 10) : undefined
+    recommended_amount: data.recommended_amount !== undefined && data.recommended_amount !== null ? parseFloat(data.recommended_amount) : undefined,
+    desil_score: data.desil_score !== undefined && data.desil_score !== null ? parseInt(data.desil_score, 10) : undefined
   };
 
   await updateMustahik(mustahikId, updateFields);
@@ -465,6 +565,9 @@ export async function addAssessment(mustahikId, data) {
   return result.lastID;
 }
 
+/**
+ * Add MPZIS approval (F-BPP/06) with RETURNING id
+ */
 export async function addMpzis(mustahikIdOrData, maybeData) {
   const db = await getDb();
   let mustahikId = typeof mustahikIdOrData === 'object' ? mustahikIdOrData.mustahik_id : mustahikIdOrData;
@@ -472,12 +575,12 @@ export async function addMpzis(mustahikIdOrData, maybeData) {
 
   let applicationId = data.application_id;
   if (!applicationId && mustahikId) {
-    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC LIMIT 1', mustahikId);
+    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC LIMIT 1', [mustahikId]);
     applicationId = latestApp?.id || null;
   }
 
   if (!mustahikId && applicationId) {
-    const app = await db.get('SELECT mustahik_id FROM applications WHERE id = ?', applicationId);
+    const app = await db.get('SELECT mustahik_id FROM applications WHERE id = $1', [applicationId]);
     mustahikId = app?.mustahik_id || null;
   }
 
@@ -486,7 +589,8 @@ export async function addMpzis(mustahikIdOrData, maybeData) {
       mustahik_id, application_id, form_number, mpzis_date, program_classification, purpose,
       asnaf, fund_source, recipient_name, recipient_type, beneficiary_count, total_amount,
       proposed_by, examined_by, ashnaf_verifier, responsible, approved_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    RETURNING id`,
     [
       mustahikId,
       applicationId,
@@ -524,6 +628,9 @@ export async function addMpzis(mustahikIdOrData, maybeData) {
   return result.lastID;
 }
 
+/**
+ * Add PPD disbursement request (F-PKP/03) with RETURNING id and JSON-safe fund_source
+ */
 export async function addPpd(mustahikIdOrData, maybeData) {
   const db = await getDb();
   let mustahikId = typeof mustahikIdOrData === 'object' ? mustahikIdOrData.mustahik_id : mustahikIdOrData;
@@ -531,21 +638,26 @@ export async function addPpd(mustahikIdOrData, maybeData) {
 
   let applicationId = data.application_id;
   if (!applicationId && mustahikId) {
-    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = ? ORDER BY applied_at DESC LIMIT 1', mustahikId);
+    const latestApp = await db.get('SELECT id FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC LIMIT 1', [mustahikId]);
     applicationId = latestApp?.id || null;
   }
 
   if (!mustahikId && applicationId) {
-    const app = await db.get('SELECT mustahik_id FROM applications WHERE id = ?', applicationId);
+    const app = await db.get('SELECT mustahik_id FROM applications WHERE id = $1', [applicationId]);
     mustahikId = app?.mustahik_id || null;
   }
+
+  const fundSourceVal = data.fund_source
+    ? (Array.isArray(data.fund_source) ? JSON.stringify(data.fund_source) : String(data.fund_source))
+    : 'Zakat';
 
   const result = await db.run(
     `INSERT INTO ppd (
       mustahik_id, application_id, form_number, ppd_number, transaction_number, requester_name,
       requester_role, requester_department, amount, amount_in_words, purpose, fund_source,
       bank_account_info, payment_type, disbursement_date
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    RETURNING id`,
     [
       mustahikId,
       applicationId,
@@ -558,7 +670,7 @@ export async function addPpd(mustahikIdOrData, maybeData) {
       data.amount ? parseFloat(data.amount) : 0,
       data.amount_in_words || '',
       data.purpose || '',
-      data.fund_source ? (Array.isArray(data.fund_source) ? JSON.stringify(data.fund_source) : String(data.fund_source)) : 'Zakat',
+      fundSourceVal,
       data.bank_account_info || '',
       data.payment_type || 'Transfer',
       data.disbursement_date || null
@@ -579,26 +691,37 @@ export async function addPpd(mustahikIdOrData, maybeData) {
   return result.lastID;
 }
 
+/**
+ * Add document attachment with RETURNING id
+ */
 export async function addDocument(mustahikId, docData) {
   const db = await getDb();
   const result = await db.run(
     `INSERT INTO documents (mustahik_id, doc_type, filename, original_name, file_url, uploaded_at)
-     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+     VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+     RETURNING id`,
     [mustahikId, docData.doc_type, docData.filename, docData.original_name, docData.file_url]
   );
   return result.lastID;
 }
 
+/**
+ * Get documents for a mustahik
+ */
 export async function getDocuments(mustahikId) {
   const db = await getDb();
-  return db.all('SELECT * FROM documents WHERE mustahik_id = ? ORDER BY uploaded_at DESC', mustahikId);
+  return db.all('SELECT * FROM documents WHERE mustahik_id = $1 ORDER BY uploaded_at DESC', [mustahikId]);
 }
 
+/**
+ * Add WhatsApp communication log with RETURNING id
+ */
 export async function addWaLog(logData) {
   const db = await getDb();
   const result = await db.run(
     `INSERT INTO wa_logs (mustahik_id, phone, phase, message, wa_url, status, sent_at)
-     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+     VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+     RETURNING id`,
     [
       logData.mustahik_id,
       logData.phone,
@@ -611,11 +734,46 @@ export async function addWaLog(logData) {
   return result.lastID;
 }
 
+/**
+ * Get WhatsApp logs for a mustahik
+ */
 export async function getWaLogs(mustahikId) {
   const db = await getDb();
-  return db.all('SELECT * FROM wa_logs WHERE mustahik_id = ? ORDER BY sent_at DESC', mustahikId);
+  return db.all('SELECT * FROM wa_logs WHERE mustahik_id = $1 ORDER BY sent_at DESC', [mustahikId]);
 }
 
+/**
+ * Bot session storage for stateful conversation tracking
+ */
+export async function getBotSession(chatId) {
+  const db = await getDb();
+  const row = await db.get('SELECT * FROM bot_sessions WHERE chat_id = $1', [chatId]);
+  if (!row) return null;
+  return {
+    ...row,
+    temp_data: safeJsonParse(row.temp_data, row.temp_data)
+  };
+}
+
+export async function saveBotSession(chatId, state, tempData) {
+  const db = await getDb();
+  const serialized = typeof tempData === 'object' && tempData !== null ? JSON.stringify(tempData) : tempData;
+  const result = await db.run(
+    `INSERT INTO bot_sessions (chat_id, state, temp_data, updated_at)
+     VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+     ON CONFLICT (chat_id) DO UPDATE SET
+       state = EXCLUDED.state,
+       temp_data = EXCLUDED.temp_data,
+       updated_at = CURRENT_TIMESTAMP
+     RETURNING chat_id`,
+    [chatId, state || 'idle', serialized]
+  );
+  return result.lastID || chatId;
+}
+
+/**
+ * Formats Indonesian phone numbers to 628... format for WhatsApp wa.me links
+ */
 export function formatWaPhone(phone) {
   if (!phone) return '';
   let cleaned = String(phone).replace(/[^0-9]/g, '');
@@ -627,11 +785,14 @@ export function formatWaPhone(phone) {
   return cleaned;
 }
 
+/**
+ * Generates automated 5-phase WhatsApp notification template text
+ */
 export function generateWaMessage(phase, mustahik) {
   const nama = mustahik.name || 'Mustahik';
   const fileNo = mustahik.file_no || '-';
   const program = mustahik.program || 'Bantuan BAZNAS';
-  const nominal = mustahik.approved_amount ? `Rp ${mustahik.approved_amount.toLocaleString('id-ID')}` : 'Rp -';
+  const nominal = mustahik.approved_amount ? `Rp ${Number(mustahik.approved_amount).toLocaleString('id-ID')}` : 'Rp -';
   const date = mustahik.received_date || new Date().toISOString().split('T')[0];
   const disburseDate = mustahik.disbursement_date || new Date().toISOString().split('T')[0];
   const paymentMethod = mustahik.payment_method || 'Transfer';
@@ -686,76 +847,15 @@ export function generateWaMessage(phase, mustahik) {
   };
 }
 
+/**
+ * Export all 60 master columns
+ */
 export async function exportMustahikData() {
   const db = await getDb();
   const rows = await db.all('SELECT * FROM mustahik ORDER BY id ASC');
-
-  // Format all 60 master columns explicitly
-  return rows.map(r => ({
-    id: r.id,
-    file_no: r.file_no,
-    received_date: r.received_date,
-    name: r.name,
-    applicant_status: r.applicant_status,
-    beneficiary_name: r.beneficiary_name,
-    nik: r.nik,
-    kk_number: r.kk_number,
-    phone: r.phone,
-    marital_status: r.marital_status,
-    pob: r.pob,
-    dob: r.dob,
-    occupation: r.occupation,
-    work_place: r.work_place,
-    education_level: r.education_level,
-    address: r.address,
-    rt_rw: r.rt_rw,
-    kelurahan: r.kelurahan,
-    kecamatan: r.kecamatan,
-    kabupaten_kota: r.kabupaten_kota,
-    province: r.province,
-    survey_date: r.survey_date,
-    surveyor_name: r.surveyor_name,
-    surveyor_phone: r.surveyor_phone,
-    house_ownership: r.house_ownership,
-    family_dependents: r.family_dependents,
-    monthly_income: r.monthly_income,
-    monthly_expense: r.monthly_expense,
-    remaining_income: r.remaining_income,
-    survey_recommendation: r.survey_recommendation,
-    survey_notes: r.survey_notes,
-    application_count: r.application_count,
-    beneficiary_count: r.beneficiary_count,
-    priority: r.priority,
-    recommended_amount: r.recommended_amount,
-    approved_amount: r.approved_amount,
-    mpzis_date: r.mpzis_date,
-    ppd_number: r.ppd_number,
-    disbursement_date: r.disbursement_date,
-    payment_method: r.payment_method,
-    bank_account: r.bank_account,
-    bank_name: r.bank_name,
-    bank_account_name: r.bank_account_name,
-    asnaf: r.asnaf,
-    fund_source: r.fund_source,
-    distribution_purpose: r.distribution_purpose,
-    parent_occupation: r.parent_occupation,
-    desil_score: r.desil_score,
-    program: r.program,
-    request_title: r.request_title,
-    status: r.status,
-    rejection_reason: r.rejection_reason,
-    house_index: r.house_index,
-    asset_index: r.asset_index,
-    income_index: r.income_index,
-    spiritual_score: r.spiritual_score,
-    overall_score: r.overall_score,
-    notes: r.notes,
-    created_at: r.created_at,
-    updated_at: r.updated_at
-  }));
+  return rows.map(formatMustahikRow);
 }
 
 export async function getStatusByFileNo(fileNo) {
   return trackApplication(fileNo);
 }
-

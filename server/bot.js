@@ -119,7 +119,7 @@ if (token && token !== 'YOUR_BOT_TOKEN_HERE') {
       try {
         const db = await getDb();
         const data = await db.get(
-          'SELECT id, file_no, name, status, program, request_title, approved_amount FROM mustahik WHERE file_no = ? OR nik = ? OR phone = ?',
+          'SELECT id, file_no, name, status, program, request_title, approved_amount FROM mustahik WHERE file_no ILIKE $1 OR nik ILIKE $2 OR phone ILIKE $3',
           [query, query, query]
         );
 
@@ -394,7 +394,7 @@ export async function upsertMustahikFromSurvey(data) {
 
   if (!mustahik && data.nik) {
     const db = await getDb();
-    mustahik = await db.get('SELECT * FROM mustahik WHERE nik = ?', data.nik);
+    mustahik = await db.get('SELECT * FROM mustahik WHERE nik = $1', [data.nik]);
   }
 
   const status = normalizeStatus(data.status) || 'Survey';
