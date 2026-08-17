@@ -1,9 +1,10 @@
-import { Bell, ChevronDown, LogOut, Settings, UserCircle, Search, ExternalLink, Globe } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Settings, UserCircle, Search, ExternalLink, Globe, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import baznasLogo from '@/assets/baznas-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,26 @@ export default function Header({ activePage = 'utama', onNavigate }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sticky top-0 z-20">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+      
+      {/* Brand Logo & Name */}
+      <div 
+        className="flex items-center gap-2 cursor-pointer group"
+        onClick={() => onNavigate && onNavigate('utama')}
+        title="Menuju Dashboard Utama"
+      >
+        <div className="bg-white/90 dark:bg-white p-0.5 rounded-lg border border-border/50 shadow-2xs">
+          <img
+            src={baznasLogo}
+            alt="BAZNAS Kota Tangerang"
+            className="h-7 w-auto object-contain transition-transform group-hover:scale-105"
+          />
+        </div>
+        <div className="hidden md:flex flex-col leading-none">
+          <span className="text-[11px] font-black tracking-tight text-foreground uppercase">BAZNAS</span>
+          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">Kota Tangerang</span>
+        </div>
+      </div>
+
       <Separator orientation="vertical" className="h-4" />
 
       {/* Breadcrumb */}
@@ -183,21 +204,29 @@ export default function Header({ activePage = 'utama', onNavigate }) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        {/* Tombol Portal Publik Mustahik */}
+        {/* Tombol Portal Publik Mustahik Toggle */}
         {onNavigate && (
           <Button
             size="sm"
-            variant="outline"
-            className="h-8 text-xs font-semibold gap-1.5 border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+            className={`h-8 text-xs font-bold gap-1.5 shadow-sm transition-all duration-200 cursor-pointer ${
+              activePage === 'portal'
+                ? 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 shadow-emerald-600/20'
+            }`}
             onClick={() => onNavigate(activePage === 'portal' ? 'mustahik' : 'portal')}
+            title={activePage === 'portal' ? 'Kembali ke Dashboard Mustahik' : 'Buka Portal Publik Layanan Mustahik'}
           >
             {activePage === 'portal' ? (
               <>
-                <Globe className="size-3.5" /> Backoffice Mustahik
+                <LayoutDashboard className="size-3.5" />
+                <span className="hidden sm:inline">Kembali ke Dashboard</span>
+                <span className="sm:hidden">Dashboard</span>
               </>
             ) : (
               <>
-                <ExternalLink className="size-3.5" /> Portal Publik Mustahik
+                <Globe className="size-3.5" />
+                <span className="hidden sm:inline">🌐 Portal Publik Mustahik</span>
+                <span className="sm:hidden">🌐 Portal</span>
               </>
             )}
           </Button>

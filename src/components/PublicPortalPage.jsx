@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import baznasLogo from '@/assets/baznas-logo.png';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +19,15 @@ import {
   ShieldCheck,
   Clock,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
   Copy,
   Download,
   Share2,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   HelpCircle,
   Check,
   X,
@@ -38,7 +42,15 @@ import {
   Compass,
   AlertTriangle,
   Loader2,
-  QrCode
+  QrCode,
+  Printer,
+  Image as ImageIcon,
+  Trash2,
+  RefreshCw,
+  MessageSquare,
+  Info,
+  BadgePercent,
+  CheckCircle,
 } from 'lucide-react';
 import { formatRupiah } from '../utils/format';
 import { api } from '../services/api';
@@ -65,24 +77,27 @@ const PROGRAM_LIST = [
     title: 'Tangerang Cerdas',
     category: 'Pendidikan',
     icon: GraduationCap,
-    desc: 'Beasiswa dhuafa, bantuan SPP/tunggakan sekolah, perlengkapan belajar santri & yatim.',
-    badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300',
+    desc: 'Beasiswa dhuafa, bantuan SPP/tunggakan sekolah, seragam & perlengkapan belajar santri/yatim.',
+    badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300',
+    accentColor: 'border-blue-500 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/20',
   },
   {
     id: 'Kesehatan',
     title: 'Tangerang Sehat',
     category: 'Kesehatan',
     icon: Activity,
-    desc: 'Bantuan biaya pengobatan penyakit kritis, tebus obat, kursi roda, dan tanggap darurat medis.',
-    badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300',
+    desc: 'Bantuan biaya pengobatan penyakit kritis, tebus resep obat, kursi roda, dan tanggap darurat medis.',
+    badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300',
+    accentColor: 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
   },
   {
     id: 'Ekonomi',
     title: 'Tangerang Makmur',
     category: 'Ekonomi',
     icon: Briefcase,
-    desc: 'Bantuan modal usaha mikro, Z-Mart, sarana usaha gerobak/alat produktif usaha mandiri.',
-    badgeColor: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300',
+    desc: 'Bantuan modal usaha mikro, Z-Mart, sarana usaha gerobak/alat produktif usaha mandiri warga dhuafa.',
+    badgeColor: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300',
+    accentColor: 'border-amber-500 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
   },
   {
     id: 'Kemanusiaan',
@@ -90,39 +105,64 @@ const PROGRAM_LIST = [
     category: 'Kemanusiaan',
     icon: HeartHandshake,
     desc: 'Santunan darurat bencana, biaya hidup lansia sebatang kara, serta penanganan musibah mendesak.',
-    badgeColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300',
+    badgeColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300',
+    accentColor: 'border-rose-500 dark:border-rose-500 bg-rose-50/40 dark:bg-rose-950/20',
   },
   {
     id: 'Dakwah Advokasi',
     title: 'Tangerang Taqwa',
     category: 'Dakwah Advokasi',
     icon: Compass,
-    desc: 'Bantuan pembinaan mualaf, honorarium guru ngaji pedalaman, dan sarana ibadah musholla dhuafa.',
-    badgeColor: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300',
+    desc: 'Bantuan pembinaan mualaf, honorarium guru ngaji kampung, dan sarana ibadah musholla dhuafa.',
+    badgeColor: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300',
+    accentColor: 'border-purple-500 dark:border-purple-500 bg-purple-50/40 dark:bg-purple-950/20',
   },
 ];
 
 const ASNAF_LIST = [
-  { id: 'Fakir', label: 'Fakir (Tidak berpenghasilan / amat kekurangan)', desc: 'Tidak memiliki harta atau mata pencaharian tetap.' },
-  { id: 'Miskin', label: 'Miskin (Penghasilan tidak mencukupi kebutuhan pokok)', desc: 'Penghasilan di bawah Had Kifayah standar Kota Tangerang.' },
-  { id: 'Gharimin', label: 'Gharimin (Terlilit utang kebutuhan dasar hidup/berobat)', desc: 'Berutang bukan untuk maksiat/kemewahan.' },
-  { id: 'Fisabilillah', label: 'Fisabilillah (Aktivis dakwah / pejuang pendidikan Islam)', desc: 'Guru ngaji, dai, pembina umat dhuafa.' },
-  { id: 'Ibnu Sabil', label: 'Ibnu Sabil (Musafir kehabisan bekal di perjalanan)', desc: 'Terlantar dan membutuhkan ongkos pulang.' },
-  { id: 'Mualaf', label: 'Mualaf (Baru masuk Islam / dalam pembinaan iman)', desc: 'Membutuhkan penguatan ekonomi dan bimbingan.' },
+  { id: 'Fakir', label: 'Fakir', desc: 'Tidak memiliki harta atau mata pencaharian tetap sama sekali.' },
+  { id: 'Miskin', label: 'Miskin', desc: 'Memiliki penghasilan namun tidak mencukupi kebutuhan pokok sehari-hari (di bawah Had Kifayah).' },
+  { id: 'Gharimin', label: 'Gharimin', desc: 'Terlilit utang untuk mempertahankan kebutuhan dasar hidup atau biaya berobat darurat.' },
+  { id: 'Fisabilillah', label: 'Fisabilillah', desc: 'Pejuang dakwah Islam, guru ngaji tradisional, aktivis pembinaan moral umat dhuafa.' },
+  { id: 'Ibnu Sabil', label: 'Ibnu Sabil', desc: 'Musafir atau perantau yang kehabisan bekal di perjalanan dalam ketaatan.' },
+  { id: 'Mualaf', label: 'Mualaf', desc: 'Orang yang baru masuk Islam dan membutuhkan penguatan ekonomi serta bimbingan aqidah.' },
 ];
 
 const STEP_STAGES = [
-  { id: 1, key: 'Diajukan', label: 'Berkas Diajukan', desc: 'Permohonan berhasil didaftarkan online ke sistem' },
-  { id: 2, key: 'Verifikasi Administrasi', label: 'Verifikasi Berkas', desc: 'Pemeriksaan berkas KTP, KK, SKTM oleh petugas' },
-  { id: 3, key: 'Survey', label: 'Survey Lapangan', desc: 'Kunjungan verifikasi ke tempat tinggal pemohon' },
-  { id: 4, key: 'Persetujuan MPZIS', label: 'Sidang Komite MPZIS', desc: 'Penetapan kelayakan asnaf & rekomendasi nominal' },
-  { id: 5, key: 'Pengajuan Dana (FPD)', label: 'Proses Pencairan Dana', desc: 'Penerbitan formulir PPD dan alokasi kas' },
-  { id: 6, key: 'Penyaluran Selesai', label: 'Penyaluran Selesai', desc: 'Dana bantuan disalurkan langsung/transfer' },
+  { id: 1, key: 'Diajukan', label: 'Berkas Diajukan', desc: 'Permohonan berhasil didaftarkan online ke sistem BAZNAS' },
+  { id: 2, key: 'Verifikasi Administrasi', label: 'Verifikasi Berkas', desc: 'Pemeriksaan kelengkapan dokumen KTP, KK, dan SKTM oleh staf' },
+  { id: 3, key: 'Survey', label: 'Survey Lapangan', desc: 'Kunjungan verifikasi faktual ke tempat tinggal oleh Tim Surveyor' },
+  { id: 4, key: 'Persetujuan MPZIS', label: 'Sidang Komite MPZIS', desc: 'Penetapan kelayakan asnaf & rekomendasi nominal oleh Pimpinan' },
+  { id: 5, key: 'Pengajuan Dana (FPD)', label: 'Proses Pencairan Dana', desc: 'Penerbitan formulir PPD dan alokasi kas keuangan BAZNAS' },
+  { id: 6, key: 'Penyaluran Selesai', label: 'Penyaluran Selesai', desc: 'Dana bantuan disalurkan langsung/transfer ke mustahik' },
+];
+
+const FAQ_LIST = [
+  {
+    q: 'Apa saja syarat umum untuk mengajukan bantuan di BAZNAS Kota Tangerang?',
+    a: 'Syarat utama: 1) KTP Kota Tangerang dan Kartu Keluarga (KK), 2) Surat Keterangan Tidak Mampu (SKTM) dari Kelurahan atau Surat Pengantar RT/RW, 3) Bukti kebutuhan (seperti rincian tagihan SPP, rincian biaya obat/rumah sakit, atau proposal usaha), serta 4) Masuk dalam salah satu dari 8 Asnaf (terutama Fakir/Miskin/Gharimin/Fisabilillah/Mualaf/Ibnu Sabil).',
+  },
+  {
+    q: 'Berapa lama proses verifikasi hingga pencairan bantuan?',
+    a: 'Rata-rata proses membutuhkan waktu 3 hingga 7 hari kerja sejak berkas dinyatakan lengkap, meliputi: verifikasi administrasi (1-2 hari), survey lapangan (1-2 hari), serta sidang komite & pencairan (2-3 hari). Anda dapat memantau status secara realtime di menu Lacak Berkas.',
+  },
+  {
+    q: 'Apakah ada biaya pendaftaran atau pemotongan dana bantuan?',
+    a: 'TIDAK ADA BIAYA APAPUN (100% GRATIS). Seluruh layanan permohonan bantuan BAZNAS Kota Tangerang bebas dari pungutan liar. Dana bantuan disalurkan utuh 100% tanpa potongan kepada mustahik yang berhak.',
+  },
+  {
+    q: 'Bagaimana cara mengetahui perkembangan atau tindak lanjut pengajuan saya?',
+    a: 'Gunakan fitur "Lacak Status Pengajuan" pada portal ini dengan memasukkan Nomor Berkas (contoh: MST-202608-xxxx), NIK, atau No. WhatsApp Anda. Petugas kami juga akan mengirimkan notifikasi via WhatsApp.',
+  },
+  {
+    q: 'Apakah bisa mengajukan bantuan untuk anggota keluarga lain yang sedang sakit/sekolah?',
+    a: 'Bisa. Kepala keluarga atau wali dapat mengajukan permohonan dengan mengisi nama penerima manfaat (anak/orang tua sakit) pada kolom "Penerima Manfaat" di formulir pendaftaran.',
+  },
 ];
 
 export default function PublicPortalPage({ onNavigateToDashboard }) {
-  const [activeTab, setActiveTab] = useState('pengajuan'); // 'pengajuan' | 'lacak'
-  const [currentStep, setCurrentStep] = useState(1); // 1: Profil, 2: Alamat, 3: Program, 4: Berkas
+  const [activeTab, setActiveTab] = useState('pengajuan'); // 'pengajuan' | 'lacak' | 'faq'
+  const [currentStep, setCurrentStep] = useState(1); // 1: Profil, 2: Alamat, 3: Program, 4: Berkas, 5: Konfirmasi
 
   // Form State
   const [formData, setFormData] = useState({
@@ -155,6 +195,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     bank_account: '',
     bank_account_name: '',
     notes: '',
+    agreed: false,
   });
 
   const [uploadedFiles, setUploadedFiles] = useState({
@@ -168,6 +209,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccessData, setSubmitSuccessData] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [previewImageModal, setPreviewImageModal] = useState(null);
 
   // Tracking State
   const [searchQuery, setSearchQuery] = useState('');
@@ -175,32 +217,107 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
   const [trackingResult, setTrackingResult] = useState(null);
   const [searchError, setSearchError] = useState('');
 
-  // Handle Input Changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // FAQ open item state
+  const [openFaq, setOpenFaq] = useState(0);
+
+  const formSectionRef = useRef(null);
+
+  // Scroll smoothly to form section when changing step or tab
+  const scrollToForm = () => {
+    if (formSectionRef.current) {
+      formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
-  // Handle File Upload Simulation
+  // Handle Input Changes
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // Handle File Upload Simulation with image preview URL
   const handleFileChange = (field, e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
+      const isImage = file.type.startsWith('image/');
+      const previewUrl = isImage ? URL.createObjectURL(file) : null;
       setUploadedFiles((prev) => ({
         ...prev,
         [field]: {
           name: file.name,
           size: (file.size / 1024).toFixed(1) + ' KB',
           file,
+          previewUrl,
+          type: file.type,
         },
       }));
     }
   };
 
+  const removeFile = (field) => {
+    setUploadedFiles((prev) => {
+      const copy = { ...prev };
+      if (copy[field]?.previewUrl) {
+        URL.revokeObjectURL(copy[field].previewUrl);
+      }
+      copy[field] = null;
+      return copy;
+    });
+  };
+
+  // Step Validation Helpers
+  const validateStep = (step) => {
+    if (step === 1) {
+      if (!formData.name.trim()) return 'Nama lengkap pemohon wajib diisi sesuai KTP!';
+      if (!formData.nik || formData.nik.length !== 16) return 'NIK harus terdiri dari 16 digit angka!';
+      if (!formData.kk_number || formData.kk_number.length !== 16) return 'Nomor Kartu Keluarga (KK) harus 16 digit angka!';
+      if (!formData.phone || formData.phone.length < 10) return 'Nomor WhatsApp / HP tidak valid (minimal 10 digit)!';
+    }
+    if (step === 2) {
+      if (!formData.address.trim()) return 'Alamat domisili jalan/gang/RT wajib diisi!';
+      if (!formData.kecamatan) return 'Kecamatan di Kota Tangerang wajib dipilih!';
+    }
+    if (step === 3) {
+      if (!formData.program) return 'Silakan pilih salah satu Program BAZNAS!';
+      if (!formData.asnaf) return 'Silakan tentukan Kategori Asnaf!';
+      if (!formData.request_title.trim()) return 'Mohon jelaskan uraian kebutuhan / alasan permohonan bantuan!';
+    }
+    if (step === 4) {
+      if (!uploadedFiles.ktp) return 'Dokumen Foto KTP Pemohon wajib diupload!';
+      if (!uploadedFiles.kk) return 'Dokumen Foto Kartu Keluarga (KK) wajib diupload!';
+    }
+    return null;
+  };
+
+  const handleNextStep = () => {
+    const errorMsg = validateStep(currentStep);
+    if (errorMsg) {
+      alert(errorMsg);
+      return;
+    }
+    setCurrentStep((prev) => Math.min(prev + 1, 5));
+    scrollToForm();
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    scrollToForm();
+  };
+
   // Submit Handler
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.nik || !formData.phone || !formData.address) {
-      alert('Mohon lengkapi data profil, NIK, No. WhatsApp, dan alamat!');
+    const errorMsg = validateStep(4);
+    if (errorMsg) {
+      alert(errorMsg);
+      setCurrentStep(4);
+      return;
+    }
+    if (!formData.agreed) {
+      alert('Mohon centang persetujuan keabsahan dan kebenaran data di Langkah 5!');
       return;
     }
 
@@ -234,9 +351,13 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       setSubmitSuccessData({
         fileNo: generatedFileNo,
         name: formData.name,
+        nik: formData.nik,
         program: formData.program,
-        date: timestamp.toLocaleDateString('id-ID', { dateStyle: 'long' }),
+        asnaf: formData.asnaf,
+        kecamatan: formData.kecamatan,
+        date: timestamp.toLocaleDateString('id-ID', { dateStyle: 'full' }),
         phone: formData.phone,
+        proposedAmount: formData.proposed_amount,
       });
 
     } catch (err) {
@@ -247,9 +368,9 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
   };
 
   // Handle Search Tracking
-  const handleSearchTracking = async (e) => {
-    e?.preventDefault();
-    const query = searchQuery.trim().toLowerCase();
+  const handleSearchTracking = async (e, customQuery = null) => {
+    if (e) e.preventDefault();
+    const query = (customQuery !== null ? customQuery : searchQuery).trim().toLowerCase();
     if (!query) {
       setSearchError('Silakan masukkan Nomor Berkas, NIK, atau No. WhatsApp!');
       return;
@@ -265,7 +386,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       // Try fetching from API
       try {
         const res = await api.listMustahik();
-        const list = res.data || [];
+        const list = res?.data || [];
         match = list.find((m) =>
           (m.file_no && m.file_no.toLowerCase().includes(query)) ||
           (m.nik && m.nik.toLowerCase().includes(query)) ||
@@ -281,22 +402,22 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         if (query.includes('mst') || query.includes('081') || query.length >= 4) {
           match = {
             id: 999,
-            file_no: searchQuery.toUpperCase().startsWith('MST') ? searchQuery.toUpperCase() : 'MST-202608-0128',
+            file_no: query.startsWith('mst') ? query.toUpperCase() : 'MST-202608-0128',
             name: 'Bapak Subur Santoso',
             received_date: '2026-08-10',
             nik: '3671011205850003',
             phone: '081234567890',
             kecamatan: 'Karawaci',
-            kelurahan: 'Cimone',
-            address: 'Jl. Merdeka No. 45 RT 02/RW 04',
+            kelurahan: 'Cimone Jaya',
+            address: 'Jl. Merdeka Gg. H. Jaelani No. 45 RT 02/RW 04',
             program: 'Pendidikan',
             asnaf: 'Miskin',
-            request_title: 'Bantuan Beasiswa Pendidikan Kuliah Semester Ganjil & SPP SMK',
+            request_title: 'Bantuan Biaya Tunggakan SPP Sekolah SMK & Perlengkapan Belajar Santri Dhuafa',
             status: 'Persetujuan MPZIS',
             approved_amount: 3500000,
             recommended_amount: 3500000,
-            surveyor_name: 'Ahmad Fauzi, S.Sos',
-            notes: 'Hasil assessment lapangan: Keluarga terverifikasi asnaf miskin, anak berprestasi di sekolah.',
+            surveyor_name: 'Ahmad Fauzi, S.Sos (Tim Assessment BAZNAS)',
+            notes: 'Hasil assessment lapangan: Keluarga terverifikasi layak kategori asnaf miskin, kepala keluarga berpenghasilan tidak tetap, anak berprestasi akademik di sekolah.',
           };
         }
       }
@@ -304,7 +425,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       if (match) {
         setTrackingResult(match);
       } else {
-        setSearchError('Data pengajuan tidak ditemukan. Pastikan Nomor Berkas / NIK / No. WhatsApp sudah benar.');
+        setSearchError('Data pengajuan tidak ditemukan. Pastikan Nomor Berkas (contoh: MST-202608-0128), NIK 16 digit, atau No. WhatsApp sudah sesuai.');
       }
     } finally {
       setIsSearching(false);
@@ -332,44 +453,64 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     return map[status] || 2;
   };
 
+  // Trigger browser print for tracking slip
+  const handlePrintSlip = () => {
+    window.print();
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-foreground flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
       
       {/* ========================================================= */}
-      {/* HEADER PORTAL PUBLIK                                      */}
+      {/* HEADER / NAVBAR PORTAL RESMI                              */}
       {/* ========================================================= */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-emerald-100 dark:border-slate-800 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           
-          {/* Logo & Identitas */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-extrabold text-sm shadow-md tracking-wider">
-              BAZNAS
-            </div>
-            <div>
+          {/* Logo BAZNAS & Brand Identity */}
+          <div className="flex items-center gap-3.5">
+            <img
+              src={baznasLogo}
+              alt="Logo Resmi BAZNAS Kota Tangerang"
+              className="h-11 sm:h-12 w-auto object-contain drop-shadow-xs"
+            />
+            <div className="hidden xs:block border-l border-slate-200 dark:border-slate-700 pl-3">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white">
-                  BAZNAS
+                  BAZNAS KOTA TANGERANG
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold">
-                  Kota Tangerang
+                <span className="hidden sm:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  Layanan Publik
                 </span>
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground hidden xs:block">
-                Portal Pelayanan Mustahik & Lacak Permohonan ZIS
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Badan Amil Zakat Nasional &bull; Pintu Pelayanan Mustahik Terpadu
               </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Quick Nav Links & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            
+            <button
+              onClick={() => {
+                setActiveTab('faq');
+                scrollToForm();
+              }}
+              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <HelpCircle className="size-4 text-emerald-600" />
+              <span>Panduan & FAQ</span>
+            </button>
+
             <a
-              href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan"
+              href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan%20mustahik"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
             >
-              <Phone className="size-3.5" /> Hotline BAZNAS
+              <Phone className="size-3.5 text-emerald-600" />
+              <span>Hotline BAZNAS</span>
             </a>
 
             {onNavigateToDashboard && (
@@ -377,10 +518,11 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                 onClick={() => onNavigateToDashboard('utama')}
                 variant="default"
                 size="sm"
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1.5 shadow-sm rounded-lg"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1.5 shadow-sm rounded-xl px-3.5 py-2 h-auto"
               >
                 <LogIn className="size-3.5" />
-                <span>Masuk Dashboard Internal</span>
+                <span className="hidden sm:inline">Masuk Dashboard</span>
+                <span className="sm:hidden">Petugas</span>
               </Button>
             )}
           </div>
@@ -388,291 +530,463 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       </header>
 
       {/* ========================================================= */}
-      {/* HERO / BANNER SECTION                                     */}
+      {/* HERO / BANNER SECTION (MODERN, ISLAMI, ELEGAN)             */}
       {/* ========================================================= */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-teal-900 to-slate-900 text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8">
-        {/* Decorative Background Pattern */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-teal-950 to-slate-950 text-white pt-12 pb-20 px-4 sm:px-6 lg:px-8 border-b border-emerald-800/40">
         
-        <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-medium backdrop-blur-xs">
-            <Sparkles className="size-3.5 text-amber-300" />
-            Layanan Penyaluran Zakat, Infak & Sedekah Kota Tangerang 1447 H / 2026 M
+        {/* Subtle Islamic Geometric Pattern Background */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
+        
+        {/* Ambient Glows */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-emerald-500/15 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute -bottom-10 right-10 w-80 h-80 bg-teal-500/10 blur-3xl rounded-full pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
+          
+          {/* Official Badge & Logo Mini */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-medium backdrop-blur-md shadow-inner">
+            <Sparkles className="size-4 text-amber-400 animate-spin-slow" />
+            <span>Penyaluran Resmi Zakat, Infak & Sedekah Kota Tangerang 1447 H / 2026 M</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-balance">
-            Pusat Pelayanan Mustahik & Permohonan Bantuan BAZNAS
+          {/* Main Welcoming Headline */}
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight sm:leading-snug text-balance">
+            Layanan Pengajuan Bantuan Mustahik Online <br className="hidden sm:inline" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-200 to-teal-200">
+              BAZNAS Kota Tangerang
+            </span>
           </h1>
 
-          <p className="text-xs sm:text-base text-emerald-100/90 max-w-2xl mx-auto leading-relaxed">
-            Ajukan permohonan bantuan secara online dengan transparan, mudah, dan pantau proses verifikasi berkas hingga penyaluran dana secara mandiri.
+          {/* Subtitle */}
+          <p className="text-xs sm:text-base text-emerald-100/90 max-w-3xl mx-auto leading-relaxed">
+            Membantu sesama dengan amanah, transparan, profesional, dan sesuai kaidah syariah.
+            Daftarkan permohonan bantuan secara mandiri dan pantau setiap tahapan verifikasi berkas hingga pencairan secara realtime.
           </p>
 
-          {/* Quick Tab Switcher */}
-          <div className="pt-4 flex items-center justify-center">
-            <div className="inline-flex p-1 rounded-xl bg-black/30 backdrop-blur-md border border-white/10 shadow-lg">
-              <button
-                onClick={() => setActiveTab('pengajuan')}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'pengajuan'
-                    ? 'bg-emerald-500 text-white shadow-md'
-                    : 'text-emerald-100/70 hover:text-white'
-                }`}
-              >
-                <FileText className="size-4" /> Formulir Pengajuan Bantuan
-              </button>
-              <button
-                onClick={() => setActiveTab('lacak')}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                  activeTab === 'lacak'
-                    ? 'bg-emerald-500 text-white shadow-md'
-                    : 'text-emerald-100/70 hover:text-white'
-                }`}
-              >
-                <Search className="size-4" /> Lacak Status Pengajuan
-              </button>
-            </div>
+          {/* 2 Primary CTA Action Buttons */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <button
+              onClick={() => {
+                setActiveTab('pengajuan');
+                scrollToForm();
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-900/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            >
+              <FileText className="size-4 text-slate-950" />
+              <span>Ajukan Bantuan Sekarang</span>
+              <ArrowRight className="size-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('lacak');
+                scrollToForm();
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-sm border border-emerald-500/40 backdrop-blur-md shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            >
+              <Search className="size-4 text-emerald-300" />
+              <span>Lacak Status Berkas</span>
+            </button>
           </div>
+
+          {/* 4 Trust & Core Statistics Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-6 text-left">
+            
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                <HeartHandshake className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-white">5 Program Prioritas</p>
+                <p className="text-[11px] text-emerald-200/70">Pendidikan, Kesehatan, Ekonomi</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0">
+                <MapPin className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-white">13 Kecamatan</p>
+                <p className="text-[11px] text-teal-200/70">Wilayah Kota Tangerang</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+                <Clock className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-white">6 Tahapan Transparan</p>
+                <p className="text-[11px] text-amber-200/70">SOP Standar Resmi BAZNAS</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                <ShieldCheck className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold text-white">100% Bebas Biaya</p>
+                <p className="text-[11px] text-emerald-200/70">Gratis Tanpa Pungutan</p>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </section>
 
       {/* ========================================================= */}
-      {/* MAIN CONTENT AREA                                         */}
+      {/* MAIN CONTENT PORTAL CONTAINER                             */}
       {/* ========================================================= */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-16 relative z-20">
+      <main
+        ref={formSectionRef}
+        className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-16 relative z-20 space-y-8"
+      >
         
+        {/* Navigation Tabs Pill Bar */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl gap-1">
+            
+            <button
+              onClick={() => setActiveTab('pengajuan')}
+              className={`flex items-center gap-2 px-5 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                activeTab === 'pengajuan'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <FileText className="size-4" />
+              <span>Formulir Pengajuan Bantuan</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('lacak')}
+              className={`flex items-center gap-2 px-5 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                activeTab === 'lacak'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Search className="size-4" />
+              <span>Lacak Status Berkas</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('faq')}
+              className={`hidden sm:flex items-center gap-2 px-5 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                activeTab === 'faq'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <HelpCircle className="size-4" />
+              <span>FAQ & Syarat</span>
+            </button>
+
+          </div>
+        </div>
+
         {/* ========================================================= */}
-        {/* TAB 1: FORMULIR PENGAJUAN ONLINE                          */}
+        {/* TAB 1: FORMULIR PENGAJUAN (5 STEP INTERACTIVE WIZARD)     */}
         {/* ========================================================= */}
         {activeTab === 'pengajuan' && (
-          <div className="space-y-6">
-            <Card className="shadow-xl border-slate-200 dark:border-slate-800 bg-card rounded-2xl overflow-hidden">
+          <div className="space-y-6 animate-fade-in">
+            <Card className="shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
               
-              {/* Stepper Progress Bar */}
-              <div className="bg-muted/40 border-b border-border p-4 sm:p-6">
-                <div className="grid grid-cols-4 gap-2 text-center">
+              {/* Stepper Header Progress Bar (5 Steps) */}
+              <div className="bg-slate-50/90 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-6">
+                
+                {/* Mobile Active Step Info */}
+                <div className="flex sm:hidden items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
+                      {currentStep}
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {currentStep === 1 && 'Langkah 1: Identitas Pemohon'}
+                      {currentStep === 2 && 'Langkah 2: Domisili & Profil Ekonomi'}
+                      {currentStep === 3 && 'Langkah 3: Program & Asnaf'}
+                      {currentStep === 4 && 'Langkah 4: Upload Berkas Dokumen'}
+                      {currentStep === 5 && 'Langkah 5: Konfirmasi & Pernyataan'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+                    {currentStep} / 5
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-5 gap-1 sm:gap-3 text-center">
                   {[
-                    { step: 1, title: 'Profil Pemohon', icon: User },
-                    { step: 2, title: 'Alamat Domisili', icon: MapPin },
-                    { step: 3, title: 'Program Bantuan', icon: HeartHandshake },
-                    { step: 4, title: 'Dokumen Berkas', icon: Upload },
-                  ].map((s) => (
-                    <div
-                      key={s.step}
-                      onClick={() => setCurrentStep(s.step)}
-                      className={`flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-                        currentStep === s.step
-                          ? 'text-emerald-700 dark:text-emerald-400 font-bold'
-                          : currentStep > s.step
-                          ? 'text-slate-700 dark:text-slate-300 font-medium'
-                          : 'text-muted-foreground/60'
-                      }`}
-                    >
+                    { step: 1, title: 'Identitas', sub: 'Data Pemohon', icon: User },
+                    { step: 2, title: 'Domisili', sub: 'Profil Ekonomi', icon: MapPin },
+                    { step: 3, title: 'Program', sub: 'Pilihan Asnaf', icon: HeartHandshake },
+                    { step: 4, title: 'Upload Berkas', sub: 'KTP, KK, SKTM', icon: Upload },
+                    { step: 5, title: 'Konfirmasi', sub: 'Kirim Berkas', icon: FileCheck },
+                  ].map((s) => {
+                    const isPassed = currentStep > s.step;
+                    const isCurrent = currentStep === s.step;
+
+                    return (
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                          currentStep === s.step
-                            ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950/60 shadow-xs'
-                            : currentStep > s.step
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                            : 'bg-muted text-muted-foreground'
+                        key={s.step}
+                        onClick={() => {
+                          if (s.step < currentStep) setCurrentStep(s.step);
+                        }}
+                        className={`flex flex-col items-center gap-1.5 transition-all ${
+                          s.step < currentStep ? 'cursor-pointer' : ''
                         }`}
                       >
-                        {currentStep > s.step ? <Check className="size-4" /> : s.step}
+                        <div
+                          className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-extrabold transition-all ${
+                            isCurrent
+                              ? 'bg-emerald-600 text-white ring-4 ring-emerald-100 dark:ring-emerald-950 shadow-md transform scale-105'
+                              : isPassed
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {isPassed ? <Check className="size-4 sm:size-5" /> : s.step}
+                        </div>
+                        <div className="hidden sm:block">
+                          <p className={`text-xs font-bold leading-tight ${isCurrent ? 'text-emerald-700 dark:text-emerald-400' : isPassed ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400'}`}>
+                            {s.title}
+                          </p>
+                          <p className="text-[10px] text-slate-400">{s.sub}</p>
+                        </div>
                       </div>
-                      <span className="text-[10px] sm:text-xs text-center hidden xs:block">{s.title}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              <CardContent className="p-6 sm:p-8">
+              <CardContent className="p-6 sm:p-10">
                 <form onSubmit={handleSubmitApplication} className="space-y-6">
                   
-                  {/* STEP 1: Profil Pemohon */}
+                  {/* ================================================= */}
+                  {/* STEP 1: PROFIL & IDENTITAS                        */}
+                  {/* ================================================= */}
                   {currentStep === 1 && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="border-b border-border pb-3">
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                          <User className="size-4 text-emerald-600" /> Data Pemohon & Penerima Manfaat
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                          <User className="size-3.5" /> Langkah 1 dari 5
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                          Data Identitas Pemohon & Penerima Manfaat
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Isi data identitas diri sesuai dengan KTP dan Kartu Keluarga yang berlaku
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Pastikan nama dan nomor identitas sesuai persis dengan e-KTP dan Kartu Keluarga yang berlaku.
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                             Nama Lengkap Pemohon (Sesuai KTP) <span className="text-rose-500">*</span>
                           </label>
                           <Input
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="Contoh: Ahmad Subagja"
-                            className="h-10 text-xs"
+                            placeholder="Contoh: Muhammad Syafi'i"
+                            className="h-11 text-xs sm:text-sm rounded-xl"
                             required
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
-                            Nomor Induk Kependudukan (NIK) <span className="text-rose-500">*</span>
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Nomor Induk Kependudukan (NIK) <span className="text-rose-500">*</span>
+                            </label>
+                            <span className={`text-[10px] font-mono font-bold ${formData.nik.length === 16 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {formData.nik.length}/16 digit
+                            </span>
+                          </div>
                           <Input
                             name="nik"
                             value={formData.nik}
-                            onChange={handleChange}
-                            placeholder="16 Digit NIK KTP"
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                              setFormData((prev) => ({ ...prev, nik: val }));
+                            }}
+                            placeholder="16 Digit NIK KTP (Contoh: 3671xxxxxxxxxxxx)"
                             maxLength={16}
-                            className="h-10 text-xs font-mono"
+                            className="h-11 text-xs sm:text-sm font-mono tracking-wider rounded-xl"
                             required
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
-                            Nomor Kartu Keluarga (KK) <span className="text-rose-500">*</span>
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Nomor Kartu Keluarga (KK) <span className="text-rose-500">*</span>
+                            </label>
+                            <span className={`text-[10px] font-mono font-bold ${formData.kk_number.length === 16 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {formData.kk_number.length}/16 digit
+                            </span>
+                          </div>
                           <Input
                             name="kk_number"
                             value={formData.kk_number}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 16);
+                              setFormData((prev) => ({ ...prev, kk_number: val }));
+                            }}
                             placeholder="16 Digit Nomor KK"
                             maxLength={16}
-                            className="h-10 text-xs font-mono"
+                            className="h-11 text-xs sm:text-sm font-mono tracking-wider rounded-xl"
                             required
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                             Nomor WhatsApp / HP Aktif <span className="text-rose-500">*</span>
                           </label>
-                          <Input
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="081234567890 (Untuk notifikasi status)"
-                            className="h-10 text-xs"
-                            required
-                          />
+                          <div className="relative">
+                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                            <Input
+                              name="phone"
+                              value={formData.phone}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^\d+]/g, '');
+                                setFormData((prev) => ({ ...prev, phone: val }));
+                              }}
+                              placeholder="081234567890 (Untuk notifikasi status verifikasi)"
+                              className="h-11 pl-10 text-xs sm:text-sm rounded-xl font-medium"
+                              required
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-400">Notifikasi perkembangan berkas akan dikirim ke nomor WhatsApp ini.</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Tempat Lahir</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tempat Lahir</label>
                           <Input
                             name="pob"
                             value={formData.pob}
                             onChange={handleChange}
                             placeholder="Kota Tangerang"
-                            className="h-10 text-xs"
+                            className="h-11 text-xs rounded-xl"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Tanggal Lahir</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tanggal Lahir</label>
                           <Input
                             type="date"
                             name="dob"
                             value={formData.dob}
                             onChange={handleChange}
-                            className="h-10 text-xs"
+                            className="h-11 text-xs rounded-xl"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Status Perkawinan</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Perkawinan</label>
                           <select
                             name="marital_status"
                             value={formData.marital_status}
                             onChange={handleChange}
-                            className="w-full h-10 text-xs rounded-md border border-border bg-background px-3"
+                            className="w-full h-11 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 font-medium"
                           >
                             <option value="Menikah">Menikah</option>
                             <option value="Belum Menikah">Belum Menikah</option>
-                            <option value="Cerai Mati">Cerai Mati (Janda/Duda)</option>
+                            <option value="Cerai Mati">Cerai Mati (Janda / Duda)</option>
                             <option value="Cerai Hidup">Cerai Hidup</option>
                           </select>
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 pt-2">
-                        <label className="text-xs font-semibold text-foreground">
-                          Nama Penerima Manfaat (Jika bantuan untuk anak / lansia / orang lain)
+                      <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Users className="size-4 text-emerald-600" />
+                          Nama Penerima Manfaat Bantuan (Opsional)
                         </label>
+                        <p className="text-[11px] text-slate-500">
+                          Isi kolom ini jika bantuan diajukan oleh wali/orang tua untuk anak sekolah, anggota keluarga yang sakit, atau lansia.
+                        </p>
                         <Input
                           name="beneficiary_name"
                           value={formData.beneficiary_name}
                           onChange={handleChange}
-                          placeholder="Kosongkan jika penerima bantuan sama dengan pemohon"
-                          className="h-10 text-xs"
+                          placeholder="Kosongkan jika penerima bantuan sama dengan nama pemohon"
+                          className="h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
                         />
                       </div>
 
-                      <div className="flex justify-end pt-4">
+                      <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
                         <Button
                           type="button"
-                          onClick={() => setCurrentStep(2)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-5 gap-1.5 font-semibold"
+                          onClick={handleNextStep}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
                         >
-                          Lanjut: Alamat Lengkap <ChevronRight className="size-4" />
+                          <span>Lanjut: Alamat & Ekonomi</span>
+                          <ChevronRight className="size-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 2: Alamat Lengkap */}
+                  {/* ================================================= */}
+                  {/* STEP 2: DOMISILI & PROFIL EKONOMI                 */}
+                  {/* ================================================= */}
                   {currentStep === 2 && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="border-b border-border pb-3">
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                          <MapPin className="size-4 text-emerald-600" /> Alamat Domisili Pemohon di Kota Tangerang
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                          <MapPin className="size-3.5" /> Langkah 2 dari 5
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                          Alamat Domisili & Profil Sosial Ekonomi
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Prioritas bantuan BAZNAS Kota Tangerang diperuntukkan bagi warga berdomisili di 13 Kecamatan Kota Tangerang
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Prioritas bantuan BAZNAS Kota Tangerang diperuntukkan bagi warga berdomisili di 13 Kecamatan Kota Tangerang.
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground">
-                          Alamat Jalan / Gang / Nomor Rumah <span className="text-rose-500">*</span>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Alamat Lengkap (Jalan / Gang / Nomor Rumah) <span className="text-rose-500">*</span>
                         </label>
                         <Input
                           name="address"
                           value={formData.address}
                           onChange={handleChange}
-                          placeholder="Contoh: Jl. Satria Sudirman No. 12"
-                          className="h-10 text-xs"
+                          placeholder="Contoh: Jl. Daan Mogot Gg. Macan No. 18"
+                          className="h-11 text-xs sm:text-sm rounded-xl"
                           required
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">RT / RW</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">RT / RW</label>
                           <Input
                             name="rt_rw"
                             value={formData.rt_rw}
                             onChange={handleChange}
-                            placeholder="Contoh: 003/004"
-                            className="h-10 text-xs"
+                            placeholder="Contoh: 003/005"
+                            className="h-11 text-xs rounded-xl font-mono"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
-                            Kecamatan <span className="text-rose-500">*</span>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Kecamatan (Kota Tangerang) <span className="text-rose-500">*</span>
                           </label>
                           <select
                             name="kecamatan"
                             value={formData.kecamatan}
                             onChange={handleChange}
-                            className="w-full h-10 text-xs rounded-md border border-border bg-background px-3"
+                            className="w-full h-11 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 font-semibold text-emerald-800 dark:text-emerald-300"
                           >
                             {KECAMATAN_TANGERANG.map((k) => (
                               <option key={k} value={k}>{k}</option>
@@ -681,116 +995,131 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Kelurahan</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kelurahan</label>
                           <Input
                             name="kelurahan"
                             value={formData.kelurahan}
                             onChange={handleChange}
                             placeholder="Contoh: Sukarasa / Cimone"
-                            className="h-10 text-xs"
+                            className="h-11 text-xs rounded-xl"
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Status Kepemilikan Rumah</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Tempat Tinggal</label>
                           <select
                             name="house_ownership"
                             value={formData.house_ownership}
                             onChange={handleChange}
-                            className="w-full h-10 text-xs rounded-md border border-border bg-background px-3"
+                            className="w-full h-11 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 font-medium"
                           >
                             <option value="Kontrak">Kontrak / Sewa Bulanan</option>
-                            <option value="Menumpang">Menumpang Keluarga</option>
-                            <option value="Sendiri">Milik Sendiri</option>
+                            <option value="Menumpang">Menumpang Orang Tua / Saudara</option>
+                            <option value="Sendiri">Milik Sendiri (Dhuafa)</option>
+                            <option value="Tanah Garapan">Menempati Lahan Fasum / Garapan</option>
                           </select>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Pekerjaan Utama</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Pekerjaan Utama</label>
                           <Input
                             name="occupation"
                             value={formData.occupation}
                             onChange={handleChange}
-                            placeholder="Buruh / Ojek / Pedagang / Tidak Bekerja"
-                            className="h-10 text-xs"
+                            placeholder="Buruh Harian / Pedagang Keliling / Tidak Bekerja"
+                            className="h-11 text-xs rounded-xl"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Jumlah Tanggungan Keluarga</label>
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Jumlah Tanggungan Jiwa</label>
                           <Input
                             type="number"
                             name="family_dependents"
                             value={formData.family_dependents}
                             onChange={handleChange}
-                            placeholder="Jumlah jiwa (misal 3)"
-                            className="h-10 text-xs"
+                            placeholder="Contoh: 3 orang"
+                            min={1}
+                            max={20}
+                            className="h-11 text-xs rounded-xl font-mono"
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Penghasilan Rata-rata / Bulan (Rp)</label>
+                          <label className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                            Penghasilan Rata-rata Keluarga / Bulan (Rp)
+                          </label>
                           <Input
                             type="number"
                             name="monthly_income"
                             value={formData.monthly_income}
                             onChange={handleChange}
                             placeholder="Contoh: 1500000"
-                            className="h-10 text-xs"
+                            className="h-11 text-xs sm:text-sm bg-white dark:bg-slate-900 rounded-xl font-mono"
                           />
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Total pendapatan seluruh anggota keluarga.</p>
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">Pengeluaran Rata-rata / Bulan (Rp)</label>
+                          <label className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                            Pengeluaran Rata-rata Keluarga / Bulan (Rp)
+                          </label>
                           <Input
                             type="number"
                             name="monthly_expense"
                             value={formData.monthly_expense}
                             onChange={handleChange}
                             placeholder="Contoh: 2000000"
-                            className="h-10 text-xs"
+                            className="h-11 text-xs sm:text-sm bg-white dark:bg-slate-900 rounded-xl font-mono"
                           />
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Kebutuhan makan, sewa rumah, dan operasional.</p>
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-4">
+                      <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setCurrentStep(1)}
-                          className="text-xs h-9 px-4"
+                          onClick={handlePrevStep}
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
                         >
-                          Kembali
+                          <ArrowLeft className="size-4" /> Kembali
                         </Button>
                         <Button
                           type="button"
-                          onClick={() => setCurrentStep(3)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-5 gap-1.5 font-semibold"
+                          onClick={handleNextStep}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
                         >
-                          Lanjut: Program Bantuan <ChevronRight className="size-4" />
+                          <span>Lanjut: Program Bantuan</span>
+                          <ChevronRight className="size-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 3: Program & Asnaf */}
+                  {/* ================================================= */}
+                  {/* STEP 3: PROGRAM BANTUAN & ASNAF                   */}
+                  {/* ================================================= */}
                   {currentStep === 3 && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="border-b border-border pb-3">
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                          <HeartHandshake className="size-4 text-emerald-600" /> Pemilihan Program & Kategori Asnaf
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                          <HeartHandshake className="size-3.5" /> Langkah 3 dari 5
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                          Pilihan Program BAZNAS & Kategori Asnaf
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Pilih klasifikasi 5 Program Utama BAZNAS Kota Tangerang yang sesuai dengan kebutuhan Anda
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Pilih klasifikasi 5 Program Utama BAZNAS Kota Tangerang yang paling sesuai dengan kebutuhan bantuan Anda.
                         </p>
                       </div>
 
-                      {/* Program Grid Selector */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {/* 5 Program Cards Selector */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                         {PROGRAM_LIST.map((prog) => {
                           const IconComp = prog.icon;
                           const isSelected = formData.program === prog.id;
@@ -798,28 +1127,30 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             <div
                               key={prog.id}
                               onClick={() => setFormData((prev) => ({ ...prev, program: prog.id }))}
-                              className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                              className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
                                 isSelected
-                                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm'
-                                  : 'border-border hover:border-emerald-300 hover:bg-muted/30'
+                                  ? `${prog.accentColor} shadow-md ring-2 ring-emerald-500`
+                                  : 'border-slate-200 dark:border-slate-800 hover:border-emerald-300 bg-white dark:bg-slate-900/60'
                               }`}
                             >
-                              <div className="space-y-2">
+                              <div className="space-y-2.5">
                                 <div className="flex items-center justify-between">
-                                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center">
-                                    <IconComp className="size-4" />
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                                    <IconComp className="size-5" />
                                   </div>
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${prog.badgeColor}`}>
+                                  <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${prog.badgeColor}`}>
                                     {prog.category}
                                   </span>
                                 </div>
-                                <h4 className="text-xs font-bold text-foreground">{prog.title}</h4>
-                                <p className="text-[11px] text-muted-foreground leading-relaxed">{prog.desc}</p>
+                                <div>
+                                  <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">{prog.title}</h4>
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{prog.desc}</p>
+                                </div>
                               </div>
 
-                              <div className="pt-2 mt-2 border-t border-border/40 flex items-center justify-end">
-                                <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}>
-                                  {isSelected ? '✓ Terpilih' : 'Pilih Program'}
+                              <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+                                <span className={`text-xs font-bold ${isSelected ? 'text-emerald-700 dark:text-emerald-400 flex items-center gap-1' : 'text-slate-400'}`}>
+                                  {isSelected ? <><CheckCircle2 className="size-4" /> Dipilih</> : 'Klik untuk Pilih'}
                                 </span>
                               </div>
                             </div>
@@ -827,26 +1158,38 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         })}
                       </div>
 
-                      {/* Asnaf Selector */}
-                      <div className="space-y-1.5 pt-2">
-                        <label className="text-xs font-semibold text-foreground">
-                          Kategori Asnaf (Sesuai Kriteria Syariah) <span className="text-rose-500">*</span>
+                      {/* Asnaf Selector with Explanations */}
+                      <div className="space-y-2 pt-2">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Kategori Asnaf (Kriteria Syariah) <span className="text-rose-500">*</span>
                         </label>
-                        <select
-                          name="asnaf"
-                          value={formData.asnaf}
-                          onChange={handleChange}
-                          className="w-full h-10 text-xs rounded-md border border-border bg-background px-3"
-                        >
-                          {ASNAF_LIST.map((a) => (
-                            <option key={a.id} value={a.id}>{a.label}</option>
-                          ))}
-                        </select>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                          {ASNAF_LIST.map((a) => {
+                            const isSelected = formData.asnaf === a.id;
+                            return (
+                              <div
+                                key={a.id}
+                                onClick={() => setFormData((prev) => ({ ...prev, asnaf: a.id }))}
+                                className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                                  isSelected
+                                    ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 font-bold'
+                                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold">{a.label}</span>
+                                  {isSelected && <Check className="size-3.5 text-emerald-600" />}
+                                </div>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">{a.desc}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* Uraian Kebutuhan */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                           Uraian Singkat Kebutuhan / Alasan Permohonan <span className="text-rose-500">*</span>
                         </label>
                         <textarea
@@ -854,16 +1197,17 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                           value={formData.request_title}
                           onChange={handleChange}
                           rows={3}
-                          placeholder="Jelaskan kebutuhan Anda, misalnya: Bantuan tunggakan SPP semester 5 dan biaya buku sekolah karena kepala keluarga sakit stroke..."
-                          className="w-full text-xs rounded-md border border-border bg-background p-3 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          placeholder="Jelaskan kebutuhan Anda secara rinci, misalnya: Bantuan tunggakan SPP semester 5 dan tebus ijazah SMK karena orang tua baru terkena PHK..."
+                          className="w-full text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-3.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500"
                           required
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Estimasi Biaya & Info Rekening */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
-                            Estimasi Biaya / Kebutuhan Dana yang Dimohon (Rp)
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Estimasi Kebutuhan Dana yang Dimohon (Rp)
                           </label>
                           <Input
                             type="number"
@@ -871,180 +1215,457 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             value={formData.proposed_amount}
                             onChange={handleChange}
                             placeholder="Contoh: 2500000"
-                            className="h-10 text-xs"
+                            className="h-11 text-xs sm:text-sm rounded-xl font-mono"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-foreground">
-                            Nomor Rekening Bank & Nama Bank (Opsional)
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Nama Bank & Nomor Rekening Pemohon (Opsional)
                           </label>
                           <Input
                             name="bank_account"
                             value={formData.bank_account}
                             onChange={handleChange}
-                            placeholder="Contoh: Bank BJB Syariah - 512010203040"
-                            className="h-10 text-xs"
+                            placeholder="Contoh: Bank BJB Syariah - 512010203040 a.n Ahmad"
+                            className="h-11 text-xs sm:text-sm rounded-xl"
                           />
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-4">
+                      <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setCurrentStep(2)}
-                          className="text-xs h-9 px-4"
+                          onClick={handlePrevStep}
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
                         >
-                          Kembali
+                          <ArrowLeft className="size-4" /> Kembali
                         </Button>
                         <Button
                           type="button"
-                          onClick={() => setCurrentStep(4)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 px-5 gap-1.5 font-semibold"
+                          onClick={handleNextStep}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
                         >
-                          Lanjut: Upload Berkas <ChevronRight className="size-4" />
+                          <span>Lanjut: Upload Dokumen</span>
+                          <ChevronRight className="size-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 4: Upload Dokumen */}
+                  {/* ================================================= */}
+                  {/* STEP 4: UPLOAD DOKUMEN BERKAS                     */}
+                  {/* ================================================= */}
                   {currentStep === 4 && (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="border-b border-border pb-3">
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                          <Upload className="size-4 text-emerald-600" /> Upload Dokumen Pendukung Permohonan
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                          <Upload className="size-3.5" /> Langkah 4 dari 5
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                          Upload Dokumen Pendukung Permohonan
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Format dokumen yang didukung: JPG, PNG, atau PDF (Maks. 5 MB per berkas)
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Format berkas yang didukung: JPG, JPEG, PNG, atau PDF (Ukuran maksimal 5 MB per berkas). Foto harus terbaca jelas.
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         
-                        {/* KTP */}
-                        <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        {/* 1. Foto KTP Pemohon (Wajib) */}
+                        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">1. Foto KTP Pemohon <span className="text-rose-500">*</span></span>
-                            {uploadedFiles.ktp ? <CheckCircle2 className="size-4 text-emerald-600" /> : <span className="text-[10px] text-rose-500 font-semibold">Wajib</span>}
+                            <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <User className="size-4 text-emerald-600" />
+                              1. Foto e-KTP Pemohon <span className="text-rose-500">*</span>
+                            </span>
+                            {uploadedFiles.ktp ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                <Check className="size-3" /> Terupload
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Wajib</span>
+                            )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">KTP Asli / e-KTP Kota Tangerang yang jelas terbaca.</p>
-                          <input
-                            type="file"
-                            id="upload-ktp"
-                            className="hidden"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileChange('ktp', e)}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById('upload-ktp').click()}
-                            className="w-full text-xs h-8 gap-1.5"
-                          >
-                            <Upload className="size-3.5" /> {uploadedFiles.ktp ? uploadedFiles.ktp.name : 'Pilih File KTP'}
-                          </Button>
+                          
+                          {uploadedFiles.ktp ? (
+                            <div className="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {uploadedFiles.ktp.previewUrl ? (
+                                <img
+                                  src={uploadedFiles.ktp.previewUrl}
+                                  alt="Preview KTP"
+                                  className="w-12 h-12 object-cover rounded-lg border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                  <FileText className="size-6" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate">{uploadedFiles.ktp.name}</p>
+                                <p className="text-[10px] text-slate-400">{uploadedFiles.ktp.size}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeFile('ktp')}
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                title="Hapus File"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <input
+                                type="file"
+                                id="upload-ktp"
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleFileChange('ktp', e)}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('upload-ktp').click()}
+                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl"
+                              >
+                                <Upload className="size-4" /> Pilih / Foto KTP Asli
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* KK */}
-                        <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        {/* 2. Foto KK (Wajib) */}
+                        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">2. Foto Kartu Keluarga (KK) <span className="text-rose-500">*</span></span>
-                            {uploadedFiles.kk ? <CheckCircle2 className="size-4 text-emerald-600" /> : <span className="text-[10px] text-rose-500 font-semibold">Wajib</span>}
+                            <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <Users className="size-4 text-emerald-600" />
+                              2. Foto Kartu Keluarga (KK) <span className="text-rose-500">*</span>
+                            </span>
+                            {uploadedFiles.kk ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                <Check className="size-3" /> Terupload
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Wajib</span>
+                            )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">Kartu Keluarga terbaru yang memuat anggota keluarga.</p>
-                          <input
-                            type="file"
-                            id="upload-kk"
-                            className="hidden"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileChange('kk', e)}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById('upload-kk').click()}
-                            className="w-full text-xs h-8 gap-1.5"
-                          >
-                            <Upload className="size-3.5" /> {uploadedFiles.kk ? uploadedFiles.kk.name : 'Pilih File KK'}
-                          </Button>
+
+                          {uploadedFiles.kk ? (
+                            <div className="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {uploadedFiles.kk.previewUrl ? (
+                                <img
+                                  src={uploadedFiles.kk.previewUrl}
+                                  alt="Preview KK"
+                                  className="w-12 h-12 object-cover rounded-lg border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                  <FileText className="size-6" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate">{uploadedFiles.kk.name}</p>
+                                <p className="text-[10px] text-slate-400">{uploadedFiles.kk.size}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeFile('kk')}
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                title="Hapus File"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <input
+                                type="file"
+                                id="upload-kk"
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleFileChange('kk', e)}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('upload-kk').click()}
+                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl"
+                              >
+                                <Upload className="size-4" /> Pilih / Foto Kartu Keluarga
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* SKTM */}
-                        <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        {/* 3. SKTM / Surat Keterangan RT-RW */}
+                        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">3. SKTM / Surat RT-RW</span>
-                            {uploadedFiles.sktm && <CheckCircle2 className="size-4 text-emerald-600" />}
+                            <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <FileCheck className="size-4 text-emerald-600" />
+                              3. SKTM / Surat Pengantar RT-RW
+                            </span>
+                            {uploadedFiles.sktm && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                <Check className="size-3" /> Terupload
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">Surat Keterangan Tidak Mampu dari Kelurahan / Pengantar RT-RW.</p>
-                          <input
-                            type="file"
-                            id="upload-sktm"
-                            className="hidden"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileChange('sktm', e)}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById('upload-sktm').click()}
-                            className="w-full text-xs h-8 gap-1.5"
-                          >
-                            <Upload className="size-3.5" /> {uploadedFiles.sktm ? uploadedFiles.sktm.name : 'Pilih File SKTM'}
-                          </Button>
+
+                          {uploadedFiles.sktm ? (
+                            <div className="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {uploadedFiles.sktm.previewUrl ? (
+                                <img
+                                  src={uploadedFiles.sktm.previewUrl}
+                                  alt="Preview SKTM"
+                                  className="w-12 h-12 object-cover rounded-lg border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                  <FileText className="size-6" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate">{uploadedFiles.sktm.name}</p>
+                                <p className="text-[10px] text-slate-400">{uploadedFiles.sktm.size}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeFile('sktm')}
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                title="Hapus File"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <input
+                                type="file"
+                                id="upload-sktm"
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleFileChange('sktm', e)}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('upload-sktm').click()}
+                                className="w-full text-xs h-10 gap-2 rounded-xl"
+                              >
+                                <Upload className="size-4" /> Pilih File SKTM Kelurahan
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Surat Permohonan / Bukti Tunggakan / Berobat */}
-                        <div className="p-3.5 rounded-xl border border-border bg-card space-y-2">
+                        {/* 4. Rincian Tagihan / Bukti Permohonan */}
+                        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">4. Bukti Tagihan / Rincian Biaya</span>
-                            {uploadedFiles.permohonan && <CheckCircle2 className="size-4 text-emerald-600" />}
+                            <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <FileText className="size-4 text-emerald-600" />
+                              4. Rincian Tagihan / Surat Sakit / Usaha
+                            </span>
+                            {uploadedFiles.permohonan && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                <Check className="size-3" /> Terupload
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">Rincian SPP sekolah / kwitansi obat / proposal usaha.</p>
-                          <input
-                            type="file"
-                            id="upload-permohonan"
-                            className="hidden"
-                            accept="image/*,.pdf"
-                            onChange={(e) => handleFileChange('permohonan', e)}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById('upload-permohonan').click()}
-                            className="w-full text-xs h-8 gap-1.5"
-                          >
-                            <Upload className="size-3.5" /> {uploadedFiles.permohonan ? uploadedFiles.permohonan.name : 'Pilih Bukti Tagihan'}
-                          </Button>
+
+                          {uploadedFiles.permohonan ? (
+                            <div className="flex items-center gap-3 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              {uploadedFiles.permohonan.previewUrl ? (
+                                <img
+                                  src={uploadedFiles.permohonan.previewUrl}
+                                  alt="Preview Bukti"
+                                  className="w-12 h-12 object-cover rounded-lg border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                  <FileText className="size-6" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate">{uploadedFiles.permohonan.name}</p>
+                                <p className="text-[10px] text-slate-400">{uploadedFiles.permohonan.size}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeFile('permohonan')}
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                title="Hapus File"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <input
+                                type="file"
+                                id="upload-permohonan"
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => handleFileChange('permohonan', e)}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('upload-permohonan').click()}
+                                className="w-full text-xs h-10 gap-2 rounded-xl"
+                              >
+                                <Upload className="size-4" /> Pilih Bukti Tagihan SPP / RS
+                              </Button>
+                            </div>
+                          )}
                         </div>
+
                       </div>
 
-                      {/* Pernyataan Kebenaran Data */}
-                      <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
-                        <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-                        <p className="leading-relaxed">
-                          Dengan menekan tombol <strong>"Kirim Permohonan Bantuan"</strong>, saya menyatakan dengan sesungguhnya di hadapan Allah SWT bahwa data dan dokumen yang saya berikan adalah benar dan dapat dipertanggungjawabkan untuk diverifikasi oleh Petugas BAZNAS Kota Tangerang.
-                        </p>
-                      </div>
-
-                      <div className="flex justify-between pt-4">
+                      <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setCurrentStep(3)}
-                          className="text-xs h-9 px-4"
+                          onClick={handlePrevStep}
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
                         >
-                          Kembali
+                          <ArrowLeft className="size-4" /> Kembali
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleNextStep}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
+                        >
+                          <span>Lanjut: Konfirmasi & Kirim</span>
+                          <ChevronRight className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ================================================= */}
+                  {/* STEP 5: KONFIRMASI & PERNYATAAN AKHIR             */}
+                  {/* ================================================= */}
+                  {currentStep === 5 && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-1">
+                          <FileCheck className="size-3.5" /> Langkah 5 dari 5
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                          Ringkasan Data & Pernyataan Keabsahan
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Periksa kembali rincian formulir pengajuan Anda sebelum dikirimkan ke sistem BAZNAS Kota Tangerang.
+                        </p>
+                      </div>
+
+                      {/* Summary Data Review Card */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+                          <h4 className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <User className="size-4" /> Identitas & Domisili
+                          </h4>
+                          <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Nama Pemohon:</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{formData.name}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">NIK (KTP):</span>
+                              <span className="font-mono font-bold text-slate-900 dark:text-white">{formData.nik}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">No. WhatsApp:</span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{formData.phone}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Kecamatan:</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-400">Kec. {formData.kecamatan}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Alamat:</span>
+                              <span className="font-medium text-slate-900 dark:text-white text-right max-w-[200px]">{formData.address}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+                          <h4 className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <HeartHandshake className="size-4" /> Program & Berkas
+                          </h4>
+                          <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Program:</span>
+                              <span className="font-bold text-slate-900 dark:text-white">{formData.program}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Kategori Asnaf:</span>
+                              <span className="font-bold text-amber-700 dark:text-amber-400">{formData.asnaf}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">Estimasi Dimohon:</span>
+                              <span className="font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">
+                                {formData.proposed_amount ? formatRupiah(parseFloat(formData.proposed_amount)) : 'Sesuai Standar BAZNAS'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">KTP Terlampir:</span>
+                              <span className="font-semibold text-emerald-600">{uploadedFiles.ktp?.name ? '✓ Ada' : 'Belum'}</span>
+                            </div>
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-slate-500">KK Terlampir:</span>
+                              <span className="font-semibold text-emerald-600">{uploadedFiles.kk?.name ? '✓ Ada' : 'Belum'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* Pakta Integritas / Pernyataan Syariah */}
+                      <div className="p-5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-900/60 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="size-5 shrink-0 text-amber-600 mt-0.5" />
+                          <div className="space-y-2">
+                            <h5 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                              Pernyataan Keabsahan Data & Akad Permohonan
+                            </h5>
+                            <p className="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
+                              Dengan ini saya menyatakan atas nama Allah SWT bahwa seluruh keterangan, data keluarga, dan dokumen yang saya berikan adalah <strong>benar, jujur, dan sah</strong>. Apabila di kemudian hari ditemukan keterangan yang tidak benar, saya bersedia menerima sanksi dan pembatalan bantuan sesuai ketentuan BAZNAS Kota Tangerang.
+                            </p>
+                            
+                            <label className="flex items-center gap-2.5 pt-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                name="agreed"
+                                checked={formData.agreed}
+                                onChange={handleChange}
+                                className="w-4 h-4 rounded border-amber-400 text-emerald-600 focus:ring-emerald-500"
+                                required
+                              />
+                              <span className="text-xs font-bold text-amber-950 dark:text-amber-100">
+                                Saya menyetujui pernyataan dan kebenaran data di atas.
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handlePrevStep}
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
+                        >
+                          <ArrowLeft className="size-4" /> Kembali
                         </Button>
                         <Button
                           type="submit"
-                          disabled={isSubmitting}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-10 px-8 gap-2 font-bold shadow-md"
+                          disabled={isSubmitting || !formData.agreed}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-12 px-9 rounded-2xl font-black gap-2 shadow-lg shadow-emerald-900/20 transition-transform active:scale-95"
                         >
                           {isSubmitting ? (
                             <>
@@ -1052,7 +1673,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             </>
                           ) : (
                             <>
-                              <Send className="size-4" /> Kirim Permohonan Bantuan
+                              <Send className="size-4" /> Kirim Permohonan Bantuan Sekarang
                             </>
                           )}
                         </Button>
@@ -1070,45 +1691,71 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         {/* TAB 2: LACAK STATUS PENGAJUAN MANDIRI                     */}
         {/* ========================================================= */}
         {activeTab === 'lacak' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             
             {/* Search Box Card */}
-            <Card className="shadow-lg border-slate-200 dark:border-slate-800 bg-card rounded-2xl p-6 sm:p-8">
+            <Card className="shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10">
               <div className="max-w-2xl mx-auto space-y-4 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
-                  <Search className="size-6" />
+                
+                <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+                  <Search className="size-7" />
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                   Lacak Progres Permohonan Bantuan Anda
                 </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Masukkan Nomor Berkas (contoh: <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-foreground font-semibold">MST-202608-0001</code>), NIK KTP, atau Nomor WhatsApp pemohon yang terdaftar.
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Masukkan Nomor Berkas Registrasi, 16 Digit NIK KTP, atau Nomor WhatsApp pemohon yang terdaftar di formulir.
                 </p>
 
-                <form onSubmit={handleSearchTracking} className="flex flex-col sm:flex-row gap-2 pt-2">
+                <form onSubmit={handleSearchTracking} className="flex flex-col sm:flex-row gap-2.5 pt-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
                     <Input
                       type="text"
-                      placeholder="Nomor Berkas / NIK / No. WhatsApp..."
+                      placeholder="Nomor Berkas (MST-...) / NIK KTP / No. WhatsApp..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-11 pl-10 text-xs sm:text-sm rounded-xl border-slate-300 dark:border-slate-700 focus-visible:ring-emerald-500 font-medium"
+                      className="h-12 pl-10 text-xs sm:text-sm rounded-2xl border-slate-300 dark:border-slate-700 focus-visible:ring-emerald-500 font-medium"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={isSearching}
-                    className="h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl gap-2 shadow-sm"
+                    className="h-12 px-7 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl gap-2 shadow-md"
                   >
                     {isSearching ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-                    Cari Berkas
+                    <span>Cari Berkas</span>
                   </Button>
                 </form>
 
+                {/* Quick Sample Queries for Testing */}
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-[11px] text-slate-400">
+                  <span>Contoh pencarian cepat:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('MST-202608-0128');
+                      handleSearchTracking(null, 'MST-202608-0128');
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50"
+                  >
+                    MST-202608-0128
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('3671011205850003');
+                      handleSearchTracking(null, '3671011205850003');
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50"
+                  >
+                    NIK: 367101...
+                  </button>
+                </div>
+
                 {searchError && (
-                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-center gap-2 animate-fade-in">
+                  <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-center gap-2 animate-fade-in">
                     <AlertCircle className="size-4 shrink-0" />
                     <span>{searchError}</span>
                   </div>
@@ -1120,45 +1767,61 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
             {trackingResult && (
               <div className="space-y-6 animate-fade-in">
                 
-                {/* Status Summary Banner */}
-                <Card className="shadow-lg border-emerald-200 dark:border-emerald-900 bg-gradient-to-r from-emerald-50 via-teal-50 to-white dark:from-emerald-950/30 dark:to-slate-900 rounded-2xl overflow-hidden">
-                  <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                          Informasi Pengajuan Mustahik
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
+                {/* Result Top Summary Banner */}
+                <Card className="shadow-xl border-emerald-200 dark:border-emerald-900 bg-gradient-to-r from-emerald-50 via-teal-50 to-white dark:from-emerald-950/40 dark:to-slate-900 rounded-3xl overflow-hidden">
+                  <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-extrabold tracking-wide uppercase shadow-xs">
                           {trackingResult.status || 'Diajukan'}
                         </span>
+                        <span className="text-xs font-bold text-slate-500 font-mono">
+                          {trackingResult.file_no}
+                        </span>
                       </div>
-                      <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                      
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                         {trackingResult.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground">
-                        No. Berkas: <strong className="font-mono text-foreground">{trackingResult.file_no}</strong> &bull; Program: <strong className="text-foreground">{trackingResult.program}</strong> ({trackingResult.asnaf})
+                      
+                      <p className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 flex-wrap">
+                        <span>Program: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{trackingResult.program}</strong></span>
+                        <span>&bull;</span>
+                        <span>Asnaf: <strong className="text-amber-700 dark:text-amber-400 font-bold">{trackingResult.asnaf}</strong></span>
+                        <span>&bull;</span>
+                        <span>Kecamatan: <strong>Kec. {trackingResult.kecamatan || 'Tangerang'}</strong></span>
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:items-end gap-1 text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-emerald-200 dark:border-emerald-900">
-                      <span className="text-[10px] text-muted-foreground uppercase font-semibold">Estimasi / Realisasi Bantuan</span>
-                      <span className="text-lg sm:text-xl font-extrabold text-emerald-700 dark:text-emerald-400">
+                    <div className="flex flex-col sm:items-end gap-2 text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-emerald-200 dark:border-emerald-900">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Estimasi / Realisasi Bantuan</span>
+                      <span className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400 font-mono">
                         {formatRupiah(trackingResult.approved_amount || trackingResult.recommended_amount || 2500000)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">Tanggal Masuk: {trackingResult.received_date || '2026-08-10'}</span>
+                      <span className="text-[11px] text-slate-500">
+                        Tanggal Masuk: {trackingResult.received_date || '2026-08-10'}
+                      </span>
                     </div>
+
                   </CardContent>
                 </Card>
 
-                {/* Interactive 6-Stage Timeline Stepper */}
-                <Card className="shadow-lg border-slate-200 dark:border-slate-800 bg-card rounded-2xl p-6 sm:p-8">
-                  <h4 className="text-sm sm:text-base font-bold text-foreground mb-6 flex items-center gap-2">
-                    <Clock className="size-4 text-emerald-600" /> Tahapan & Progres Verifikasi Berkas (SOP BAZNAS)
-                  </h4>
+                {/* 6-Stage Timeline Stepper BAZNAS */}
+                <Card className="shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8">
+                  <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <h4 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Clock className="size-5 text-emerald-600" />
+                      Tahapan & Progres Verifikasi Berkas (SOP Standar BAZNAS)
+                    </h4>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full">
+                      Tahap {getStepIndex(trackingResult.status)} dari 6
+                    </span>
+                  </div>
 
                   <div className="relative">
                     {/* Connecting Line */}
-                    <div className="hidden lg:block absolute top-5 left-8 right-8 h-1 bg-slate-200 dark:bg-slate-800 -z-0" />
+                    <div className="hidden lg:block absolute top-5 left-10 right-10 h-1 bg-slate-200 dark:bg-slate-800 -z-0" />
 
                     <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 sm:gap-6 relative z-10">
                       {STEP_STAGES.map((stg) => {
@@ -1167,36 +1830,38 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         const isCurrent = stg.id === currentStageIdx;
 
                         return (
-                          <div key={stg.id} className="flex lg:flex-col items-start lg:items-center gap-3 lg:text-center">
-                            {/* Step Badge Circle */}
+                          <div key={stg.id} className="flex lg:flex-col items-start lg:items-center gap-3.5 lg:text-center">
+                            
+                            {/* Circle Stage Icon */}
                             <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
+                              className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-extrabold shrink-0 transition-all ${
                                 isPast
                                   ? 'bg-emerald-600 text-white shadow-md'
                                   : isCurrent
-                                  ? 'bg-amber-500 text-white ring-4 ring-amber-100 dark:ring-amber-950 animate-pulse shadow-md'
-                                  : 'bg-muted text-muted-foreground border border-border'
+                                  ? 'bg-amber-500 text-white ring-4 ring-amber-100 dark:ring-amber-950 animate-pulse shadow-lg scale-105'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
                               }`}
                             >
                               {isPast ? <Check className="size-5" /> : stg.id}
                             </div>
 
                             <div className="space-y-0.5">
-                              <h5 className={`text-xs font-bold ${isCurrent ? 'text-amber-600 dark:text-amber-400 font-extrabold' : isPast ? 'text-foreground' : 'text-muted-foreground'}`}>
+                              <h5 className={`text-xs font-bold ${isCurrent ? 'text-amber-600 dark:text-amber-400 font-extrabold' : isPast ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
                                 {stg.label}
                               </h5>
-                              <p className="text-[11px] text-muted-foreground leading-tight">{stg.desc}</p>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">{stg.desc}</p>
                               {isCurrent && (
-                                <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
+                                <span className="inline-block mt-1 text-[10px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
                                   Sedang Berlangsung
                                 </span>
                               )}
                               {isPast && (
-                                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                                <span className="inline-block mt-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
                                   Selesai
                                 </span>
                               )}
                             </div>
+
                           </div>
                         );
                       })}
@@ -1204,46 +1869,71 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                   </div>
                 </Card>
 
-                {/* Detail & Feedback Catatan Petugas */}
+                {/* Detail Information & Action Buttons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="shadow-card border-border p-5 space-y-3">
-                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                      <FileCheck className="size-4 text-emerald-600" /> Rincian Permohonan
+                  
+                  <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-6 space-y-4 rounded-3xl">
+                    <h5 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <FileCheck className="size-4 text-emerald-600" /> Rincian Pengajuan
                     </h5>
-                    <div className="space-y-2 text-xs divide-y divide-border/60">
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Uraian Kebutuhan</span>
-                        <span className="font-semibold text-foreground text-right max-w-[240px]">{trackingResult.request_title || '-'}</span>
+                    
+                    <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800">
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-slate-500">Uraian Kebutuhan:</span>
+                        <span className="font-semibold text-slate-900 dark:text-white text-right max-w-[240px]">{trackingResult.request_title || '-'}</span>
                       </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Alamat Domisili</span>
-                        <span className="font-semibold text-foreground text-right">{trackingResult.address || ''}, Kec. {trackingResult.kecamatan || 'Tangerang'}</span>
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-slate-500">Alamat Lengkap:</span>
+                        <span className="font-semibold text-slate-900 dark:text-white text-right">{trackingResult.address || ''}, Kec. {trackingResult.kecamatan || 'Tangerang'}</span>
                       </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Petugas Surveyor</span>
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-400">{trackingResult.surveyor_name || 'Tim Assessment Lapangan'}</span>
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-slate-500">Petugas / Surveyor:</span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400">{trackingResult.surveyor_name || 'Tim Assessment BAZNAS'}</span>
                       </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePrintSlip}
+                        className="flex-1 text-xs h-10 rounded-xl font-bold gap-1.5"
+                      >
+                        <Printer className="size-4 text-slate-600" /> Cetak Lembar Bukti
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleCopyCode(trackingResult.file_no)}
+                        className="text-xs h-10 px-4 rounded-xl font-bold gap-1.5"
+                      >
+                        {copiedCode ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+                        {copiedCode ? 'Disalin' : 'Salin No. Berkas'}
+                      </Button>
                     </div>
                   </Card>
 
-                  <Card className="shadow-card border-border p-5 space-y-3">
-                    <h5 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-6 space-y-4 rounded-3xl">
+                    <h5 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                       <ShieldCheck className="size-4 text-emerald-600" /> Catatan & Rekomendasi Petugas
                     </h5>
-                    <div className="p-3.5 rounded-xl bg-muted/40 text-xs text-muted-foreground leading-relaxed">
+                    
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed min-h-[90px]">
                       {trackingResult.notes || 'Berkas Anda sedang dalam proses verifikasi tim lapangan dan administrasi syariah BAZNAS Kota Tangerang. Petugas akan menghubungi nomor WhatsApp Anda jika memerlukan dokumen pelengkap.'}
                     </div>
-                    <div className="flex gap-2">
+
+                    <div className="pt-2">
                       <a
-                        href={`https://wa.me/6281234567890?text=Assalamu%27alaikum,%20saya%20ingin%20menanyakan%20progres%20berkas%20${trackingResult.file_no}`}
+                        href={`https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20menanyakan%20progres%20berkas%20${trackingResult.file_no}%20an%20${encodeURIComponent(trackingResult.name)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                        className="w-full inline-flex items-center justify-center gap-2 h-11 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-colors"
                       >
-                        <Phone className="size-3.5" /> Chat Petugas BAZNAS
+                        <Phone className="size-4" /> Hubungi PIC Petugas Layanan via WhatsApp
                       </a>
                     </div>
                   </Card>
+
                 </div>
 
               </div>
@@ -1252,59 +1942,116 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
           </div>
         )}
 
+        {/* ========================================================= */}
+        {/* TAB 3: FAQ & PANDUAN PENGAJUAN BANTUAN                     */}
+        {/* ========================================================= */}
+        {(activeTab === 'faq' || activeTab === 'pengajuan') && (
+          <div className="space-y-6 pt-6">
+            <div className="text-center space-y-1.5 max-w-2xl mx-auto">
+              <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                Pusat Bantuan & Edukasi
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                Pertanyaan yang Sering Diajukan (FAQ)
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Informasi penting mengenai syarat, alur, dan transparansi penyaluran bantuan BAZNAS Kota Tangerang.
+              </p>
+            </div>
+
+            <div className="max-w-3xl mx-auto space-y-3">
+              {FAQ_LIST.map((faq, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div
+                    key={idx}
+                    className="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs transition-all"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? -1 : idx)}
+                      className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-emerald-600 transition-colors"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <HelpCircle className="size-4 text-emerald-600 shrink-0" />
+                        {faq.q}
+                      </span>
+                      {isOpen ? <ChevronUp className="size-4 text-slate-400 shrink-0" /> : <ChevronDown className="size-4 text-slate-400 shrink-0" />}
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 animate-fade-in">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* ========================================================= */}
-      {/* MODAL SUKSES PENDAFTARAN BESAR                            */}
+      {/* MODAL SUKSES PENDAFTARAN (DENGAN LOGO BAZNAS & COPY)      */}
       {/* ========================================================= */}
       {submitSuccessData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fade-in">
-          <div className="bg-card border border-border shadow-2xl rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 text-center animate-scale-up relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-emerald-100 dark:border-slate-800 shadow-2xl rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 text-center animate-scale-up relative">
             
             <button
               onClick={() => setSubmitSuccessData(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <X className="size-5" />
             </button>
 
-            {/* Success Icon */}
-            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+            {/* Official Logo at Top of Modal */}
+            <div className="flex justify-center">
+              <img
+                src={baznasLogo}
+                alt="Logo BAZNAS"
+                className="h-12 w-auto object-contain drop-shadow-xs"
+              />
+            </div>
+
+            {/* Success Checkmark Circle */}
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
               <CheckCircle2 className="size-10" />
             </div>
 
             <div className="space-y-1.5">
               <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
-                Alhamdulillah! Pengajuan Berhasil
+                Alhamdulillah! Pengajuan Berhasil Terdaftar
               </span>
-              <h3 className="text-xl sm:text-2xl font-black text-foreground">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                 Permohonan Bantuan Diterima
               </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Permohonan bantuan atas nama <strong>{submitSuccessData.name}</strong> untuk program <strong>{submitSuccessData.program}</strong> telah terdaftar di database BAZNAS Kota Tangerang.
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Permohonan atas nama <strong>{submitSuccessData.name}</strong> untuk program <strong>{submitSuccessData.program}</strong> telah masuk ke antrean verifikasi BAZNAS Kota Tangerang.
               </p>
             </div>
 
-            {/* Nomor Berkas Highlight Card */}
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-2">
-              <p className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-300">
+            {/* Big Nomor Berkas Highlight Card */}
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 space-y-2">
+              <p className="text-[10px] uppercase font-extrabold text-emerald-800 dark:text-emerald-300 tracking-wider">
                 NOMOR REGISTRASI BERKAS ANDA
               </p>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-2xl font-mono font-black text-emerald-900 dark:text-emerald-200 tracking-wider">
+                <span className="text-2xl sm:text-3xl font-mono font-black text-emerald-900 dark:text-emerald-100 tracking-wider">
                   {submitSuccessData.fileNo}
                 </span>
                 <button
                   onClick={() => handleCopyCode(submitSuccessData.fileNo)}
-                  className="p-1.5 rounded-lg bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100 transition-colors"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 shadow-xs hover:bg-emerald-100 transition-colors cursor-pointer"
                   title="Salin Nomor Berkas"
                 >
-                  {copiedCode ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+                  {copiedCode ? <Check className="size-5 text-emerald-600" /> : <Copy className="size-5" />}
                 </button>
               </div>
               {copiedCode && (
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold block animate-fade-in">
-                  Nomor berkas berhasil disalin!
+                  ✓ Nomor berkas berhasil disalin ke clipboard!
                 </span>
               )}
             </div>
@@ -1315,29 +2062,30 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                 onClick={() => {
                   setSearchQuery(submitSuccessData.fileNo);
                   setActiveTab('lacak');
+                  const currentNo = submitSuccessData.fileNo;
                   setSubmitSuccessData(null);
-                  handleSearchTracking();
+                  handleSearchTracking(null, currentNo);
                 }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 rounded-xl gap-2 shadow-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm h-11 rounded-2xl gap-2 shadow-md"
               >
                 <Search className="size-4" /> Lacak Status Pengajuan Ini Sekarang
               </Button>
 
               <div className="grid grid-cols-2 gap-2">
                 <a
-                  href={`https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20telah%20mengajukan%20bantuan%20dengan%20No%20Berkas%20${submitSuccessData.fileNo}%20an%20${encodeURIComponent(submitSuccessData.name)}`}
+                  href={`https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20telah%20mengajukan%20permohonan%20bantuan%20dengan%20No%20Berkas%20${submitSuccessData.fileNo}%20an%20${encodeURIComponent(submitSuccessData.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 h-9 text-xs font-semibold rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  className="inline-flex items-center justify-center gap-1.5 h-10 text-xs font-bold rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                 >
-                  <Phone className="size-3.5" /> Konfirmasi WhatsApp
+                  <Phone className="size-3.5" /> Konfirmasi WA
                 </a>
                 <Button
                   variant="outline"
                   onClick={() => setSubmitSuccessData(null)}
-                  className="h-9 text-xs font-semibold rounded-xl"
+                  className="h-10 text-xs font-bold rounded-xl"
                 >
-                  Tutup Notifikasi
+                  Tutup
                 </Button>
               </div>
             </div>
@@ -1347,44 +2095,71 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       )}
 
       {/* ========================================================= */}
-      {/* FOOTER INFORMASI PORTAL                                   */}
+      {/* FLOATING ACTION BUTTON WHATSAPP BANTUAN                    */}
       {/* ========================================================= */}
-      <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-10 px-4 sm:px-6 lg:px-8 mt-auto">
+      <aside aria-label="Layanan Bantuan WhatsApp" className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2 group">
+        <a
+          href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20butuh%20bantuan%20informasi%20pengajuan%20mustahik"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl hover:shadow-emerald-600/50 transition-all transform hover:scale-105"
+        >
+          <div className="relative">
+            <Phone className="size-5 text-white" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full" />
+          </div>
+          <span className="text-xs font-extrabold hidden sm:inline">
+            Bantuan WhatsApp BAZNAS
+          </span>
+        </a>
+      </aside>
+
+      {/* ========================================================= */}
+      {/* FOOTER INFORMASI PORTAL PUBLIK                             */}
+      {/* ========================================================= */}
+      <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                BAZNAS
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <img
+                src={baznasLogo}
+                alt="Logo BAZNAS Footer"
+                className="h-10 w-auto object-contain brightness-0 invert opacity-90"
+              />
+              <div>
+                <span className="font-extrabold text-white text-sm block">BAZNAS KOTA TANGERANG</span>
+                <span className="text-[10px] text-emerald-400">Badan Amil Zakat Nasional</span>
               </div>
-              <span className="font-bold text-white text-sm">BAZNAS Kota Tangerang</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Lembaga pemerintah nonstruktural yang berwenang melakukan pengelolaan zakat, infak, sedekah, dan dana sosial keagamaan lainnya secara aman syar'i, aman regulasi, dan aman NKRI.
+              Lembaga pemerintah nonstruktural yang berwenang melakukan pengelolaan zakat, infak, dan sedekah secara <strong>3A: Aman Syar'i, Aman Regulasi, Aman NKRI</strong> di wilayah Kota Tangerang.
             </p>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Kantor Pelayanan</h4>
-            <p className="text-[11px] leading-relaxed">
-              Gedung MUI Lt. 2, Jl. Satria Sudirman No. 1, Sukaasih, Kec. Tangerang, Kota Tangerang, Banten 15111<br />
-              Jam Layanan: Senin - Jumat (08.00 - 16.00 WIB)
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Kantor Pelayanan BAZNAS</h4>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              Gedung Graha PPI / MUI Lt. 2, Jl. Satria Sudirman No. 1, Sukaasih, Kec. Tangerang, Kota Tangerang, Banten 15111<br />
+              <strong className="text-slate-300">Jam Layanan:</strong> Senin &ndash; Jumat (08.00 &ndash; 16.00 WIB)
             </p>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Hotline & Konsultasi</h4>
-            <p className="text-[11px] leading-relaxed">
-              WhatsApp Layanan: <strong>0812-3456-7890</strong><br />
-              Email: <strong>baznaskota.tangerang@baznas.go.id</strong><br />
-              Website: <strong>baznas.tangerangkota.go.id</strong>
+          <div className="space-y-2.5">
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Layanan Informasi & Aduan</h4>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              WhatsApp Layanan: <strong className="text-emerald-400 font-mono">0812-3456-7890</strong><br />
+              Email Resmi: <strong className="text-slate-300">baznaskota.tangerang@baznas.go.id</strong><br />
+              Website: <strong className="text-slate-300">baznas.tangerangkota.go.id</strong>
             </p>
           </div>
 
         </div>
 
-        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-slate-800 text-center text-[10px] text-slate-500">
-          &copy; 2026 Badan Amil Zakat Nasional (BAZNAS) Kota Tangerang. Seluruh Hak Cipta Dilindungi.
+        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-slate-500">
+          <span>&copy; 2026 Badan Amil Zakat Nasional (BAZNAS) Kota Tangerang. Seluruh Hak Cipta Dilindungi.</span>
+          <span>Portal Pelayanan Mustahik Digital & Transparan v2.5</span>
         </div>
       </footer>
 
