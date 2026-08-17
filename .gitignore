@@ -18,7 +18,18 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
-*.ntvs*
+*.ntvs_analysis.dat
 *.njsproj
 *.sln
 *.sw?
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Uploads & data
+uploads/
+*.db
+*.sqlite
+*.sqlite3

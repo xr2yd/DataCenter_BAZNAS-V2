@@ -1,0 +1,51 @@
+name: Build and Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Frontend Production Bundle
+        run: npm run build
+
+      - name: Deploy to VPS via SCP
+        uses: appleboy/scp-action@master
+        if: "${{ secrets.SSH_PRIVATE_KEY != '' }}"
+        with:
+          host: ${{ secrets.VPS_HOST || '103.189.235.61' }}
+          username: ${{ secrets.VPS_USERNAME || 'xruncy' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: 'dist/*,server/*,package.json,package-lock.json'
+          target: '/home/xruncy/baznas-tangkot-v2'
+
+      - name: Remote Setup & Nginx Reload
+        uses: appleboy/ssh-action@master
+        if: "${{ secrets.SSH_PRIVATE_KEY != '' }}"
+        with:
+          host: ${{ secrets.VPS_HOST || '103.189.235.61' }}
+          username: ${{ secrets.VPS_USERNAME || 'xruncy' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo mkdir -p /var/www/baznas-tangkot-v2
+            sudo cp -r /home/xruncy/baznas-tangkot-v2/dist/* /var/www/baznas-tangkot-v2/
+            sudo chown -R www-data:www-data /var/www/baznas-tangkot-v2
+            sudo systemctl reload nginx || sudo service nginx reload
+            echo "Deployment successful!"

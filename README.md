@@ -1,16 +1,156 @@
-# React + Vite
+# BAZNAS Data Center V2 — AI Agent + Telegram Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Sistem demo untuk digitalisasi proses pengajuan mustahik di BAZNAS. Fitur utama:
 
-Currently, two official plugins are available:
+- **Dashboard admin BAZNAS** berbasis React + Vite yang sudah ada.
+- **Backend Node.js + Express + SQLite** untuk penyimpanan data lokal.
+- **Telegram Bot** untuk input data oleh petugas lapangan.
+- **AI Agent** menggunakan Ollama Cloud dengan model `kimi-k2.6` untuk membaca dan mengekstrak data dari teks maupun foto form survey (F-BPP/04).
+- **Status pengajuan workflow**: Diajukan → Verifikasi Administrasi → Survey → Persetujuan MPZIS → Pengajuan Dana (FPD) → Penyaluran Selesai.
+- Integrasi format dokumen: **F-BPP/04 (Assessment Mustahik)**, **F-BPP/06 (MPZIS)**, dan **F-PKP/03 (PPD)**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Sistem ini bersifat **demo lokal** dan **menyampingi** sistem Excel yang sudah berjalan, bukan menggantinya.
 
-## React Compiler
+## Menjalankan Aplikasi
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Persiapan Environment
 
-## Expanding the Oxlint configuration
+Salin file `.env.example` menjadi `.env`, lalu isi:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```env
+PORT=3001
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+OLLAMA_API_KEY=your_ollama_cloud_api_key
+OLLAMA_HOST=https://ollama.com
+OLLAMA_MODEL=kimi-k2.6
+FRONTEND_URL=http://localhost:5173
+UPLOAD_DIR=./uploads
+NODE_ENV=development
+```
+
+> ⚠️ Jangan commit file `.env` ke repository. File ini sudah masuk `.gitignore`.
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Jalankan Backend
+
+```bash
+npm run server
+# atau dengan auto-reload saat dev
+npm run server:dev
+```
+
+Backend akan berjalan di `http://localhost:3001`. Telegram bot akan otomatis mulai polling.
+
+### 4. Jalankan Frontend
+
+Di terminal terpisah:
+
+```bash
+npm run dev
+```
+
+Buka `http://localhost:5173` di browser. Navigasi ke menu **Data Mustahik**.
+
+## Menggunakan Telegram Bot
+
+Pastikan bot sudah dibuat melalui [@BotFather](https://t.me/BotFather) dan token dimasukkan ke `.env`.
+
+Perintah yang tersedia:
+
+| Perintah | Fungsi |
+|---|---|
+| `/start` | Menu utama |
+| `/help` | Panduan penggunaan |
+| `/status <no_berkas>` | Cek status pengajuan |
+| `/survey <data>` | Input hasil survey teks |
+| `/mpzis <data>` | Input data MPZIS |
+| `/ppd <data>` | Input data PPD |
+
+### Contoh Input Survey Teks
+
+```
+/survey
+no_berkas=MST-002
+nama=Keluarga Bpk. Sulaeman
+alamat=Jl. Melati No. 8 RT/RW 003/004
+kecamatan=Cipondoh
+program=Kesehatan
+uraian=Bantuan pengobatan dan sembako
+asnaf=Fakir
+pendapatan=1200000
+pengeluaran=2500000
+rumah=Kontrak
+tanggungan=4
+rekomendasi=Layak
+prioritas=1
+surveyor=Romlih, S.Sos
+surveyor_phone=0812345678901
+```
+
+### Contoh Input Survey Foto
+
+Kirim foto form F-BPP/04 dengan caption:
+
+```
+/survey no_berkas=MST-002
+```
+
+Bot akan membaca foto menggunakan AI dan menyimpan hasil ekstraksi ke database.
+
+## Struktur Project
+
+```
+D:\AI\DataCenter_BAZNAS V2
+├── server/               # Backend Express + SQLite + Telegram Bot + AI
+│   ├── index.js          # Entry point Express
+│   ├── db.js             # Database schema & seed
+│   ├── repository.js     # Data access layer
+│   ├── bot.js            # Telegram bot handlers
+│   └── ai.js             # Ollama Cloud integration
+├── src/                  # Frontend React + Vite
+│   ├── components/
+│   │   └── MustahikPage.jsx
+│   └── services/
+│       └── api.js
+├── data/                 # Dokumen format BAZNAS (PDF/Excel)
+├── uploads/              # Foto dokumen dari Telegram
+├── .env                  # Secrets (tidak di-commit)
+└── .env.example          # Template environment
+```
+
+## Integrasi Ollama Cloud
+
+Base URL resmi Ollama Cloud: `https://ollama.com/api`
+
+Endpoint yang digunakan:
+- `POST /api/chat` — untuk ekstraksi teks dan gambar.
+- `GET /api/tags` — untuk memverifikasi model tersedia.
+
+Model default yang digunakan: `kimi-k2.6`. Pastikan API key valid dan model tersedia di akun Ollama Cloud Anda.
+
+## Catatan Keamanan & Demo
+
+- Ini adalah sistem **demo lokal**. Jangan gunakan di production tanpa hardening.
+- Token Telegram dan API key disimpan di `.env`.
+- SQLite hanya untuk demo lokal. Untuk production, gunakan PostgreSQL/MySQL.
+- Notifikasi otomatis ke Mustahik belum diimplementasikan karena membutuhkan chat ID Telegram. Fitur ini akan ditambahkan saat migrasi ke WhatsApp.
+
+## Development Commands
+
+```bash
+npm run dev         # Jalankan frontend dev server
+npm run server      # Jalankan backend
+npm run server:dev  # Jalankan backend dengan auto-reload
+npm run build       # Build frontend untuk production
+npm run lint        # Jalankan linter
+npm run preview     # Preview build production
+```
+
+## Lisensi
+
+Proyek internal BAZNAS Data Center V2.
