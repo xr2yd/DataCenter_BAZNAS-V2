@@ -754,3 +754,8 @@ export async function exportMustahikData() {
     updated_at: r.updated_at
   }));
 }
+
+export async function getStatusByFileNo(fileNo) {
+  return trackApplication(fileNo);
+}
+
