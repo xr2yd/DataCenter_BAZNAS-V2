@@ -481,10 +481,10 @@ export default function PublicPortalPage({ onNavigateToDashboard, onNavigate }) 
     <div className="w-full min-w-full min-h-screen overflow-x-hidden p-0 m-0 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
       
       {/* ========================================================= */}
-      {/* 1. NAVBAR SLEEK, COMPACT & GLASSMORPHISM (64px)            */}
+      {/* 1. NAVBAR SLEEK, CLEAN & MINIMALIST (64px)                 */}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-50 w-full h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-emerald-500/15 transition-all shadow-xs">
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-50 w-full h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-all shadow-xs">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           
           {/* Logo & Brand Identity */}
           <div 
@@ -494,174 +494,51 @@ export default function PublicPortalPage({ onNavigateToDashboard, onNavigate }) 
             <img
               src={baznasLogo}
               alt="Logo Resmi BAZNAS Kota Tangerang"
-              className="h-9 sm:h-10 w-auto object-contain drop-shadow-xs"
+              className="h-10 sm:h-11 w-auto object-contain drop-shadow-xs"
             />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-sm sm:text-base tracking-tight text-slate-900 dark:text-white leading-none">
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-750 hidden xs:block" />
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white leading-tight">
                   BAZNAS KOTA TANGERANG
                 </span>
-                <span className="hidden md:inline-flex text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="hidden sm:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
                   Layanan Publik
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-tight mt-0.5">
-                Pintu Pelayanan Mustahik Terpadu & Transparan
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none mt-0.5 hidden xs:block">
+                Pintu Pelayanan Pengajuan Bantuan Mustahik Online
               </p>
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
-            <button
-              onClick={() => handleNavClick('pengajuan')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'pengajuan'
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              🏠 Beranda
-            </button>
-            <button
-              onClick={() => handleNavClick('program')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'program'
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              📋 5 Program Bantuan
-            </button>
-            <button
-              onClick={() => handleNavClick('alur')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'alur'
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              📑 Syarat & Alur
-            </button>
-            <button
-              onClick={() => handleNavClick('lacak')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'lacak'
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              🔍 Lacak Status
-            </button>
-            <button
-              onClick={() => handleNavClick('faq')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'faq'
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              ❓ FAQ
-            </button>
-          </nav>
-
-          {/* Quick Action Buttons on Right */}
-          <div className="flex items-center gap-2">
+          {/* Quick Actions on Right (Clean & Uncluttered) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <a
               href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan%20mustahik"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50/90 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs"
             >
-              <Phone className="size-3.5 text-emerald-600" />
-              <span>Hotline WA</span>
+              <Phone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden md:inline">Hotline: 0812-3456-7890</span>
+              <span className="md:hidden">Hotline WA</span>
             </a>
 
             {(onNavigateToDashboard || onNavigate) && (
               <Button
                 onClick={handleDashboardNavigate}
                 size="sm"
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold gap-1.5 shadow-xs rounded-xl px-3.5 h-9"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1.5 shadow-xs rounded-xl px-3.5 sm:px-4 h-9 cursor-pointer transition-all"
               >
                 <LogIn className="size-3.5" />
-                <span className="hidden sm:inline">🔐 Masuk Petugas / Dashboard</span>
+                <span className="hidden sm:inline">Masuk Dashboard</span>
                 <span className="sm:hidden">Petugas</span>
               </Button>
             )}
-
-            {/* Mobile Hamburger Toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              aria-label="Toggle Menu"
-            >
-              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
           </div>
 
         </div>
-
-        {/* Mobile Navigation Drawer Dropdown */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 px-4 py-3 space-y-1.5 shadow-xl animate-slide-down">
-            <button
-              onClick={() => handleNavClick('pengajuan')}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
-                activeTab === 'pengajuan' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>🏠 Beranda / Form Pengajuan</span>
-              <ChevronRight className="size-3.5 text-slate-400" />
-            </button>
-            <button
-              onClick={() => handleNavClick('program')}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
-                activeTab === 'program' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>📋 5 Program Bantuan</span>
-              <ChevronRight className="size-3.5 text-slate-400" />
-            </button>
-            <button
-              onClick={() => handleNavClick('alur')}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
-                activeTab === 'alur' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>📑 Syarat & Alur Pengajuan</span>
-              <ChevronRight className="size-3.5 text-slate-400" />
-            </button>
-            <button
-              onClick={() => handleNavClick('lacak')}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
-                activeTab === 'lacak' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>🔍 Lacak Status Berkas</span>
-              <ChevronRight className="size-3.5 text-slate-400" />
-            </button>
-            <button
-              onClick={() => handleNavClick('faq')}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
-                activeTab === 'faq' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>❓ Tanya Jawab (FAQ)</span>
-              <ChevronRight className="size-3.5 text-slate-400" />
-            </button>
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-              <a
-                href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan%20mustahik"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2 text-center text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl border border-emerald-200"
-              >
-                📞 Hotline WhatsApp
-              </a>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* ========================================================= */}
