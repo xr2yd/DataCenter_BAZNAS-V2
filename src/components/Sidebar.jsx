@@ -63,6 +63,7 @@ const menuGroups = [
     items: [
       { icon: ChartPie, label: 'Dashboard Penyaluran' },
       { icon: Users, label: 'Data Mustahik' },
+      { icon: HeartHandshake, label: 'Portal Publik Mustahik' },
       { icon: ClipboardList, label: 'Program Bantuan' },
       { icon: FileText, label: 'Laporan Penyaluran' },
     ],
@@ -172,6 +173,7 @@ export default function AppSidebar({ activePage = 'utama', onNavigate = () => {}
             'Laporan Penerimaan': 'laporan_penerimaan',
             'Dashboard Penyaluran': 'penyaluran',
             'Data Mustahik': 'mustahik',
+            'Portal Publik Mustahik': 'portal',
             'Program Bantuan': 'program_bantuan',
             'Laporan Penyaluran': 'laporan_penyaluran',
             'Data UPZ': 'data_upz',

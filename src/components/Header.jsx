@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, Settings, UserCircle, Search } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Settings, UserCircle, Search, ExternalLink, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function Header({ activePage = 'utama' }) {
+export default function Header({ activePage = 'utama', onNavigate }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sticky top-0 z-20">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
@@ -25,6 +25,12 @@ export default function Header({ activePage = 'utama' }) {
         <span className="text-muted-foreground/50">/</span>
         {(() => {
           switch (activePage) {
+            case 'portal':
+              return (
+                <>
+                  <span className="text-emerald-600 font-semibold">Portal Publik Mustahik</span>
+                </>
+              );
             case 'penerimaan':
               return (
                 <>
@@ -62,7 +68,7 @@ export default function Header({ activePage = 'utama' }) {
                 <>
                   <span>Penyaluran</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Data Mustahik</span>
+                  <span className="text-foreground font-semibold text-emerald-600">Data Mustahik Terpadu</span>
                 </>
               );
             case 'program_bantuan':
@@ -177,6 +183,26 @@ export default function Header({ activePage = 'utama' }) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
+        {/* Tombol Portal Publik Mustahik */}
+        {onNavigate && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs font-semibold gap-1.5 border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+            onClick={() => onNavigate(activePage === 'portal' ? 'mustahik' : 'portal')}
+          >
+            {activePage === 'portal' ? (
+              <>
+                <Globe className="size-3.5" /> Backoffice Mustahik
+              </>
+            ) : (
+              <>
+                <ExternalLink className="size-3.5" /> Portal Publik Mustahik
+              </>
+            )}
+          </Button>
+        )}
+
         <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
           <Bell className="size-4" />
           <span className="absolute top-1.5 right-1.5 flex size-2">
@@ -227,3 +253,4 @@ export default function Header({ activePage = 'utama' }) {
     </header>
   );
 }
+

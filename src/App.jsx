@@ -16,6 +16,7 @@ import PenerimaanDashboard from './components/PenerimaanDashboard';
 import PenyaluranDashboard from './components/PenyaluranDashboard';
 import MuzakkiPage from './components/MuzakkiPage';
 import MustahikPage from './components/MustahikPage';
+import PublicPortalPage from './components/PublicPortalPage';
 import ProgramBantuanPage from './components/ProgramBantuanPage';
 import LaporanPenerimaanPage from './components/LaporanPenerimaanPage';
 import LaporanPenyaluranPage from './components/LaporanPenyaluranPage';
@@ -124,19 +125,24 @@ function DashboardUtama() {
 function App() {
   const [activePage, setActivePage] = useState('utama');
 
+  // If in portal mode, show standalone public portal view
+  if (activePage === 'portal' || activePage === 'portal_publik') {
+    return <PublicPortalPage onNavigateToDashboard={setActivePage} onNavigate={setActivePage} />;
+  }
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar activePage={activePage} onNavigate={setActivePage} />
       <SidebarInset className="min-w-0">
-        <Header activePage={activePage} />
+        <Header activePage={activePage} onNavigate={setActivePage} />
 
         <main className="flex-1 w-full min-w-0 p-3 sm:p-4 md:p-6 lg:p-8 overflow-x-hidden">
           <div key={activePage} className="animate-page-enter w-full min-h-[75vh] flex flex-col">
-            {activePage === 'utama' && <DashboardUtama />}
+            {(activePage === 'utama' || activePage === 'dashboard') && <DashboardUtama />}
             {activePage === 'penerimaan' && <PenerimaanDashboard />}
             {activePage === 'penyaluran' && <PenyaluranDashboard />}
             {activePage === 'muzakki' && <MuzakkiPage />}
-            {activePage === 'mustahik' && <MustahikPage />}
+            {activePage === 'mustahik' && <MustahikPage onNavigate={setActivePage} />}
             {activePage === 'program_bantuan' && <ProgramBantuanPage />}
             {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage />}
             {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage />}
@@ -151,7 +157,7 @@ function App() {
             {activePage === 'absensi' && <AbsensiPage />}
             {activePage === 'kinerja' && <KinerjaPage />}
             {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={setActivePage} />}
-            {!['utama', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
+            {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
               <div className="flex flex-col items-center justify-center min-h-[400px] gap-2 text-center">
                 <h2 className="text-lg font-bold text-foreground">Halaman Belum Tersedia</h2>
                 <p className="text-xs text-muted-foreground">Modul "{activePage}" sedang dalam tahap pengembangan.</p>
@@ -171,3 +177,4 @@ function App() {
 }
 
 export default App;
+
