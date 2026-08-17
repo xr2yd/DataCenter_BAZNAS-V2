@@ -80,13 +80,16 @@ function PortalFallbackSkeleton() {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState('utama');
+  const [activePage, setActivePage] = useState('portal');
 
-  // If in portal mode, show standalone public portal view with Suspense fallback
+  // If in portal mode, show standalone public portal view with Suspense fallback (100% independent without Sidebar wrapper)
   if (activePage === 'portal' || activePage === 'portal_publik') {
     return (
       <Suspense fallback={<PortalFallbackSkeleton />}>
-        <PublicPortalPage onNavigateToDashboard={setActivePage} onNavigate={setActivePage} />
+        <PublicPortalPage 
+          onNavigateToDashboard={(page) => setActivePage(page || 'utama')} 
+          onNavigate={setActivePage} 
+        />
       </Suspense>
     );
   }

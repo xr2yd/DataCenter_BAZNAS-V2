@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useRef } from 'react';
 import baznasLogo from '@/assets/baznas-logo.png';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,18 +12,12 @@ import {
   User,
   MapPin,
   Phone,
-  CreditCard,
   Upload,
-  Calendar,
-  Building2,
-  ShieldCheck,
   Clock,
   ArrowRight,
   ArrowLeft,
   Sparkles,
   Copy,
-  Download,
-  Share2,
   ExternalLink,
   ChevronRight,
   ChevronDown,
@@ -42,15 +36,15 @@ import {
   Compass,
   AlertTriangle,
   Loader2,
-  QrCode,
   Printer,
-  Image as ImageIcon,
   Trash2,
-  RefreshCw,
-  MessageSquare,
-  Info,
-  BadgePercent,
-  CheckCircle,
+  Menu,
+  ShieldCheck,
+  Layers,
+  MessageCircleQuestion,
+  Receipt,
+  FileQuestion,
+  Building,
 } from 'lucide-react';
 import { formatRupiah } from '../utils/format';
 import { api } from '../services/api';
@@ -80,6 +74,7 @@ const PROGRAM_LIST = [
     desc: 'Beasiswa dhuafa, bantuan SPP/tunggakan sekolah, seragam & perlengkapan belajar santri/yatim.',
     badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300',
     accentColor: 'border-blue-500 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/20',
+    tag: 'Bantuan Pendidikan & Santri',
   },
   {
     id: 'Kesehatan',
@@ -89,6 +84,7 @@ const PROGRAM_LIST = [
     desc: 'Bantuan biaya pengobatan penyakit kritis, tebus resep obat, kursi roda, dan tanggap darurat medis.',
     badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300',
     accentColor: 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
+    tag: 'Layanan Pengobatan & Medis',
   },
   {
     id: 'Ekonomi',
@@ -98,6 +94,7 @@ const PROGRAM_LIST = [
     desc: 'Bantuan modal usaha mikro, Z-Mart, sarana usaha gerobak/alat produktif usaha mandiri warga dhuafa.',
     badgeColor: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300',
     accentColor: 'border-amber-500 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
+    tag: 'Pemberdayaan Usaha Mikro',
   },
   {
     id: 'Kemanusiaan',
@@ -107,6 +104,7 @@ const PROGRAM_LIST = [
     desc: 'Santunan darurat bencana, biaya hidup lansia sebatang kara, serta penanganan musibah mendesak.',
     badgeColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300',
     accentColor: 'border-rose-500 dark:border-rose-500 bg-rose-50/40 dark:bg-rose-950/20',
+    tag: 'Tanggap Darurat & Lansia',
   },
   {
     id: 'Dakwah Advokasi',
@@ -116,6 +114,7 @@ const PROGRAM_LIST = [
     desc: 'Bantuan pembinaan mualaf, honorarium guru ngaji kampung, dan sarana ibadah musholla dhuafa.',
     badgeColor: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300',
     accentColor: 'border-purple-500 dark:border-purple-500 bg-purple-50/40 dark:bg-purple-950/20',
+    tag: 'Syiar Islam & Guru Ngaji',
   },
 ];
 
@@ -129,40 +128,45 @@ const ASNAF_LIST = [
 ];
 
 const STEP_STAGES = [
-  { id: 1, key: 'Diajukan', label: 'Berkas Diajukan', desc: 'Permohonan berhasil didaftarkan online ke sistem BAZNAS' },
-  { id: 2, key: 'Verifikasi Administrasi', label: 'Verifikasi Berkas', desc: 'Pemeriksaan kelengkapan dokumen KTP, KK, dan SKTM oleh staf' },
-  { id: 3, key: 'Survey', label: 'Survey Lapangan', desc: 'Kunjungan verifikasi faktual ke tempat tinggal oleh Tim Surveyor' },
-  { id: 4, key: 'Persetujuan MPZIS', label: 'Sidang Komite MPZIS', desc: 'Penetapan kelayakan asnaf & rekomendasi nominal oleh Pimpinan' },
-  { id: 5, key: 'Pengajuan Dana (FPD)', label: 'Proses Pencairan Dana', desc: 'Penerbitan formulir PPD dan alokasi kas keuangan BAZNAS' },
-  { id: 6, key: 'Penyaluran Selesai', label: 'Penyaluran Selesai', desc: 'Dana bantuan disalurkan langsung/transfer ke mustahik' },
+  { id: 1, key: 'Diajukan', label: '1. Pendaftaran Online', desc: 'Pemohon mengisi formulir online & mengunggah berkas identitas' },
+  { id: 2, key: 'Verifikasi Administrasi', label: '2. Verifikasi Dokumen', desc: 'Pemeriksaan kelengkapan berkas KTP, KK, dan SKTM oleh staf BAZNAS' },
+  { id: 3, key: 'Survey', label: '3. Survey Lapangan', desc: 'Kunjungan verifikasi faktual ke tempat tinggal oleh Tim Assessment' },
+  { id: 4, key: 'Persetujuan MPZIS', label: '4. Sidang Komite MPZIS', desc: 'Penetapan kelayakan asnaf & rekomendasi besaran bantuan oleh Pimpinan' },
+  { id: 5, key: 'Pengajuan Dana (FPD)', label: '5. Proses Pencairan Dana', desc: 'Penerbitan formulir PPD dan alokasi kas keuangan BAZNAS' },
+  { id: 6, key: 'Penyaluran Selesai', label: '6. Penyaluran Selesai', desc: 'Dana bantuan disalurkan langsung/transfer resmi kepada mustahik' },
 ];
 
 const FAQ_LIST = [
   {
     q: 'Apa saja syarat umum untuk mengajukan bantuan di BAZNAS Kota Tangerang?',
-    a: 'Syarat utama: 1) KTP Kota Tangerang dan Kartu Keluarga (KK), 2) Surat Keterangan Tidak Mampu (SKTM) dari Kelurahan atau Surat Pengantar RT/RW, 3) Bukti kebutuhan (seperti rincian tagihan SPP, rincian biaya obat/rumah sakit, atau proposal usaha), serta 4) Masuk dalam salah satu dari 8 Asnaf (terutama Fakir/Miskin/Gharimin/Fisabilillah/Mualaf/Ibnu Sabil).',
+    a: 'Syarat utama: 1) e-KTP Kota Tangerang dan Kartu Keluarga (KK), 2) Surat Keterangan Tidak Mampu (SKTM) dari Kelurahan atau Surat Pengantar RT/RW, 3) Bukti kebutuhan (seperti rincian tunggakan SPP/sekolah, kuitansi/surat rujukan rumah sakit, atau proposal usaha mikro), serta 4) Termasuk dalam salah satu dari 8 Asnaf (Fakir, Miskin, Gharimin, Fisabilillah, Mualaf, Ibnu Sabil).',
   },
   {
-    q: 'Berapa lama proses verifikasi hingga pencairan bantuan?',
-    a: 'Rata-rata proses membutuhkan waktu 3 hingga 7 hari kerja sejak berkas dinyatakan lengkap, meliputi: verifikasi administrasi (1-2 hari), survey lapangan (1-2 hari), serta sidang komite & pencairan (2-3 hari). Anda dapat memantau status secara realtime di menu Lacak Berkas.',
+    q: 'Berapa lama proses verifikasi hingga dana bantuan disalurkan?',
+    a: 'Rata-rata proses berlangsung 3 hingga 7 hari kerja sejak berkas dinyatakan lengkap, meliputi: verifikasi administrasi (1-2 hari), survey faktual (1-2 hari), serta sidang komite & pencairan (2-3 hari). Anda dapat memantau status secara realtime di menu Lacak Berkas.',
   },
   {
     q: 'Apakah ada biaya pendaftaran atau pemotongan dana bantuan?',
-    a: 'TIDAK ADA BIAYA APAPUN (100% GRATIS). Seluruh layanan permohonan bantuan BAZNAS Kota Tangerang bebas dari pungutan liar. Dana bantuan disalurkan utuh 100% tanpa potongan kepada mustahik yang berhak.',
+    a: 'TIDAK ADA BIAYA APAPUN (100% GRATIS). Seluruh layanan permohonan bantuan BAZNAS Kota Tangerang bebas dari pungutan liar. Dana bantuan disalurkan utuh 100% tanpa potongan sepeserpun kepada mustahik yang berhak.',
   },
   {
-    q: 'Bagaimana cara mengetahui perkembangan atau tindak lanjut pengajuan saya?',
-    a: 'Gunakan fitur "Lacak Status Pengajuan" pada portal ini dengan memasukkan Nomor Berkas (contoh: MST-202608-xxxx), NIK, atau No. WhatsApp Anda. Petugas kami juga akan mengirimkan notifikasi via WhatsApp.',
+    q: 'Bagaimana cara memantau status tindak lanjut permohonan saya?',
+    a: 'Gunakan fitur "Lacak Status Pengajuan" pada portal ini dengan memasukkan Nomor Berkas Registrasi (contoh: MST-202608-xxxx), NIK KTP 16 digit, atau Nomor WhatsApp Anda. Petugas kami juga akan memberikan update berkala.',
   },
   {
-    q: 'Apakah bisa mengajukan bantuan untuk anggota keluarga lain yang sedang sakit/sekolah?',
-    a: 'Bisa. Kepala keluarga atau wali dapat mengajukan permohonan dengan mengisi nama penerima manfaat (anak/orang tua sakit) pada kolom "Penerima Manfaat" di formulir pendaftaran.',
+    q: 'Apakah bisa mengajukan bantuan untuk anggota keluarga lain yang sakit / bersekolah?',
+    a: 'Bisa. Kepala keluarga atau wali dapat mengajukan permohonan dengan mengisi nama penerima manfaat (anak/orang tua/saudara sakit) pada kolom "Penerima Manfaat" di formulir pendaftaran.',
+  },
+  {
+    q: 'Bagaimana jika saya tidak memiliki rekening bank sendiri?',
+    a: 'Kolom rekening bank bersifat opsional. BAZNAS Kota Tangerang menyediakan opsi penyaluran langsung secara tunai di kantor layanan atau melalui transfer ke rekening perwakilan keluarga terverifikasi.',
   },
 ];
 
-export default function PublicPortalPage({ onNavigateToDashboard }) {
-  const [activeTab, setActiveTab] = useState('pengajuan'); // 'pengajuan' | 'lacak' | 'faq'
-  const [currentStep, setCurrentStep] = useState(1); // 1: Profil, 2: Alamat, 3: Program, 4: Berkas, 5: Konfirmasi
+export default function PublicPortalPage({ onNavigateToDashboard, onNavigate }) {
+  const [activeTab, setActiveTab] = useState('pengajuan'); // 'pengajuan' | 'lacak' | 'program' | 'alur' | 'faq'
+  const [currentStep, setCurrentStep] = useState(1); // 1: Profil, 2: Domisili, 3: Program, 4: Berkas, 5: Konfirmasi
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -203,13 +207,11 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     kk: null,
     sktm: null,
     permohonan: null,
-    rumah: null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccessData, setSubmitSuccessData] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [previewImageModal, setPreviewImageModal] = useState(null);
 
   // Tracking State
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,15 +219,29 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
   const [trackingResult, setTrackingResult] = useState(null);
   const [searchError, setSearchError] = useState('');
 
-  // FAQ open item state
+  // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState(0);
 
   const formSectionRef = useRef(null);
 
-  // Scroll smoothly to form section when changing step or tab
+  // Smooth scroll to form section
   const scrollToForm = () => {
     if (formSectionRef.current) {
       formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleNavClick = (tabKey) => {
+    setActiveTab(tabKey);
+    setMobileMenuOpen(false);
+    scrollToForm();
+  };
+
+  const handleDashboardNavigate = () => {
+    if (typeof onNavigateToDashboard === 'function') {
+      onNavigateToDashboard('utama');
+    } else if (typeof onNavigate === 'function') {
+      onNavigate('utama');
     }
   };
 
@@ -238,7 +254,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     }));
   };
 
-  // Handle File Upload Simulation with image preview URL
+  // Handle File Upload
   const handleFileChange = (field, e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -268,7 +284,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     });
   };
 
-  // Step Validation Helpers
+  // Step Validation
   const validateStep = (step) => {
     if (step === 1) {
       if (!formData.name.trim()) return 'Nama lengkap pemohon wajib diisi sesuai KTP!';
@@ -277,7 +293,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       if (!formData.phone || formData.phone.length < 10) return 'Nomor WhatsApp / HP tidak valid (minimal 10 digit)!';
     }
     if (step === 2) {
-      if (!formData.address.trim()) return 'Alamat domisili jalan/gang/RT wajib diisi!';
+      if (!formData.address.trim()) return 'Alamat domisili jalan/gang wajib diisi!';
       if (!formData.kecamatan) return 'Kecamatan di Kota Tangerang wajib dipilih!';
     }
     if (step === 3) {
@@ -304,6 +320,14 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
 
   const handlePrevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
+    scrollToForm();
+  };
+
+  // Select Program from Program Section
+  const handleSelectProgramFromCatalog = (progId) => {
+    setFormData((prev) => ({ ...prev, program: progId }));
+    setActiveTab('pengajuan');
+    setCurrentStep(3);
     scrollToForm();
   };
 
@@ -341,7 +365,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         approved_amount: parseFloat(formData.proposed_amount) || 2000000,
       };
 
-      // Try sending to API
       try {
         await api.createMustahik(payload);
       } catch (err) {
@@ -383,7 +406,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     try {
       let match = null;
 
-      // Try fetching from API
       try {
         const res = await api.listMustahik();
         const list = res?.data || [];
@@ -397,7 +419,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         console.warn('API fetch error during search:', err);
       }
 
-      // Fallback demo mock if match not found
       if (!match) {
         if (query.includes('mst') || query.includes('081') || query.length >= 4) {
           match = {
@@ -438,7 +459,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     setTimeout(() => setCopiedCode(false), 3000);
   };
 
-  // Get active step index for tracking
   const getStepIndex = (status) => {
     if (!status) return 1;
     if (status === 'Ditolak') return -1;
@@ -453,127 +473,242 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
     return map[status] || 2;
   };
 
-  // Trigger browser print for tracking slip
   const handlePrintSlip = () => {
     window.print();
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
+    <div className="w-full min-w-full min-h-screen overflow-x-hidden p-0 m-0 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-200 selection:text-emerald-900">
       
       {/* ========================================================= */}
-      {/* HEADER / NAVBAR PORTAL RESMI                              */}
+      {/* 1. NAVBAR SLEEK, COMPACT & GLASSMORPHISM (64px)            */}
       {/* ========================================================= */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-emerald-100 dark:border-slate-800 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 w-full h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-emerald-500/15 transition-all shadow-xs">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
           
-          {/* Logo BAZNAS & Brand Identity */}
-          <div className="flex items-center gap-3.5">
+          {/* Logo & Brand Identity */}
+          <div 
+            onClick={() => handleNavClick('pengajuan')} 
+            className="flex items-center gap-3 cursor-pointer select-none shrink-0"
+          >
             <img
               src={baznasLogo}
               alt="Logo Resmi BAZNAS Kota Tangerang"
-              className="h-11 sm:h-12 w-auto object-contain drop-shadow-xs"
+              className="h-9 sm:h-10 w-auto object-contain drop-shadow-xs"
             />
-            <div className="hidden xs:block border-l border-slate-200 dark:border-slate-700 pl-3">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-sm sm:text-base tracking-tight text-slate-900 dark:text-white leading-none">
                   BAZNAS KOTA TANGERANG
                 </span>
-                <span className="hidden sm:inline-flex text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <span className="hidden md:inline-flex text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   Layanan Publik
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                Badan Amil Zakat Nasional &bull; Pintu Pelayanan Mustahik Terpadu
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-tight mt-0.5">
+                Pintu Pelayanan Mustahik Terpadu & Transparan
               </p>
             </div>
           </div>
 
-          {/* Quick Nav Links & Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1">
             <button
-              onClick={() => {
-                setActiveTab('faq');
-                scrollToForm();
-              }}
-              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              onClick={() => handleNavClick('pengajuan')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'pengajuan'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
             >
-              <HelpCircle className="size-4 text-emerald-600" />
-              <span>Panduan & FAQ</span>
+              🏠 Beranda
             </button>
+            <button
+              onClick={() => handleNavClick('program')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'program'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              📋 5 Program Bantuan
+            </button>
+            <button
+              onClick={() => handleNavClick('alur')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'alur'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              📑 Syarat & Alur
+            </button>
+            <button
+              onClick={() => handleNavClick('lacak')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'lacak'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              🔍 Lacak Status
+            </button>
+            <button
+              onClick={() => handleNavClick('faq')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'faq'
+                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              ❓ FAQ
+            </button>
+          </nav>
 
+          {/* Quick Action Buttons on Right */}
+          <div className="flex items-center gap-2">
             <a
               href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan%20mustahik"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
             >
               <Phone className="size-3.5 text-emerald-600" />
-              <span>Hotline BAZNAS</span>
+              <span>Hotline WA</span>
             </a>
 
-            {onNavigateToDashboard && (
+            {(onNavigateToDashboard || onNavigate) && (
               <Button
-                onClick={() => onNavigateToDashboard('utama')}
-                variant="default"
+                onClick={handleDashboardNavigate}
                 size="sm"
-                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold gap-1.5 shadow-sm rounded-xl px-3.5 py-2 h-auto"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold gap-1.5 shadow-xs rounded-xl px-3.5 h-9"
               >
                 <LogIn className="size-3.5" />
-                <span className="hidden sm:inline">Masuk Dashboard</span>
+                <span className="hidden sm:inline">🔐 Masuk Petugas / Dashboard</span>
                 <span className="sm:hidden">Petugas</span>
               </Button>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
           </div>
+
         </div>
+
+        {/* Mobile Navigation Drawer Dropdown */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 px-4 py-3 space-y-1.5 shadow-xl animate-slide-down">
+            <button
+              onClick={() => handleNavClick('pengajuan')}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                activeTab === 'pengajuan' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>🏠 Beranda / Form Pengajuan</span>
+              <ChevronRight className="size-3.5 text-slate-400" />
+            </button>
+            <button
+              onClick={() => handleNavClick('program')}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                activeTab === 'program' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>📋 5 Program Bantuan</span>
+              <ChevronRight className="size-3.5 text-slate-400" />
+            </button>
+            <button
+              onClick={() => handleNavClick('alur')}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                activeTab === 'alur' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>📑 Syarat & Alur Pengajuan</span>
+              <ChevronRight className="size-3.5 text-slate-400" />
+            </button>
+            <button
+              onClick={() => handleNavClick('lacak')}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                activeTab === 'lacak' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>🔍 Lacak Status Berkas</span>
+              <ChevronRight className="size-3.5 text-slate-400" />
+            </button>
+            <button
+              onClick={() => handleNavClick('faq')}
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+                activeTab === 'faq' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>❓ Tanya Jawab (FAQ)</span>
+              <ChevronRight className="size-3.5 text-slate-400" />
+            </button>
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+              <a
+                href="https://wa.me/6281234567890?text=Assalamu%27alaikum%20BAZNAS%20Kota%20Tangerang,%20saya%20ingin%20konsultasi%20bantuan%20mustahik"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2 text-center text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl border border-emerald-200"
+              >
+                📞 Hotline WhatsApp
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ========================================================= */}
-      {/* HERO / BANNER SECTION (MODERN, ISLAMI, ELEGAN)             */}
+      {/* 2. HERO SECTION MEMIKAT & CLEAN (DEEP EMERALD & GOLD)     */}
       {/* ========================================================= */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-teal-950 to-slate-950 text-white pt-12 pb-20 px-4 sm:px-6 lg:px-8 border-b border-emerald-800/40">
+      <section className="relative w-full overflow-hidden bg-gradient-to-b from-emerald-950 via-[#064e3b] to-slate-950 text-white pt-10 sm:pt-14 pb-20 px-4 sm:px-6 lg:px-8 border-b border-emerald-800/40">
         
-        {/* Subtle Islamic Geometric Pattern Background */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
+        {/* Subtle Islamic Geometric Pattern Overlay */}
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#34d399_1.5px,transparent_1.5px)] [background-size:24px_24px] pointer-events-none" />
         
         {/* Ambient Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-emerald-500/15 blur-3xl rounded-full pointer-events-none" />
-        <div className="absolute -bottom-10 right-10 w-80 h-80 bg-teal-500/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-64 bg-emerald-400/15 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 right-10 w-96 h-96 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
+        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-5">
           
-          {/* Official Badge & Logo Mini */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-medium backdrop-blur-md shadow-inner">
-            <Sparkles className="size-4 text-amber-400 animate-spin-slow" />
+          {/* Badge Penyaluran Resmi */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-semibold backdrop-blur-md shadow-inner">
+            <Sparkles className="size-3.5 text-amber-300" />
             <span>Penyaluran Resmi Zakat, Infak & Sedekah Kota Tangerang 1447 H / 2026 M</span>
           </div>
 
-          {/* Main Welcoming Headline */}
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight sm:leading-snug text-balance">
+          {/* Main Headline */}
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight sm:leading-tight text-balance">
             Layanan Pengajuan Bantuan Mustahik Online <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-200 to-teal-200">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-200 to-amber-200">
               BAZNAS Kota Tangerang
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-xs sm:text-base text-emerald-100/90 max-w-3xl mx-auto leading-relaxed">
-            Membantu sesama dengan amanah, transparan, profesional, dan sesuai kaidah syariah.
-            Daftarkan permohonan bantuan secara mandiri dan pantau setiap tahapan verifikasi berkas hingga pencairan secara realtime.
+            Membantu sesama dengan amanah, transparan, profesional, dan berlandaskan prinsip syariah 3A: 
+            <strong> Aman Syar'i, Aman Regulasi, Aman NKRI</strong>. Daftarkan permohonan mandiri & pantau progres verifikasi secara realtime.
           </p>
 
-          {/* 2 Primary CTA Action Buttons */}
+          {/* 2 Ergonomic CTA Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
               onClick={() => {
                 setActiveTab('pengajuan');
                 scrollToForm();
               }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-900/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-900/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
               <FileText className="size-4 text-slate-950" />
-              <span>Ajukan Bantuan Sekarang</span>
+              <span>✍️ Ajukan Permohonan Sekarang</span>
               <ArrowRight className="size-4" />
             </button>
 
@@ -582,88 +717,85 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                 setActiveTab('lacak');
                 scrollToForm();
               }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-sm border border-emerald-500/40 backdrop-blur-md shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm border border-emerald-500/40 backdrop-blur-md shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
               <Search className="size-4 text-emerald-300" />
-              <span>Lacak Status Berkas</span>
+              <span>🔍 Lacak Status Berkas</span>
             </button>
           </div>
 
           {/* 4 Trust & Core Statistics Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-6 text-left">
-            
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4 text-left">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
                 <HeartHandshake className="size-5" />
               </div>
               <div>
-                <p className="text-xs font-extrabold text-white">5 Program Prioritas</p>
-                <p className="text-[11px] text-emerald-200/70">Pendidikan, Kesehatan, Ekonomi</p>
+                <p className="text-xs font-black text-white">5 Program Prioritas</p>
+                <p className="text-[11px] text-emerald-200/70">Pendidikan, Medis, Ekonomi</p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0">
                 <MapPin className="size-5" />
               </div>
               <div>
-                <p className="text-xs font-extrabold text-white">13 Kecamatan</p>
+                <p className="text-xs font-black text-white">13 Kecamatan</p>
                 <p className="text-[11px] text-teal-200/70">Wilayah Kota Tangerang</p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
                 <Clock className="size-5" />
               </div>
               <div>
-                <p className="text-xs font-extrabold text-white">6 Tahapan Transparan</p>
-                <p className="text-[11px] text-amber-200/70">SOP Standar Resmi BAZNAS</p>
+                <p className="text-xs font-black text-white">Transparan Syariah</p>
+                <p className="text-[11px] text-amber-200/70">6 Tahap SOP Resmi BAZNAS</p>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
                 <ShieldCheck className="size-5" />
               </div>
               <div>
-                <p className="text-xs font-extrabold text-white">100% Bebas Biaya</p>
-                <p className="text-[11px] text-emerald-200/70">Gratis Tanpa Pungutan</p>
+                <p className="text-xs font-black text-white">100% Gratis</p>
+                <p className="text-[11px] text-emerald-200/70">Bebas Pungutan & Potongan</p>
               </div>
             </div>
-
           </div>
 
         </div>
       </section>
 
       {/* ========================================================= */}
-      {/* MAIN CONTENT PORTAL CONTAINER                             */}
+      {/* 3. MAIN CONTENT PORTAL CONTAINER                          */}
       {/* ========================================================= */}
       <main
         ref={formSectionRef}
-        className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-16 relative z-20 space-y-8"
+        className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-16 relative z-20 space-y-8"
       >
         
         {/* Navigation Tabs Pill Bar */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl gap-1">
-            
+          <div className="inline-flex p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl gap-1 flex-wrap justify-center">
             <button
-              onClick={() => setActiveTab('pengajuan')}
-              className={`flex items-center gap-2 px-5 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+              onClick={() => handleNavClick('pengajuan')}
+              className={`flex items-center gap-2 px-5 sm:px-7 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
                 activeTab === 'pengajuan'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <FileText className="size-4" />
-              <span>Formulir Pengajuan Bantuan</span>
+              <span>Formulir Pengajuan</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('lacak')}
-              className={`flex items-center gap-2 px-5 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+              onClick={() => handleNavClick('lacak')}
+              className={`flex items-center gap-2 px-5 sm:px-7 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
                 activeTab === 'lacak'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -674,22 +806,45 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
             </button>
 
             <button
-              onClick={() => setActiveTab('faq')}
-              className={`hidden sm:flex items-center gap-2 px-5 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+              onClick={() => handleNavClick('program')}
+              className={`hidden sm:flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                activeTab === 'program'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Layers className="size-4" />
+              <span>5 Program</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('alur')}
+              className={`hidden sm:flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                activeTab === 'alur'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <FileCheck className="size-4" />
+              <span>Syarat & Alur</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick('faq')}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
                 activeTab === 'faq'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <HelpCircle className="size-4" />
-              <span>FAQ & Syarat</span>
+              <span>FAQ</span>
             </button>
-
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* TAB 1: FORMULIR PENGAJUAN (5 STEP INTERACTIVE WIZARD)     */}
+        {/* TAB 1: FORMULIR PENGAJUAN WIZARD (5 STEPS)                */}
         {/* ========================================================= */}
         {activeTab === 'pengajuan' && (
           <div className="space-y-6 animate-fade-in">
@@ -705,15 +860,15 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                       {currentStep}
                     </span>
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      {currentStep === 1 && 'Langkah 1: Identitas Pemohon'}
-                      {currentStep === 2 && 'Langkah 2: Domisili & Profil Ekonomi'}
-                      {currentStep === 3 && 'Langkah 3: Program & Asnaf'}
-                      {currentStep === 4 && 'Langkah 4: Upload Berkas Dokumen'}
-                      {currentStep === 5 && 'Langkah 5: Konfirmasi & Pernyataan'}
+                      {currentStep === 1 && 'Identitas Pemohon'}
+                      {currentStep === 2 && 'Domisili & Ekonomi'}
+                      {currentStep === 3 && 'Program & Asnaf'}
+                      {currentStep === 4 && 'Upload Berkas'}
+                      {currentStep === 5 && 'Konfirmasi & Kirim'}
                     </span>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
-                    {currentStep} / 5
+                    Langkah {currentStep} dari 5
                   </span>
                 </div>
 
@@ -764,9 +919,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
               <CardContent className="p-6 sm:p-10">
                 <form onSubmit={handleSubmitApplication} className="space-y-6">
                   
-                  {/* ================================================= */}
-                  {/* STEP 1: PROFIL & IDENTITAS                        */}
-                  {/* ================================================= */}
+                  {/* STEP 1: PROFIL & IDENTITAS */}
                   {currentStep === 1 && (
                     <div className="space-y-6 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -928,16 +1081,14 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                           onClick={handleNextStep}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
                         >
-                          <span>Lanjut: Alamat & Ekonomi</span>
+                          <span>Lanjut: Alamat & Domisili</span>
                           <ChevronRight className="size-4" />
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* ================================================= */}
-                  {/* STEP 2: DOMISILI & PROFIL EKONOMI                 */}
-                  {/* ================================================= */}
+                  {/* STEP 2: DOMISILI & PROFIL EKONOMI */}
                   {currentStep === 2 && (
                     <div className="space-y-6 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -1061,7 +1212,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             placeholder="Contoh: 1500000"
                             className="h-11 text-xs sm:text-sm bg-white dark:bg-slate-900 rounded-xl font-mono"
                           />
-                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Total pendapatan seluruh anggota keluarga.</p>
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Total pendapatan seluruh anggota keluarga serumah.</p>
                         </div>
 
                         <div className="space-y-1.5">
@@ -1076,7 +1227,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             placeholder="Contoh: 2000000"
                             className="h-11 text-xs sm:text-sm bg-white dark:bg-slate-900 rounded-xl font-mono"
                           />
-                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Kebutuhan makan, sewa rumah, dan operasional.</p>
+                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Kebutuhan makan, sewa rumah, listrik, dan operasional.</p>
                         </div>
                       </div>
 
@@ -1101,9 +1252,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                     </div>
                   )}
 
-                  {/* ================================================= */}
-                  {/* STEP 3: PROGRAM BANTUAN & ASNAF                   */}
-                  {/* ================================================= */}
+                  {/* STEP 3: PROGRAM BANTUAN & ASNAF */}
                   {currentStep === 3 && (
                     <div className="space-y-6 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -1254,9 +1403,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                     </div>
                   )}
 
-                  {/* ================================================= */}
-                  {/* STEP 4: UPLOAD DOKUMEN BERKAS                     */}
-                  {/* ================================================= */}
+                  {/* STEP 4: UPLOAD DOKUMEN BERKAS */}
                   {currentStep === 4 && (
                     <div className="space-y-6 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -1309,7 +1456,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                               <button
                                 type="button"
                                 onClick={() => removeFile('ktp')}
-                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Hapus File"
                               >
                                 <Trash2 className="size-4" />
@@ -1328,7 +1475,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                                 type="button"
                                 variant="outline"
                                 onClick={() => document.getElementById('upload-ktp').click()}
-                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl"
+                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl cursor-pointer"
                               >
                                 <Upload className="size-4" /> Pilih / Foto KTP Asli
                               </Button>
@@ -1372,7 +1519,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                               <button
                                 type="button"
                                 onClick={() => removeFile('kk')}
-                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Hapus File"
                               >
                                 <Trash2 className="size-4" />
@@ -1391,7 +1538,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                                 type="button"
                                 variant="outline"
                                 onClick={() => document.getElementById('upload-kk').click()}
-                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl"
+                                className="w-full text-xs h-10 gap-2 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl cursor-pointer"
                               >
                                 <Upload className="size-4" /> Pilih / Foto Kartu Keluarga
                               </Button>
@@ -1433,7 +1580,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                               <button
                                 type="button"
                                 onClick={() => removeFile('sktm')}
-                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Hapus File"
                               >
                                 <Trash2 className="size-4" />
@@ -1452,7 +1599,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                                 type="button"
                                 variant="outline"
                                 onClick={() => document.getElementById('upload-sktm').click()}
-                                className="w-full text-xs h-10 gap-2 rounded-xl"
+                                className="w-full text-xs h-10 gap-2 rounded-xl cursor-pointer"
                               >
                                 <Upload className="size-4" /> Pilih File SKTM Kelurahan
                               </Button>
@@ -1464,8 +1611,8 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                              <FileText className="size-4 text-emerald-600" />
-                              4. Rincian Tagihan / Surat Sakit / Usaha
+                              <Receipt className="size-4 text-emerald-600" />
+                              4. Rincian Tagihan / Kuitansi RS / Usaha
                             </span>
                             {uploadedFiles.permohonan && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
@@ -1494,7 +1641,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                               <button
                                 type="button"
                                 onClick={() => removeFile('permohonan')}
-                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Hapus File"
                               >
                                 <Trash2 className="size-4" />
@@ -1513,7 +1660,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                                 type="button"
                                 variant="outline"
                                 onClick={() => document.getElementById('upload-permohonan').click()}
-                                className="w-full text-xs h-10 gap-2 rounded-xl"
+                                className="w-full text-xs h-10 gap-2 rounded-xl cursor-pointer"
                               >
                                 <Upload className="size-4" /> Pilih Bukti Tagihan SPP / RS
                               </Button>
@@ -1528,14 +1675,14 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                           type="button"
                           variant="outline"
                           onClick={handlePrevStep}
-                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5 cursor-pointer"
                         >
                           <ArrowLeft className="size-4" /> Kembali
                         </Button>
                         <Button
                           type="button"
                           onClick={handleNextStep}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-11 px-7 rounded-xl font-bold gap-2 shadow-md cursor-pointer"
                         >
                           <span>Lanjut: Konfirmasi & Kirim</span>
                           <ChevronRight className="size-4" />
@@ -1544,9 +1691,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                     </div>
                   )}
 
-                  {/* ================================================= */}
-                  {/* STEP 5: KONFIRMASI & PERNYATAAN AKHIR             */}
-                  {/* ================================================= */}
+                  {/* STEP 5: KONFIRMASI & PERNYATAAN AKHIR */}
                   {currentStep === 5 && (
                     <div className="space-y-6 animate-fade-in">
                       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -1561,9 +1706,8 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         </p>
                       </div>
 
-                      {/* Summary Data Review Card */}
+                      {/* Summary Data Review Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
                         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
                           <h4 className="font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                             <User className="size-4" /> Identitas & Domisili
@@ -1621,7 +1765,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                             </div>
                           </div>
                         </div>
-
                       </div>
 
                       {/* Pakta Integritas / Pernyataan Syariah */}
@@ -1658,14 +1801,14 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                           type="button"
                           variant="outline"
                           onClick={handlePrevStep}
-                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5"
+                          className="text-xs sm:text-sm h-11 px-5 rounded-xl font-semibold gap-1.5 cursor-pointer"
                         >
                           <ArrowLeft className="size-4" /> Kembali
                         </Button>
                         <Button
                           type="submit"
                           disabled={isSubmitting || !formData.agreed}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-12 px-9 rounded-2xl font-black gap-2 shadow-lg shadow-emerald-900/20 transition-transform active:scale-95"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm h-12 px-9 rounded-2xl font-black gap-2 shadow-lg shadow-emerald-900/20 transition-transform active:scale-95 cursor-pointer"
                         >
                           {isSubmitting ? (
                             <>
@@ -1688,7 +1831,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         )}
 
         {/* ========================================================= */}
-        {/* TAB 2: LACAK STATUS PENGAJUAN MANDIRI                     */}
+        {/* TAB 2: LACAK STATUS PENGAJUAN (TRACKER 6 TAHAP)           */}
         {/* ========================================================= */}
         {activeTab === 'lacak' && (
           <div className="space-y-6 animate-fade-in">
@@ -1722,14 +1865,14 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                   <Button
                     type="submit"
                     disabled={isSearching}
-                    className="h-12 px-7 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl gap-2 shadow-md"
+                    className="h-12 px-7 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl gap-2 shadow-md cursor-pointer"
                   >
                     {isSearching ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
                     <span>Cari Berkas</span>
                   </Button>
                 </form>
 
-                {/* Quick Sample Queries for Testing */}
+                {/* Quick Sample Queries */}
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-[11px] text-slate-400">
                   <span>Contoh pencarian cepat:</span>
                   <button
@@ -1738,7 +1881,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                       setSearchQuery('MST-202608-0128');
                       handleSearchTracking(null, 'MST-202608-0128');
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50"
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50 cursor-pointer"
                   >
                     MST-202608-0128
                   </button>
@@ -1748,7 +1891,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                       setSearchQuery('3671011205850003');
                       handleSearchTracking(null, '3671011205850003');
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50"
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-mono font-semibold hover:bg-emerald-50 cursor-pointer"
                   >
                     NIK: 367101...
                   </button>
@@ -1820,7 +1963,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                   </div>
 
                   <div className="relative">
-                    {/* Connecting Line */}
+                    {/* Connecting Line Desktop */}
                     <div className="hidden lg:block absolute top-5 left-10 right-10 h-1 bg-slate-200 dark:bg-slate-800 -z-0" />
 
                     <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 sm:gap-6 relative z-10">
@@ -1832,7 +1975,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         return (
                           <div key={stg.id} className="flex lg:flex-col items-start lg:items-center gap-3.5 lg:text-center">
                             
-                            {/* Circle Stage Icon */}
                             <div
                               className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-extrabold shrink-0 transition-all ${
                                 isPast
@@ -1871,7 +2013,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
 
                 {/* Detail Information & Action Buttons */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
                   <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-6 space-y-4 rounded-3xl">
                     <h5 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                       <FileCheck className="size-4 text-emerald-600" /> Rincian Pengajuan
@@ -1897,7 +2038,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         type="button"
                         variant="outline"
                         onClick={handlePrintSlip}
-                        className="flex-1 text-xs h-10 rounded-xl font-bold gap-1.5"
+                        className="flex-1 text-xs h-10 rounded-xl font-bold gap-1.5 cursor-pointer"
                       >
                         <Printer className="size-4 text-slate-600" /> Cetak Lembar Bukti
                       </Button>
@@ -1905,7 +2046,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                         type="button"
                         variant="outline"
                         onClick={() => handleCopyCode(trackingResult.file_no)}
-                        className="text-xs h-10 px-4 rounded-xl font-bold gap-1.5"
+                        className="text-xs h-10 px-4 rounded-xl font-bold gap-1.5 cursor-pointer"
                       >
                         {copiedCode ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
                         {copiedCode ? 'Disalin' : 'Salin No. Berkas'}
@@ -1933,7 +2074,6 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                       </a>
                     </div>
                   </Card>
-
                 </div>
 
               </div>
@@ -1943,7 +2083,151 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
         )}
 
         {/* ========================================================= */}
-        {/* TAB 3: FAQ & PANDUAN PENGAJUAN BANTUAN                     */}
+        {/* TAB 3: 5 PROGRAM PRIORITAS BAZNAS KOTA TANGERANG          */}
+        {/* ========================================================= */}
+        {activeTab === 'program' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
+              <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                Katalog Program BAZNAS
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                5 Program Unggulan Penyaluran BAZNAS Kota Tangerang
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Pilih program yang sesuai dengan kebutuhan Anda untuk langsung mengisi formulir pengajuan online.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {PROGRAM_LIST.map((prog) => {
+                const IconComp = prog.icon;
+                return (
+                  <Card 
+                    key={prog.id} 
+                    className="shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl p-6 flex flex-col justify-between hover:shadow-2xl transition-all border hover:border-emerald-500"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs">
+                          <IconComp className="size-6" />
+                        </div>
+                        <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${prog.badgeColor}`}>
+                          {prog.category}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="text-base font-extrabold text-slate-900 dark:text-white">{prog.title}</h4>
+                        <span className="text-xs font-semibold text-emerald-600 block mt-0.5">{prog.tag}</span>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">{prog.desc}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-5 mt-5 border-t border-slate-100 dark:border-slate-800">
+                      <Button
+                        onClick={() => handleSelectProgramFromCatalog(prog.id)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs h-10 rounded-xl gap-2 cursor-pointer shadow-xs"
+                      >
+                        <span>Ajukan Program Ini</span>
+                        <ArrowRight className="size-3.5" />
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 4: SYARAT & ALUR PENGAJUAN (INFOGRAFIK RESMI)         */}
+        {/* ========================================================= */}
+        {activeTab === 'alur' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
+              <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+                Transparansi & Prosedur
+              </span>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                Syarat & 6 Tahapan Alur Permohonan Bantuan
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Memastikan setiap rupiah zakat muzakki tersalurkan tepat sasaran kepada mustahik yang berhak.
+              </p>
+            </div>
+
+            {/* Syarat Utama Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-5 rounded-3xl bg-white dark:bg-slate-900 space-y-2">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center">
+                  <User className="size-5" />
+                </div>
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">1. KTP & KK Kota Tangerang</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Pemohon berdomisili dan memiliki e-KTP serta Kartu Keluarga sah di salah satu dari 13 Kecamatan Kota Tangerang.
+                </p>
+              </Card>
+
+              <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-5 rounded-3xl bg-white dark:bg-slate-900 space-y-2">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                  <FileCheck className="size-5" />
+                </div>
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">2. SKTM Kelurahan / RT-RW</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Surat Keterangan Tidak Mampu dari Kelurahan setempat atau surat pengantar keterangan dhuafa dari RT/RW.
+                </p>
+              </Card>
+
+              <Card className="shadow-lg border-slate-200 dark:border-slate-800 p-5 rounded-3xl bg-white dark:bg-slate-900 space-y-2">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center">
+                  <Receipt className="size-5" />
+                </div>
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">3. Bukti Kebutuhan Riil</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Bukti tagihan biaya pendidikan sekolah, rincian biaya obat rumah sakit, atau rencana usaha mikro produktif.
+                </p>
+              </Card>
+            </div>
+
+            {/* 6 Tahap SOP BAZNAS Detail Timeline */}
+            <Card className="shadow-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 space-y-6">
+              <h4 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <Clock className="size-5 text-emerald-600" />
+                Alur Standar Operasional Prosedur (SOP) Penyaluran BAZNAS
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {STEP_STAGES.map((stg) => (
+                  <div key={stg.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center shadow-xs">
+                        {stg.id}
+                      </span>
+                      <h5 className="text-xs font-black text-slate-900 dark:text-white">{stg.label}</h5>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-9">
+                      {stg.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center pt-2">
+                <Button
+                  onClick={() => handleNavClick('pengajuan')}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm h-11 px-8 rounded-xl gap-2 shadow-md cursor-pointer"
+                >
+                  <FileText className="size-4" />
+                  <span>Mulai Isi Formulir Pengajuan Sekarang</span>
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 5: FAQ & PUSAT BANTUAN                                 */}
         {/* ========================================================= */}
         {(activeTab === 'faq' || activeTab === 'pengajuan') && (
           <div className="space-y-6 pt-6">
@@ -1970,7 +2254,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                     <button
                       type="button"
                       onClick={() => setOpenFaq(isOpen ? -1 : idx)}
-                      className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-emerald-600 transition-colors"
+                      className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-emerald-600 transition-colors cursor-pointer"
                     >
                       <span className="flex items-center gap-2.5">
                         <HelpCircle className="size-4 text-emerald-600 shrink-0" />
@@ -1993,7 +2277,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       </main>
 
       {/* ========================================================= */}
-      {/* MODAL SUKSES PENDAFTARAN (DENGAN LOGO BAZNAS & COPY)      */}
+      {/* 4. MODAL SUKSES REGISTRASI DENGAN NOMOR BERKAS            */}
       {/* ========================================================= */}
       {submitSuccessData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -2001,12 +2285,12 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
             
             <button
               onClick={() => setSubmitSuccessData(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               <X className="size-5" />
             </button>
 
-            {/* Official Logo at Top of Modal */}
+            {/* Official Logo */}
             <div className="flex justify-center">
               <img
                 src={baznasLogo}
@@ -2032,7 +2316,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
               </p>
             </div>
 
-            {/* Big Nomor Berkas Highlight Card */}
+            {/* Nomor Berkas Highlight Card */}
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 space-y-2">
               <p className="text-[10px] uppercase font-extrabold text-emerald-800 dark:text-emerald-300 tracking-wider">
                 NOMOR REGISTRASI BERKAS ANDA
@@ -2066,7 +2350,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                   setSubmitSuccessData(null);
                   handleSearchTracking(null, currentNo);
                 }}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm h-11 rounded-2xl gap-2 shadow-md"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm h-11 rounded-2xl gap-2 shadow-md cursor-pointer"
               >
                 <Search className="size-4" /> Lacak Status Pengajuan Ini Sekarang
               </Button>
@@ -2083,7 +2367,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
                 <Button
                   variant="outline"
                   onClick={() => setSubmitSuccessData(null)}
-                  className="h-10 text-xs font-bold rounded-xl"
+                  className="h-10 text-xs font-bold rounded-xl cursor-pointer"
                 >
                   Tutup
                 </Button>
@@ -2095,7 +2379,7 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       )}
 
       {/* ========================================================= */}
-      {/* FLOATING ACTION BUTTON WHATSAPP BANTUAN                    */}
+      {/* 5. FLOATING ACTION BUTTON WHATSAPP BANTUAN                 */}
       {/* ========================================================= */}
       <aside aria-label="Layanan Bantuan WhatsApp" className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2 group">
         <a
@@ -2116,9 +2400,9 @@ export default function PublicPortalPage({ onNavigateToDashboard }) {
       </aside>
 
       {/* ========================================================= */}
-      {/* FOOTER INFORMASI PORTAL PUBLIK                             */}
+      {/* 6. FOOTER INFORMASI PORTAL PUBLIK                          */}
       {/* ========================================================= */}
-      <footer className="bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
+      <footer className="w-full bg-slate-900 text-slate-400 text-xs border-t border-slate-800 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           
           <div className="space-y-3">

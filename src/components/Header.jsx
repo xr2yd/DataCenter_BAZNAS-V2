@@ -204,31 +204,17 @@ export default function Header({ activePage = 'utama', onNavigate }) {
       </div>
 
       <div className="flex items-center gap-2 ml-auto">
-        {/* Tombol Portal Publik Mustahik Toggle */}
+        {/* Tombol Portal Publik Mustahik Quick Access */}
         {onNavigate && (
           <Button
             size="sm"
-            className={`h-8 text-xs font-bold gap-1.5 shadow-sm transition-all duration-200 cursor-pointer ${
-              activePage === 'portal'
-                ? 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 shadow-emerald-600/20'
-            }`}
-            onClick={() => onNavigate(activePage === 'portal' ? 'mustahik' : 'portal')}
-            title={activePage === 'portal' ? 'Kembali ke Dashboard Mustahik' : 'Buka Portal Publik Layanan Mustahik'}
+            className="h-8 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 shadow-xs shadow-emerald-600/20 transition-all duration-200 cursor-pointer"
+            onClick={() => onNavigate('portal')}
+            title="Buka Portal Publik Layanan Mustahik"
           >
-            {activePage === 'portal' ? (
-              <>
-                <LayoutDashboard className="size-3.5" />
-                <span className="hidden sm:inline">Kembali ke Dashboard</span>
-                <span className="sm:hidden">Dashboard</span>
-              </>
-            ) : (
-              <>
-                <Globe className="size-3.5" />
-                <span className="hidden sm:inline">🌐 Portal Publik Mustahik</span>
-                <span className="sm:hidden">🌐 Portal</span>
-              </>
-            )}
+            <Globe className="size-3.5" />
+            <span className="hidden sm:inline">Portal Publik</span>
+            <span className="sm:hidden">Portal</span>
           </Button>
         )}
 
