@@ -2,40 +2,36 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, UserCheck, FileCheck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
-type PriorityItem = {
-  id: string;
-  title: string;
-  program: string;
-  count: number;
-  amount: number;
-  action: string;
-  tone: 'high' | 'medium' | 'low';
-};
-
-const defaultActions: PriorityItem[] = [
+export function ActionRail() {
+  const pendingActions = [
     {
       id: 'act-1',
       title: 'Verifikasi Berkas Baru',
       count: 14,
-      program: 'Pengajuan online & rekomendasi UPZ', amount: 25000000, action: 'Verifikasi', tone: 'high',
+      desc: 'Pengajuan online & rekomendasi UPZ',
+      href: '/penyaluran/mustahik?tab=diajukan',
+      urgency: 'high',
+      icon: Clock,
     },
     {
       id: 'act-2',
       title: 'Jadwal Survey Faktual',
       count: 8,
-      program: 'Wilayah Cipondoh & Karawaci', amount: 18000000, action: 'Atur survey', tone: 'medium',
+      desc: 'Wilayah Cipondoh & Karawaci',
+      href: '/penyaluran/mustahik?tab=survey',
+      urgency: 'medium',
+      icon: UserCheck,
     },
     {
       id: 'act-3',
       title: 'Pencairan Dana (PPD/FPD)',
       count: 5,
-      program: 'Siap transfer rekening mustahik', amount: 12000000, action: 'Proses PPD', tone: 'low',
+      desc: 'Siap transfer rekening mustahik',
+      href: '/penyaluran/mustahik?tab=ppd',
+      urgency: 'urgent',
+      icon: CheckCircle2,
     },
-];
-
-const iconFor = [Clock, UserCheck, CheckCircle2];
-
-export function ActionRail({ priorities = defaultActions }: { priorities?: PriorityItem[] }) {
+  ];
 
   return (
     <div className="space-y-3">
@@ -43,16 +39,16 @@ export function ActionRail({ priorities = defaultActions }: { priorities?: Prior
         <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900">
           Antrean Keputusan Hari Ini
         </h3>
-        <span className="text-[11px] text-zinc-500">{priorities.reduce((total, item) => total + item.count, 0)} Berkas Aktif</span>
+        <span className="text-[11px] text-zinc-500">27 Berkas Aktif</span>
       </div>
 
       <div className="space-y-2">
-        {priorities.map((item, index) => {
-          const Icon = iconFor[index % iconFor.length] ?? Clock;
+        {pendingActions.map((item) => {
+          const Icon = item.icon;
           return (
             <Link
               key={item.id}
-              href="/penyaluran/mustahik"
+              href={item.href}
               className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 bg-white hover:border-emerald-600 hover:shadow-xs transition-all group"
             >
               <div className="flex items-center gap-3">
@@ -63,7 +59,7 @@ export function ActionRail({ priorities = defaultActions }: { priorities?: Prior
                   <p className="text-xs font-bold text-zinc-900 group-hover:text-emerald-700 transition-colors">
                     {item.title}
                   </p>
-                  <p className="text-[11px] text-zinc-500">{item.program} · {item.action}</p>
+                  <p className="text-[11px] text-zinc-500">{item.desc}</p>
                 </div>
               </div>
 
