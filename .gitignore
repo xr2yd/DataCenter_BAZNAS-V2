@@ -33,3 +33,9 @@ uploads/
 *.db
 *.sqlite
 *.sqlite3
+
+# Local isolated development worktrees
+.worktrees/
+.next/
+frontend-next/.next/
+
