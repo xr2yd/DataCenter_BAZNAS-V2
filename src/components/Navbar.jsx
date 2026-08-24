@@ -79,7 +79,6 @@ export default function Navbar({
           type: 'dropdown',
           activeKeys: ['penyaluran', 'program_bantuan', 'laporan_penyaluran', 'portal'],
           items: [
-            { label: 'Dashboard Penyaluran', page: 'penyaluran', icon: LayoutDashboard, desc: 'Ikhtisar statistik & progress penyaluran' },
             { label: 'Program Bantuan 5 Pilar', page: 'program_bantuan', icon: ClipboardList, desc: 'Pendidikan, Kesehatan, Ekonomi, Dakwah, Kemanusiaan' },
             { label: 'Laporan & LPJ Penyaluran', page: 'laporan_penyaluran', icon: FileText, desc: 'Rekapitulasi distribusi & export data' },
             { label: 'Portal Publik Mustahik', page: 'portal', icon: Globe, desc: 'Preview portal permohonan publik online' },
