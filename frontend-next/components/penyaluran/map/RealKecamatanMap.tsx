@@ -6,6 +6,7 @@ import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
 import { DEMO_KECAMATAN_DATA, getChoroplethColor } from './map-data';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
+import type { MapPeriodData } from '../dashboard/dashboard-data';
 
 const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
 
@@ -13,10 +14,12 @@ export default function RealKecamatanMap({
   selectedKecamatan,
   onSelectKecamatan,
   liveData,
+  periodData,
 }: {
   selectedKecamatan?: string | null;
   onSelectKecamatan?: (name: string) => void;
   liveData?: PenyaluranByKecamatan[];
+  periodData?: MapPeriodData;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -33,10 +36,29 @@ export default function RealKecamatanMap({
   }
 
   // Find data by name
-  const getDataForKecamatan = (name: string) => {
+  const getDataForKecamatan = (name: string): { totalMustahik: number; totalDisalurkan: number; topProgram: string } => {
     const fromApi = liveData?.find((d) => d.name.toLowerCase() === name.toLowerCase());
-    if (fromApi) return fromApi;
-    return DEMO_KECAMATAN_DATA[name] || { totalMustahik: 800, totalDisalurkan: 1000000000 };
+    if (fromApi) {
+      return {
+        totalMustahik: fromApi.totalMustahik,
+        totalDisalurkan: fromApi.totalDisalurkan,
+        topProgram: fromApi.topProgram ?? 'Tangerang Peduli',
+      };
+    }
+    const fromPeriod = periodData?.[name];
+    if (fromPeriod) {
+      return {
+        totalMustahik: fromPeriod.beneficiaries,
+        totalDisalurkan: fromPeriod.amount,
+        topProgram: fromPeriod.program,
+      };
+    }
+    const fallback = DEMO_KECAMATAN_DATA[name];
+    return {
+      totalMustahik: fallback?.totalMustahik ?? 800,
+      totalDisalurkan: fallback?.totalDisalurkan ?? 1_000_000_000,
+      topProgram: fallback?.topProgram ?? 'Tangerang Peduli',
+    };
   };
 
   const styleFeature = (feature?: Feature<Geometry, { name: string }>) => {
@@ -87,7 +109,7 @@ export default function RealKecamatanMap({
   };
 
   return (
-    <div className="relative h-[360px] w-full rounded-xl overflow-hidden border border-zinc-200 shadow-2xs">
+    <div className="relative h-[430px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-emerald-50/30 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
       <MapContainer
         center={[-6.1783, 106.6319]}
         zoom={12}
@@ -107,20 +129,20 @@ export default function RealKecamatanMap({
       </MapContainer>
 
       {/* Legend Badge */}
-      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs border border-zinc-200 rounded-lg p-2 text-[10px] shadow-sm">
-        <p className="font-bold text-zinc-900 mb-1">Kepadatan Mustahik</p>
+      <div className="absolute bottom-4 left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm backdrop-blur-xs">
+        <p className="mb-1.5 font-bold text-zinc-900">Intensitas penyaluran</p>
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-1">
             <span className="size-2 rounded-xs" style={{ backgroundColor: '#a7f3d0' }} />
-            <span className="text-zinc-600">&lt;500</span>
+            <span className="text-zinc-600">Rendah</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="size-2 rounded-xs" style={{ backgroundColor: '#10b981' }} />
-            <span className="text-zinc-600">500-900</span>
+            <span className="text-zinc-600">Menengah</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="size-2 rounded-xs" style={{ backgroundColor: '#00663d' }} />
-            <span className="text-zinc-600">&gt;1.200</span>
+            <span className="text-zinc-600">Tinggi</span>
           </div>
         </div>
       </div>
