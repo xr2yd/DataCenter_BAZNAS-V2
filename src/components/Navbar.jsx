@@ -45,10 +45,11 @@ export default function Navbar({
   const [showExportModal, setShowExportModal] = useState(false);
 
   const userName = currentUser?.name || 'Amil BAZNAS';
+  const userEmail = currentUser?.email || 'amil@baznas.go.id';
   const userRole = currentUser?.role || 'penyaluran';
   const userDivision = currentUser?.division || 'Bidang Penyaluran & Pendistribusian';
 
-  const userInitials = userName
+  const initials = userName
     .split(' ')
     .slice(0, 2)
     .map((n) => n[0])
