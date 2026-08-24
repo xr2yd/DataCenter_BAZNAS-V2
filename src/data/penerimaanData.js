@@ -60,20 +60,20 @@ export const PENYALURAN_METRICS = {
 };
 
 export const ASNAF_DISTRIBUTION = [
-  { name: 'Fakir', value: 567_000_000_000, color: '#ef4444' },
-  { name: 'Miskin', value: 756_000_000_000, color: '#f59e0b' },
-  { name: 'Amil', value: 189_000_000_000, color: '#3b82f6' },
-  { name: 'Mualaf', value: 94_500_000_000, color: '#10b981' },
-  { name: 'Fisabilillah', value: 151_200_000_000, color: '#8b5cf6' },
-  { name: 'Ibnu Sabil & Lainnya', value: 132_300_000_000, color: '#6b7280' },
+  { name: 'Fakir', value: 567_000_000_000, color: '#e11d48' },
+  { name: 'Miskin', value: 756_000_000_000, color: '#d97706' },
+  { name: 'Amil', value: 189_000_000_000, color: '#2563eb' },
+  { name: 'Mualaf', value: 94_500_000_000, color: '#0d9488' },
+  { name: 'Fisabilillah', value: 151_200_000_000, color: '#059669' },
+  { name: 'Ibnu Sabil & Lainnya', value: 132_300_000_000, color: '#64748b' },
 ];
 
 export const PENYALURAN_PROGRAMS = [
-  { name: 'Tangerang Cerdas (Pendidikan)', value: 35, budget: 661_500_000_000, realized: 570_000_000_000, color: '#3b82f6' },
-  { name: 'Tangerang Sehat (Kesehatan)', value: 25, budget: 472_500_000_000, realized: 410_000_000_000, color: '#10b981' },
-  { name: 'Tangerang Peduli (Sosial Kemanusiaan)', value: 20, budget: 378_000_000_000, realized: 330_000_000_000, color: '#ef4444' },
-  { name: 'Tangerang Makmur (Ekonomi)', value: 12, budget: 226_800_000_000, realized: 180_000_000_000, color: '#f59e0b' },
-  { name: 'Tangerang Takwa (Dakwah & Advokasi)', value: 8, budget: 151_200_000_000, realized: 120_000_000_000, color: '#8b5cf6' },
+  { name: 'Tangerang Cerdas (Pendidikan)', value: 35, budget: 661_500_000_000, realized: 570_000_000_000, color: '#2563eb' },
+  { name: 'Tangerang Sehat (Kesehatan)', value: 25, budget: 472_500_000_000, realized: 410_000_000_000, color: '#059669' },
+  { name: 'Tangerang Peduli (Sosial Kemanusiaan)', value: 20, budget: 378_000_000_000, realized: 330_000_000_000, color: '#e11d48' },
+  { name: 'Tangerang Makmur (Ekonomi)', value: 12, budget: 226_800_000_000, realized: 180_000_000_000, color: '#d97706' },
+  { name: 'Tangerang Takwa (Dakwah & Advokasi)', value: 8, budget: 151_200_000_000, realized: 120_000_000_000, color: '#7c3aed' },
 ];
 
 export const PENYALURAN_TRANSACTIONS = [

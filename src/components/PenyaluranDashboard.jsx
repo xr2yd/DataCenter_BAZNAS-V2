@@ -35,11 +35,11 @@ import { formatRupiah, formatRupiahChart } from '../utils/format';
 import useCountUp from '../hooks/useCountUp';
 
 const programChartConfig = {
-  pendidikan: { label: 'Tangerang Cerdas', color: '#3b82f6' },
-  kesehatan: { label: 'Tangerang Sehat', color: '#10b981' },
-  sosial: { label: 'Tangerang Peduli', color: '#ef4444' },
-  ekonomi: { label: 'Tangerang Makmur', color: '#f59e0b' },
-  dakwah: { label: 'Tangerang Takwa', color: '#8b5cf6' },
+  pendidikan: { label: 'Tangerang Cerdas', color: '#2563eb' },
+  kesehatan: { label: 'Tangerang Sehat', color: '#059669' },
+  sosial: { label: 'Tangerang Peduli', color: '#e11d48' },
+  ekonomi: { label: 'Tangerang Makmur', color: '#d97706' },
+  dakwah: { label: 'Tangerang Takwa', color: '#7c3aed' },
 };
 
 const periods = [
@@ -141,12 +141,12 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
     });
 
     return [
-      { name: 'Fakir', value: baseObj['Fakir'], color: '#ef4444' },
-      { name: 'Miskin', value: baseObj['Miskin'], color: '#f59e0b' },
-      { name: 'Amil', value: baseObj['Amil'], color: '#3b82f6' },
-      { name: 'Mualaf', value: baseObj['Mualaf'], color: '#10b981' },
-      { name: 'Fisabilillah', value: baseObj['Fisabilillah'], color: '#8b5cf6' },
-      { name: 'Ibnu Sabil & Lainnya', value: baseObj['Ibnu Sabil & Lainnya'], color: '#6b7280' },
+      { name: 'Fakir', value: baseObj['Fakir'], color: '#e11d48' },
+      { name: 'Miskin', value: baseObj['Miskin'], color: '#d97706' },
+      { name: 'Amil', value: baseObj['Amil'], color: '#2563eb' },
+      { name: 'Mualaf', value: baseObj['Mualaf'], color: '#0d9488' },
+      { name: 'Fisabilillah', value: baseObj['Fisabilillah'], color: '#059669' },
+      { name: 'Ibnu Sabil & Lainnya', value: baseObj['Ibnu Sabil & Lainnya'], color: '#64748b' },
     ];
   }, [transactions]);
 
@@ -421,11 +421,11 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
                     }
                   />
                   <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="left" />
-                  <Bar dataKey="pendidikan" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="kesehatan" stackId="a" fill="#10b981" />
-                  <Bar dataKey="sosial" stackId="a" fill="#ef4444" />
-                  <Bar dataKey="ekonomi" stackId="a" fill="#f59e0b" />
-                  <Bar dataKey="dakwah" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="pendidikan" stackId="a" fill="#2563eb" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="kesehatan" stackId="a" fill="#059669" />
+                  <Bar dataKey="sosial" stackId="a" fill="#e11d48" />
+                  <Bar dataKey="ekonomi" stackId="a" fill="#d97706" />
+                  <Bar dataKey="dakwah" stackId="a" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ChartContainer>
             </div>

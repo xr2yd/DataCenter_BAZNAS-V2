@@ -108,13 +108,13 @@ export const DISTRIBUSI_DATA = [
 ];
 
 export const DISTRIBUSI_COLORS = [
-  'var(--chart-1)',
-  'var(--chart-2)',
-  'var(--chart-3)',
-  'var(--chart-4)',
-  'var(--chart-5)',
-  '#14b8a6',
-  '#f43f5e',
+  '#2563eb', // Pendidikan - Sapphire Blue
+  '#059669', // Kesehatan - Emerald
+  '#d97706', // Ekonomi - Warm Gold
+  '#7c3aed', // Dakwah - Violet
+  '#e11d48', // Sosial - Rose Carmine
+  '#0d9488', // Infak - Teal
+  '#6366f1', // Sedekah - Indigo
 ];
 
 // Daily data generator for mini charts
