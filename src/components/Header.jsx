@@ -14,7 +14,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function Header({ activePage = 'utama', onNavigate }) {
+export default function Header({ activePage = 'utama', onNavigate, currentUser = null, onLogout = () => {} }) {
+  const userName = currentUser?.name || 'Ahmad Naufal';
+  const userDivision = currentUser?.division || 'Divisi Penyaluran';
+  const userEmail = currentUser?.email || 'admin@baznas.go.id';
+  const userRole = currentUser?.role || 'admin';
+  const initials = userName
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4 sticky top-0 z-20">
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
@@ -65,7 +76,7 @@ export default function Header({ activePage = 'utama', onNavigate }) {
                 <>
                   <span>Penerimaan</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Data Muzakki</span>
+                  <span className="text-foreground font-semibold text-emerald-600">Data Muzakki</span>
                 </>
               );
             case 'laporan_penerimaan':
@@ -153,7 +164,7 @@ export default function Header({ activePage = 'utama', onNavigate }) {
                 <>
                   <span>Keuangan</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Realisasi Anggaran</span>
+                  <span className="text-foreground">Realisasi</span>
                 </>
               );
             case 'laporan_keuangan':
@@ -161,13 +172,13 @@ export default function Header({ activePage = 'utama', onNavigate }) {
                 <>
                   <span>Keuangan</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Laporan Keuangan</span>
+                  <span className="text-foreground">Laporan</span>
                 </>
               );
             case 'pegawai':
               return (
                 <>
-                  <span>SDM & Umum</span>
+                  <span>SDM</span>
                   <span className="text-muted-foreground/50">/</span>
                   <span className="text-foreground">Data Pegawai</span>
                 </>
@@ -175,38 +186,50 @@ export default function Header({ activePage = 'utama', onNavigate }) {
             case 'absensi':
               return (
                 <>
-                  <span>SDM & Umum</span>
+                  <span>SDM</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Absensi & Cuti</span>
+                  <span className="text-foreground">Presensi</span>
                 </>
               );
             case 'kinerja':
               return (
                 <>
-                  <span>SDM & Umum</span>
+                  <span>SDM</span>
                   <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground">Penilaian Kinerja</span>
+                  <span className="text-foreground">Kinerja</span>
                 </>
               );
+            case 'ai_data_entry':
+              return (
+                <>
+                  <span>AI Tools</span>
+                  <span className="text-muted-foreground/50">/</span>
+                  <span className="text-emerald-600 font-semibold">Smart OCR Data Entry</span>
+                </>
+              );
+            case 'utama':
             default:
               return <span className="text-foreground">Utama</span>;
           }
         })()}
       </div>
 
-      {/* Search */}
-      <div className="hidden lg:flex relative flex-1 max-w-xs ml-2">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-        <Input
-          placeholder="Cari menu atau data..."
-          className="h-8 pl-8 text-xs rounded-full bg-secondary border-border focus-visible:ring-emerald-500"
-        />
-      </div>
+      {/* Right side actions */}
+      <div className="ml-auto flex items-center gap-3">
+        {/* Search */}
+        <div className="relative hidden lg:block w-56 xl:w-72">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Cari menu atau data..."
+            className="pl-8 h-9 text-xs bg-muted/50 focus-visible:bg-background transition-colors"
+          />
+        </div>
 
-      <div className="flex items-center gap-2 ml-auto">
-        {/* Tombol Portal Publik Mustahik Quick Access */}
-        {onNavigate && (
+        {/* Shortcut to Public Portal */}
+        {activePage !== 'portal' && (
           <Button
+            variant="outline"
             size="sm"
             className="h-8 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500 shadow-xs shadow-emerald-600/20 transition-all duration-200 cursor-pointer"
             onClick={() => onNavigate('portal')}
@@ -228,15 +251,15 @@ export default function Header({ activePage = 'utama', onNavigate }) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 pl-1 pr-2 h-auto">
+            <Button variant="ghost" className="flex items-center gap-2 pl-1 pr-2 h-auto cursor-pointer">
               <Avatar className="size-8">
-                <AvatarFallback className="text-xs bg-emerald-100 text-emerald-700 font-semibold">
-                  AN
+                <AvatarFallback className="text-xs bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20">
+                  {initials || 'AN'}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex flex-col items-start text-sm">
-                <span className="font-medium">Ahmad Naufal</span>
-                <span className="text-xs text-muted-foreground">Kepala Bidang Penerimaan</span>
+                <span className="font-semibold text-xs leading-tight">{userName}</span>
+                <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{userDivision}</span>
               </div>
               <ChevronDown className="hidden sm:block size-3.5 text-muted-foreground" />
             </Button>
@@ -244,23 +267,31 @@ export default function Header({ activePage = 'utama', onNavigate }) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">Ahmad Naufal</p>
-                <p className="text-xs leading-none text-muted-foreground">a.naufal@baznas.go.id</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold leading-none">{userName}</p>
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                    {userRole}
+                  </span>
+                </div>
+                <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <UserCircle />
-              Profil
+            <DropdownMenuItem className="cursor-pointer">
+              <UserCircle className="size-4" />
+              <span>Profil Pengguna</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings />
-              Pengaturan
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="size-4" />
+              <span>Pengaturan Akun</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              <LogOut />
-              Keluar
+            <DropdownMenuItem 
+              onClick={onLogout}
+              className="text-destructive focus:text-destructive cursor-pointer font-bold"
+            >
+              <LogOut className="size-4 text-destructive" />
+              <span>Keluar (Logout)</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1426,7 +1426,7 @@ export default function MustahikPage({ onNavigate }) {
                             size="icon-xs"
                             variant="ghost"
                             className="h-7 w-7 text-blue-600"
-                            onClick={() => window.open(`http://localhost:3001${doc.file_url}`, '_blank')}
+                            onClick={() => window.open(doc.file_url?.startsWith('http') ? doc.file_url : `${doc.file_url}`, '_blank')}
                           >
                             <Download className="size-3.5" />
                           </Button>

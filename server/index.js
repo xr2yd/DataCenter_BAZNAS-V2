@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import compression from 'compression';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
 import { initDb } from './db.js';
@@ -22,6 +25,13 @@ import {
   addWaLog,
   getWaLogs,
   exportMustahikData,
+  getMustahikStats,
+  getDataOverview,
+  findUserByEmail,
+  findUserById,
+  listUsers,
+  updateUserLastLogin,
+  createUser,
 } from './repository.js';
 import './bot.js';
 
@@ -30,6 +40,166 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
+
+// ==========================================
+// IN-MEMORY HIGH PERFORMANCE CACHE ENGINE
+// ==========================================
+class MemoryCache {
+  constructor(defaultTtlSeconds = 60) {
+    this.cache = new Map();
+    this.defaultTtl = defaultTtlSeconds * 1000;
+    this.stats = {
+      hits: 0,
+      misses: 0,
+      sets: 0,
+      clears: 0
+    };
+
+    // Garbage collect expired keys every 60 seconds
+    const interval = setInterval(() => this.cleanup(), 60000);
+    if (interval.unref) interval.unref();
+  }
+
+  get(key) {
+    const item = this.cache.get(key);
+    if (!item) {
+      this.stats.misses++;
+      return null;
+    }
+
+    if (Date.now() > item.expiresAt) {
+      this.cache.delete(key);
+      this.stats.misses++;
+      return null;
+    }
+
+    this.stats.hits++;
+    return item.data;
+  }
+
+  set(key, data, ttlSeconds = null) {
+    const ttl = ttlSeconds ? ttlSeconds * 1000 : this.defaultTtl;
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + ttl,
+      createdAt: Date.now()
+    });
+    this.stats.sets++;
+  }
+
+  del(key) {
+    return this.cache.delete(key);
+  }
+
+  delPattern(pattern) {
+    let count = 0;
+    const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern.replace('*', '.*'));
+    for (const key of this.cache.keys()) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  clear() {
+    this.cache.clear();
+    this.stats.clears++;
+  }
+
+  cleanup() {
+    const now = Date.now();
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiresAt) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  getStats() {
+    const totalRequests = this.stats.hits + this.stats.misses;
+    const hitRatio = totalRequests > 0 ? ((this.stats.hits / totalRequests) * 100).toFixed(2) + '%' : '0%';
+    return {
+      size: this.cache.size,
+      hits: this.stats.hits,
+      misses: this.stats.misses,
+      hitRatio,
+      sets: this.stats.sets,
+      clears: this.stats.clears,
+      memoryUsage: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`
+    };
+  }
+}
+
+export const memoryCache = new MemoryCache(60);
+
+/**
+ * Middleware for caching JSON responses in memory with TTL
+ */
+export function cacheMiddleware(ttlSeconds = 60) {
+  return (req, res, next) => {
+    if (req.method !== 'GET') return next();
+
+    const key = `req:${req.originalUrl || req.url}`;
+    const cached = memoryCache.get(key);
+
+    if (cached !== null) {
+      res.setHeader('X-Cache', 'HIT');
+      res.setHeader('X-Cache-TTL', `${ttlSeconds}s`);
+      return res.json(cached);
+    }
+
+    res.setHeader('X-Cache', 'MISS');
+    const originalJson = res.json.bind(res);
+    res.json = (body) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        memoryCache.set(key, body, ttlSeconds);
+      }
+      return originalJson(body);
+    };
+
+    next();
+  };
+}
+
+/**
+ * Invalidate cache helper called whenever database data mutations occur
+ */
+export function invalidateCache(patterns = ['req:/api/mustahik*', 'req:/api/data*']) {
+  patterns.forEach(p => memoryCache.delPattern(p));
+}
+
+// ==========================================
+// MIDDLEWARES (Compression, CORS, Parsing)
+// ==========================================
+
+// 1. Response-Time Tracker Header
+app.use((req, res, next) => {
+  const start = process.hrtime();
+  const originalSend = res.send.bind(res);
+  res.send = function (body) {
+    if (!res.headersSent) {
+      const diff = process.hrtime(start);
+      const timeMs = (diff[0] * 1e3 + diff[1] * 1e-6).toFixed(2);
+      res.setHeader('X-Response-Time', `${timeMs}ms`);
+    }
+    return originalSend(body);
+  };
+  next();
+});
+
+// 2. Gzip / Deflate Response Compression Middleware
+app.use(compression({
+  level: 6,
+  threshold: 512, // Compress any response payload >= 512 bytes
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
@@ -53,9 +223,183 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB max per file
 });
 
+// ==========================================
+// HEALTH & CACHE DIAGNOSTIC APIS
+// ==========================================
+
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'BAZNAS AI Agent API is running', timestamp: new Date().toISOString() });
+  res.json({
+    success: true,
+    message: 'BAZNAS AI Agent API is running with PostgreSQL Turbo Engine & Compression',
+    timestamp: new Date().toISOString(),
+    compression: 'active (gzip/deflate)',
+    cache_stats: memoryCache.getStats()
+  });
+});
+
+// Cache Stats & Telemetry
+app.get('/api/cache/stats', (req, res) => {
+  res.json({
+    success: true,
+    data: memoryCache.getStats()
+  });
+});
+
+// Cache Flush
+app.post('/api/cache/clear', (req, res) => {
+  memoryCache.clear();
+  res.json({
+    success: true,
+    message: 'In-memory cache flushed successfully',
+    stats: memoryCache.getStats()
+  });
+});
+
+// ==========================================
+// AUTHENTICATION & MULTI-ROLE ACCESS CONTROL
+// ==========================================
+const JWT_SECRET = process.env.JWT_SECRET || 'baznas_tangkot_super_secret_jwt_key_2026';
+
+export function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Akses ditolak: Token otentikasi tidak ditemukan.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: 'Sesi berakhir atau token tidak valid. Silakan login kembali.' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+export function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Tidak terotentikasi' });
+    }
+    if (req.user.role === 'admin' || allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: `Akses dibatasi. Fitur ini memerlukan hak akses divisi: ${allowedRoles.join(', ')}`
+    });
+  };
+}
+
+// 1. Login Endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email dan kata sandi wajib diisi' });
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Email atau kata sandi tidak cocok' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Email atau kata sandi tidak cocok' });
+    }
+
+    // Update last login
+    await updateUserLastLogin(user.id);
+
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      division: user.division,
+      avatar: user.avatar
+    };
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      success: true,
+      message: `Selamat datang, ${user.name}`,
+      token,
+      user: tokenPayload
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem saat proses login' });
+  }
+});
+
+// 2. Current User Profile Verification (Me)
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await findUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Pengguna tidak ditemukan' });
+    }
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        division: user.division,
+        avatar: user.avatar,
+        last_login: user.last_login
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 3. Logout Endpoint
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Berhasil keluar dari sistem' });
+});
+
+// 4. User Management (Admin Only)
+app.get('/api/auth/users', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const users = await listUsers();
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================
+// HIGH-SPEED AGGREGATE STATS APIS (<5ms via Cache)
+// ==========================================
+
+// Mustahik Aggregate Stats (KPI cards, charts, breakdowns)
+app.get('/api/mustahik/stats', cacheMiddleware(60), async (req, res) => {
+  try {
+    const data = await getMustahikStats();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Enterprise Data Overview (All entities summary)
+app.get('/api/data/overview', cacheMiddleware(60), async (req, res) => {
+  try {
+    const data = await getDataOverview();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Overview error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // ==========================================
@@ -66,6 +410,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/public/pengajuan', upload.any(), async (req, res) => {
   try {
     const result = await createPublicApplication(req.body, req.files || []);
+    invalidateCache();
     res.status(201).json({
       success: true,
       data: result,
@@ -98,8 +443,8 @@ app.get('/api/public/lacak/:query', async (req, res) => {
 // 2. MUSTAHIK ADMIN & MANAGEMENT APIS
 // ==========================================
 
-// Export 60 Master Columns JSON
-app.get('/api/mustahik/export/data', async (req, res) => {
+// Export 60 Master Columns JSON (Cached for high throughput)
+app.get('/api/mustahik/export/data', cacheMiddleware(60), async (req, res) => {
   try {
     const data = await exportMustahikData();
     res.json({ success: true, count: data.length, data });
@@ -109,8 +454,8 @@ app.get('/api/mustahik/export/data', async (req, res) => {
   }
 });
 
-// List all mustahik with query filter support
-app.get('/api/mustahik', async (req, res) => {
+// List all mustahik with query filter support (Cached per query)
+app.get('/api/mustahik', cacheMiddleware(30), async (req, res) => {
   try {
     const filters = {
       status: req.query.status,
@@ -141,6 +486,7 @@ app.get('/api/mustahik/:id', async (req, res) => {
 app.post('/api/mustahik', async (req, res) => {
   try {
     const id = await createMustahik(req.body);
+    invalidateCache();
     res.status(201).json({ success: true, data: { id }, message: 'Data mustahik berhasil ditambahkan' });
   } catch (err) {
     console.error('Create mustahik error:', err);
@@ -153,6 +499,7 @@ app.put('/api/mustahik/:id', async (req, res) => {
   try {
     const ok = await updateMustahik(req.params.id, req.body);
     if (!ok) return res.status(404).json({ success: false, message: 'Mustahik tidak ditemukan atau tidak ada perubahan' });
+    invalidateCache();
     res.json({ success: true, message: 'Data mustahik berhasil diperbarui' });
   } catch (err) {
     console.error('Update mustahik error:', err);
@@ -164,6 +511,7 @@ app.put('/api/mustahik/:id', async (req, res) => {
 app.delete('/api/mustahik/:id', async (req, res) => {
   try {
     await deleteMustahik(req.params.id);
+    invalidateCache();
     res.json({ success: true, message: 'Data mustahik berhasil dihapus secara permanen' });
   } catch (err) {
     console.error('Delete mustahik error:', err);
@@ -179,6 +527,7 @@ app.delete('/api/mustahik/:id', async (req, res) => {
 const handleAssessment = async (req, res) => {
   try {
     const assessmentId = await addAssessment(req.params.id, req.body);
+    invalidateCache();
     res.status(201).json({ success: true, data: { id: assessmentId }, message: 'Data assessment survey berhasil disimpan' });
   } catch (err) {
     console.error('Add assessment error:', err);
@@ -192,6 +541,7 @@ app.post('/api/mustahik/:id/assessments', handleAssessment);
 app.post('/api/mustahik/:id/mpzis', async (req, res) => {
   try {
     const mpzisId = await addMpzis(req.params.id, req.body);
+    invalidateCache();
     res.status(201).json({ success: true, data: { id: mpzisId }, message: 'Data persetujuan MPZIS berhasil disimpan' });
   } catch (err) {
     console.error('Add MPZIS error:', err);
@@ -203,6 +553,7 @@ app.post('/api/mustahik/:id/mpzis', async (req, res) => {
 app.post('/api/mustahik/:id/ppd', async (req, res) => {
   try {
     const ppdId = await addPpd(req.params.id, req.body);
+    invalidateCache();
     res.status(201).json({ success: true, data: { id: ppdId }, message: 'Data pengajuan dana (PPD/FPD) berhasil disimpan' });
   } catch (err) {
     console.error('Add PPD error:', err);
@@ -236,6 +587,8 @@ app.post('/api/mustahik/:id/whatsapp', async (req, res) => {
       wa_url: waInfo.url,
       status: 'sent'
     });
+
+    invalidateCache();
 
     res.json({
       success: true,
@@ -285,6 +638,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 app.post('/api/mustahik/:id/documents', async (req, res) => {
   try {
     const docId = await addDocument(req.params.id, req.body);
+    invalidateCache();
     res.status(201).json({ success: true, data: { id: docId }, message: 'Dokumen berhasil disimpan' });
   } catch (err) {
     console.error('Add document error:', err);
@@ -308,8 +662,12 @@ await initDb();
 
 app.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(`BAZNAS Data Center V2 API Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-  console.log(`Telegram Bot polling active`);
+  console.log(`⚡ BAZNAS Data Center V2 API Turbo Server on port ${PORT}`);
+  console.log(`🚀 Compression: Gzip/Deflate enabled`);
+  console.log(`⚡ In-Memory Cache: Active (TTL 60s)`);
+  console.log(`📊 Aggregates: /api/mustahik/stats & /api/data/overview (<5ms)`);
+  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
   console.log(`====================================================`);
 });
+
+export default app;

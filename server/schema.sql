@@ -180,15 +180,37 @@ CREATE TABLE IF NOT EXISTS bot_sessions (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 9. Table: users (Multi-Role Authentication & Access Control)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'penyaluran', -- 'admin', 'penyaluran', 'penerimaan', 'surveyor'
+    division VARCHAR(100) DEFAULT 'Divisi Penyaluran',
+    avatar VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ====================================================================
--- Performance Indexes
+-- Performance Indexes for Ultra-Fast Query Throughput
 -- ====================================================================
 CREATE INDEX IF NOT EXISTS idx_mustahik_file_no ON mustahik(file_no);
 CREATE INDEX IF NOT EXISTS idx_mustahik_nik ON mustahik(nik);
 CREATE INDEX IF NOT EXISTS idx_mustahik_phone ON mustahik(phone);
 CREATE INDEX IF NOT EXISTS idx_mustahik_status ON mustahik(status);
+CREATE INDEX IF NOT EXISTS idx_mustahik_program ON mustahik(program);
+CREATE INDEX IF NOT EXISTS idx_mustahik_received_date ON mustahik(received_date);
 CREATE INDEX IF NOT EXISTS idx_mustahik_kecamatan ON mustahik(kecamatan);
 CREATE INDEX IF NOT EXISTS idx_mustahik_created_at ON mustahik(created_at);
+CREATE INDEX IF NOT EXISTS idx_mustahik_asnaf ON mustahik(asnaf);
+CREATE INDEX IF NOT EXISTS idx_mustahik_status_program ON mustahik(status, program);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 CREATE INDEX IF NOT EXISTS idx_applications_mustahik_id ON applications(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_assessments_mustahik_id ON assessments(mustahik_id);

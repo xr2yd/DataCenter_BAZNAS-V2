@@ -16,7 +16,11 @@ import {
   Plus,
   Download,
   CheckCircle2,
-  X
+  X,
+  HeartHandshake,
+  Wallet,
+  GraduationCap,
+  TrendingUp,
 } from 'lucide-react';
 import {
   PENYALURAN_METRICS,
@@ -26,6 +30,7 @@ import {
   PENYALURAN_CHART_12M,
   PENERIMAAN_METRICS
 } from '../data/penerimaanData';
+import { getGreeting, getFormattedDate, getHijriDate } from '../data/dashboardData';
 import { formatRupiah, formatRupiahChart } from '../utils/format';
 import useCountUp from '../hooks/useCountUp';
 
@@ -49,7 +54,19 @@ const statusStyles = {
   Gagal: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400',
 };
 
-export default function PenyaluranDashboard() {
+export default function PenyaluranDashboard({ currentUser, onNavigate }) {
+  let user = currentUser;
+  if (!user && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('baznas_auth_user');
+      if (stored) user = JSON.parse(stored);
+    } catch (e) {}
+  }
+  const userName = user?.name || 'H. Rahmat Hidayat, S.Sos.';
+  const greeting = getGreeting();
+  const date = getFormattedDate();
+  const hijri = getHijriDate();
+
   const [period, setPeriod] = useState(0);
   const monthsToShow = periods[period].months;
   const chartData = PENYALURAN_CHART_12M.slice(-monthsToShow);
@@ -204,19 +221,92 @@ export default function PenyaluranDashboard() {
         </div>
       )}
 
-      {/* Page Title */}
+      {/* Row 1: Welcome Banner Khusus Divisi Penyaluran */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 via-emerald-800 to-teal-700 text-white animate-slide-down shadow-md">
+        {/* Geometric pattern overlay */}
+        <div className="absolute inset-0 bg-geometric opacity-40 pointer-events-none" />
+
+        {/* Decorative gold accent line */}
+        <div className="absolute top-0 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+
+        {/* Content */}
+        <div className="relative px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 lg:px-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
+            {/* Left: Dynamic Greeting */}
+            <div className="min-w-0">
+              <p className="text-emerald-100/80 text-[11px] sm:text-xs font-medium tracking-wide truncate">
+                {date}
+              </p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mt-1 leading-tight">
+                {greeting}, <span className="text-amber-300 whitespace-nowrap">{userName}</span>
+              </h1>
+              <p className="text-emerald-100/75 text-[11px] sm:text-xs mt-1.5 flex items-center gap-2 flex-wrap">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
+                <span className="truncate">{hijri}</span>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
+                <span>Divisi Penyaluran & Pendistribusian BAZNAS Kota Tangerang</span>
+              </p>
+            </div>
+
+            {/* Right: Penyaluran Specific Stat Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
+                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300">
+                  <HeartHandshake className="size-4 shrink-0" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-100/70 font-medium">Mustahik</p>
+                  <p className="text-xs sm:text-sm font-bold text-white">{animatedMustahik}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300">
+                  <Wallet className="size-4 shrink-0" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-100/70 font-medium">Disalurkan</p>
+                  <p className="text-xs sm:text-sm font-bold text-amber-300">Rp 1,89 M</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
+                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300">
+                  <GraduationCap className="size-4 shrink-0" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-100/70 font-medium">5 Pilar</p>
+                  <p className="text-xs sm:text-sm font-bold text-white">5 Program</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
+                <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-300">
+                  <TrendingUp className="size-4 shrink-0" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-100/70 font-medium">Efektivitas</p>
+                  <p className="text-xs sm:text-sm font-bold text-emerald-300">92.4%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Page Title & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard Penyaluran</h1>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Ikhtisar & Statistik Distribusi</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Pantau pendistribusian dana zakat, infak, dan sedekah kepada mustahik secara akurat
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" onClick={handleExportPDF}>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 cursor-pointer" onClick={handleExportPDF}>
             <Download className="size-3.5" /> Export PDF
           </Button>
-          <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5" onClick={() => setShowAddSheet(true)}>
+          <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer" onClick={() => setShowAddSheet(true)}>
             <Plus className="size-3.5" /> Catat Penyaluran
           </Button>
         </div>

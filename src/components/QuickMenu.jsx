@@ -5,15 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddPersonIcon, PeopleIcon, TargetIcon, MoneyInIcon, MoneyOutIcon } from './icons';
 
 const items = [
-  { icon: MoneyInIcon, label: 'Zakat\nMaal', color: '#059669', bg: '#ecfdf5', desc: 'Input Zakat Maal' },
-  { icon: MoneyOutIcon, label: 'Zakat\nFitrah', color: '#d97706', bg: '#fffbeb', desc: 'Input Zakat Fitrah' },
-  { icon: AddPersonIcon, label: 'Tambah\nMuzakki', color: '#059669', bg: '#ecfdf5', desc: 'Input data muzakki baru' },
-  { icon: PeopleIcon, label: 'Tambah\nMustahik', color: '#3b82f6', bg: '#eff6ff', desc: 'Daftarkan mustahik' },
-  { icon: TargetIcon, label: 'Tambah\nProgram', color: '#7c3aed', bg: '#f5f3ff', desc: 'Buat program bantuan' },
-  { icon: Bot, label: 'AI Data\nEntry', color: '#7c3aed', bg: '#f5f3ff', desc: 'Entri otomatis dengan AI' },
+  { icon: MoneyInIcon, label: 'Zakat\nMaal', color: '#059669', bg: '#ecfdf5', desc: 'Input Zakat Maal', page: 'penerimaan' },
+  { icon: MoneyOutIcon, label: 'Zakat\nFitrah', color: '#d97706', bg: '#fffbeb', desc: 'Input Zakat Fitrah', page: 'penerimaan' },
+  { icon: AddPersonIcon, label: 'Tambah\nMuzakki', color: '#059669', bg: '#ecfdf5', desc: 'Input data muzakki baru', page: 'muzakki' },
+  { icon: PeopleIcon, label: 'Tambah\nMustahik', color: '#3b82f6', bg: '#eff6ff', desc: 'Daftarkan mustahik', page: 'mustahik' },
+  { icon: TargetIcon, label: 'Tambah\nProgram', color: '#7c3aed', bg: '#f5f3ff', desc: 'Buat program bantuan', page: 'program_bantuan' },
+  { icon: Bot, label: 'AI Data\nEntry', color: '#7c3aed', bg: '#f5f3ff', desc: 'Entri otomatis dengan AI', page: 'ai_entry' },
 ];
 
-export default function QuickMenu() {
+export default function QuickMenu({ onNavigate }) {
   return (
     <Card className="card-spotlight group shadow-card transition-all-smooth hover:shadow-card-hover animate-fade-in-up gap-0 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
       <CardHeader className="pb-1">
@@ -25,7 +25,11 @@ export default function QuickMenu() {
             {items.map((item, idx) => {
               const Icon = item.icon;
               const button = (
-                <Button key={idx} variant="outline" className="group/btn relative flex flex-col items-center gap-1.5 sm:gap-2 h-auto py-2 sm:py-3 px-1.5 sm:px-2 rounded-xl sm:rounded-2xl border-border hover:border-transparent hover:shadow-md active:scale-[0.97] transition-all duration-300 bg-card overflow-hidden animate-fade-in-up"
+                <Button 
+                  key={idx} 
+                  variant="outline" 
+                  onClick={() => item.page && onNavigate && onNavigate(item.page)}
+                  className="group/btn relative flex flex-col items-center gap-1.5 sm:gap-2 h-auto py-2 sm:py-3 px-1.5 sm:px-2 rounded-xl sm:rounded-2xl border-border hover:border-transparent hover:shadow-md active:scale-[0.97] transition-all duration-300 bg-card overflow-hidden animate-fade-in-up cursor-pointer"
                   style={{ animationDelay: `${idx * 50}ms`, animationFillMode: 'both' }}>
                   <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"
                     style={{ background: `linear-gradient(135deg, ${item.bg} 0%, white 100%)` }} />

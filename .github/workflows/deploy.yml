@@ -1,4 +1,4 @@
-name: Build and Deploy to VPS
+name: Build and Auto Deploy to VPS
 
 on:
   push:
@@ -31,19 +31,25 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: 'dist/*,server/*,package.json,package-lock.json'
-          target: '/home/xruncy/baznas-tangkot-v2'
+          target: '/home/xruncy/repo'
 
-      - name: Remote Setup & Nginx Reload
+      - name: Remote Setup, PM2 Backend & Nginx Reload
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sudo mkdir -p /var/www/baznas-tangkot-v2
-            sudo cp -r /home/xruncy/baznas-tangkot-v2/dist/* /var/www/baznas-tangkot-v2/
+            sudo cp -r /home/xruncy/repo/dist/* /var/www/baznas-tangkot-v2/
             sudo chown -R www-data:www-data /var/www/baznas-tangkot-v2
+            cd /home/xruncy/repo
+            npm install --omit=dev
+            pm2 restart baznas-backend || pm2 start server/index.js --name "baznas-backend"
+            pm2 save
             sudo systemctl reload nginx || sudo service nginx reload
-            echo "Deployment successful!"
+            echo "Auto-Deployment completed successfully!"

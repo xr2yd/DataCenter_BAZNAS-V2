@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,9 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -21,16 +17,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import {
   LayoutDashboard,
-  ChevronDown,
   FileText,
   Users,
   HeartHandshake,
@@ -99,9 +87,21 @@ const menuGroups = [
   },
 ];
 
-export default function AppSidebar({ activePage = 'utama', onNavigate = () => {} }) {
+export default function AppSidebar({ activePage = 'utama', onNavigate = () => {}, currentUser = null }) {
   const { state, isMobile } = useSidebar();
-  const [openGroups, setOpenGroups] = useState({ Penerimaan: true });
+  const role = currentUser?.role || 'admin';
+
+  // Filter groups based on authenticated user's role
+  const visibleGroups = menuGroups.filter((group) => {
+    if (role === 'admin') return true;
+    if (role === 'penyaluran' || role === 'surveyor') {
+      return group.label === 'Penyaluran';
+    }
+    if (role === 'penerimaan') {
+      return group.label === 'Penerimaan' || group.label === 'UPZ & Mitra';
+    }
+    return true;
+  });
 
   const toggleGroup = (label) => {
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -166,7 +166,7 @@ export default function AppSidebar({ activePage = 'utama', onNavigate = () => {}
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {menuGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const labelMap = {
             'Dashboard Penerimaan': 'penerimaan',
             'Data Muzakki': 'muzakki',
@@ -184,81 +184,37 @@ export default function AppSidebar({ activePage = 'utama', onNavigate = () => {}
             'Realisasi Anggaran': 'realisasi_anggaran',
             'Laporan Keuangan': 'laporan_keuangan',
             'Data Pegawai': 'pegawai',
+            'Presensi': 'absensi',
             'Absensi & Cuti': 'absensi',
+            'Kinerja': 'kinerja',
             'Penilaian Kinerja': 'kinerja',
           };
 
           return (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroup key={group.label} className="py-1">
+              <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider text-emerald-800/80 dark:text-emerald-400/90 px-3 py-1.5">
+                {group.label}
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {state === 'collapsed' && !isMobile ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton tooltip={group.label} className="hover:bg-muted">
-                          <group.icon />
-                          <span>{group.label}</span>
+                  {group.items.map((item) => {
+                    const pageKey = labelMap[item.label] || null;
+                    const isActive = !!pageKey && activePage === pageKey;
+                    const ItemIcon = item.icon;
+                    return (
+                      <SidebarMenuItem key={item.label}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          tooltip={item.label}
+                          onClick={() => pageKey && onNavigate(pageKey)}
+                          className="gap-2.5 font-medium transition-all cursor-pointer"
+                        >
+                          <ItemIcon className="size-4 shrink-0" />
+                          <span className="truncate">{item.label}</span>
                         </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start" className="w-56 bg-card border border-border shadow-md p-1 ml-1.5 z-50">
-                        <div className="px-2 py-1 text-[9px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider border-b border-border/40 mb-1">
-                          {group.label}
-                        </div>
-                        {group.items.map((item) => {
-                          const pageKey = labelMap[item.label] || null;
-                          return (
-                            <DropdownMenuItem
-                              key={item.label}
-                              onClick={() => pageKey && onNavigate(pageKey)}
-                              className={`flex items-center gap-2 text-xs py-1.5 px-2 rounded-md cursor-pointer ${
-                                activePage === pageKey
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold'
-                                  : 'text-foreground hover:bg-muted'
-                              }`}
-                            >
-                              <item.icon className="size-3.5 shrink-0" />
-                              <span>{item.label}</span>
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Collapsible
-                      open={openGroups[group.label]}
-                      onOpenChange={() => toggleGroup(group.label)}
-                      className="group/collapsible"
-                    >
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={group.label}>
-                            <group.icon />
-                            <span>{group.label}</span>
-                            <ChevronDown className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {group.items.map((item) => {
-                              const pageKey = labelMap[item.label] || null;
-                              return (
-                                <SidebarMenuSubItem key={item.label}>
-                                  <SidebarMenuSubButton
-                                    isActive={!!pageKey && activePage === pageKey}
-                                    onClick={() => pageKey && onNavigate(pageKey)}
-                                  >
-                                    <item.icon />
-                                    <span>{item.label}</span>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              );
-                            })}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
                       </SidebarMenuItem>
-                    </Collapsible>
-                  )}
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

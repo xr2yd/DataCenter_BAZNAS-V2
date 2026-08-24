@@ -1,9 +1,9 @@
-import { useState, lazy, Suspense } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import AppSidebar from './components/Sidebar';
-import Header from './components/Header';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import Navbar from './components/Navbar';
+import { api } from '@/services/api';
 
 // Dynamic Code-Splitting & React.lazy() for All Pages & Views
+const LoginPage = lazy(() => import('./components/LoginPage'));
 const DashboardUtama = lazy(() => import('./components/DashboardUtama'));
 const PublicPortalPage = lazy(() => import('./components/PublicPortalPage'));
 const MustahikPage = lazy(() => import('./components/MustahikPage'));
@@ -79,6 +79,20 @@ function PortalFallbackSkeleton() {
   );
 }
 
+function getInitialUser() {
+  if (typeof window === 'undefined') return null;
+  const token = localStorage.getItem('baznas_auth_token');
+  const userStr = localStorage.getItem('baznas_auth_user');
+  if (token && userStr) {
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
 function getInitialPage() {
   if (typeof window === 'undefined') return 'portal';
   const hostname = window.location.hostname.toLowerCase();
@@ -96,6 +110,45 @@ function getInitialPage() {
 
 function App() {
   const [activePage, setActivePage] = useState(getInitialPage);
+  const [currentUser, setCurrentUser] = useState(getInitialUser);
+
+  // Check auth session validity on mount
+  useEffect(() => {
+    const token = localStorage.getItem('baznas_auth_token');
+    if (token) {
+      api.getMe()
+        .then((res) => {
+          if (res?.success && res?.user) {
+            setCurrentUser(res.user);
+            localStorage.setItem('baznas_auth_user', JSON.stringify(res.user));
+          }
+        })
+        .catch(() => {
+          // Token invalid or expired
+          localStorage.removeItem('baznas_auth_token');
+          localStorage.removeItem('baznas_auth_user');
+          setCurrentUser(null);
+        });
+    }
+  }, []);
+
+  const handleLoginSuccess = (user, token) => {
+    setCurrentUser(user);
+    if (user.role === 'penyaluran' || user.role === 'surveyor') {
+      setActivePage('mustahik');
+    } else if (user.role === 'penerimaan') {
+      setActivePage('penerimaan');
+    } else {
+      setActivePage('utama');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('baznas_auth_token');
+    localStorage.removeItem('baznas_auth_user');
+    setCurrentUser(null);
+    setActivePage('utama');
+  };
 
   // Update document title dynamically
   if (typeof document !== 'undefined') {
@@ -106,7 +159,7 @@ function App() {
     }
   }
 
-  // If in portal mode, show standalone public portal view with Suspense fallback (100% independent without Sidebar wrapper)
+  // If in portal mode, show standalone public portal view without login requirement
   if (activePage === 'portal' || activePage === 'portal_publik') {
     return (
       <Suspense fallback={<PortalFallbackSkeleton />}>
@@ -114,7 +167,7 @@ function App() {
           onNavigateToDashboard={(page) => {
             const hostname = window.location.hostname.toLowerCase();
             if (hostname.startsWith('portal.')) {
-              window.location.href = 'http://muhammadrofiq.my.id/';
+              window.location.href = 'https://muhammadrofiq.my.id/';
             } else {
               setActivePage(page || 'utama');
             }
@@ -125,52 +178,75 @@ function App() {
     );
   }
 
-  return (
-    <SidebarProvider defaultOpen={false}>
-      <AppSidebar activePage={activePage} onNavigate={setActivePage} />
-      <SidebarInset className="min-w-0">
-        <Header activePage={activePage} onNavigate={setActivePage} />
+  // If not logged in and trying to access internal dashboard, show Login Page
+  if (!currentUser) {
+    return (
+      <Suspense fallback={<PortalFallbackSkeleton />}>
+        <LoginPage 
+          onLoginSuccess={handleLoginSuccess}
+          onNavigateToPortal={() => setActivePage('portal')}
+        />
+      </Suspense>
+    );
+  }
 
-        <main className="flex-1 w-full min-w-0 p-3 sm:p-4 md:p-6 lg:p-8 overflow-x-hidden">
-          <div key={activePage} className="animate-page-enter w-full min-h-[75vh] flex flex-col">
-            <Suspense fallback={<PageFallbackSkeleton />}>
-              {(activePage === 'utama' || activePage === 'dashboard') && <DashboardUtama />}
-              {activePage === 'penerimaan' && <PenerimaanDashboard />}
-              {activePage === 'penyaluran' && <PenyaluranDashboard />}
-              {activePage === 'muzakki' && <MuzakkiPage />}
-              {activePage === 'mustahik' && <MustahikPage onNavigate={setActivePage} />}
-              {activePage === 'program_bantuan' && <ProgramBantuanPage />}
-              {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage />}
-              {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage />}
-              {activePage === 'data_upz' && <UPZPage />}
-              {activePage === 'laporan_upz' && <LaporanUPZPage />}
-              {activePage === 'kerjasama' && <KerjasamaPage />}
-              {activePage === 'keuangan_dashboard' && <KeuanganDashboard />}
-              {activePage === 'rkat' && <RKATPage />}
-              {activePage === 'realisasi_anggaran' && <RealisasiAnggaranPage />}
-              {activePage === 'laporan_keuangan' && <LaporanKeuanganPage />}
-              {activePage === 'pegawai' && <PegawaiPage />}
-              {activePage === 'absensi' && <AbsensiPage />}
-              {activePage === 'kinerja' && <KinerjaPage />}
-              {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={setActivePage} />}
-              {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
-                <div className="flex flex-col items-center justify-center min-h-[400px] gap-2 text-center">
-                  <h2 className="text-lg font-bold text-foreground">Halaman Belum Tersedia</h2>
-                  <p className="text-xs text-muted-foreground">Modul "{activePage}" sedang dalam tahap pengembangan.</p>
-                  <button 
-                    onClick={() => setActivePage('utama')} 
-                    className="px-3 py-1.5 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold cursor-pointer"
-                  >
-                    Kembali ke Utama
-                  </button>
-                </div>
-              )}
-            </Suspense>
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+  return (
+    <div className="min-h-screen w-full bg-slate-50/60 dark:bg-slate-950 flex flex-col font-sans">
+      <Navbar 
+        activePage={activePage} 
+        onNavigate={setActivePage} 
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
+
+      <main className="flex-1 w-full max-w-[1920px] mx-auto p-3 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden">
+        <div key={activePage} className="animate-page-enter w-full min-h-[80vh] flex flex-col">
+          <Suspense fallback={<PageFallbackSkeleton />}>
+            {(activePage === 'utama' || activePage === 'dashboard') && (
+              currentUser?.role === 'penyaluran' || currentUser?.role === 'surveyor' ? (
+                <PenyaluranDashboard currentUser={currentUser} onNavigate={setActivePage} />
+              ) : currentUser?.role === 'penerimaan' ? (
+                <PenerimaanDashboard currentUser={currentUser} onNavigate={setActivePage} />
+              ) : (
+                <DashboardUtama currentUser={currentUser} onNavigate={setActivePage} />
+              )
+            )}
+            {activePage === 'penerimaan' && <PenerimaanDashboard currentUser={currentUser} onNavigate={setActivePage} />}
+            {activePage === 'penyaluran' && <PenyaluranDashboard currentUser={currentUser} onNavigate={setActivePage} />}
+            {activePage === 'muzakki' && <MuzakkiPage onNavigate={setActivePage} />}
+            {activePage === 'mustahik' && <MustahikPage onNavigate={setActivePage} />}
+            {activePage === 'program_bantuan' && <ProgramBantuanPage onNavigate={setActivePage} />}
+            {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage onNavigate={setActivePage} />}
+            {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage onNavigate={setActivePage} />}
+            {activePage === 'data_upz' && <UPZPage onNavigate={setActivePage} />}
+            {activePage === 'laporan_upz' && <LaporanUPZPage onNavigate={setActivePage} />}
+            {activePage === 'kerjasama' && <KerjasamaPage onNavigate={setActivePage} />}
+            {activePage === 'keuangan_dashboard' && <KeuanganDashboard onNavigate={setActivePage} />}
+            {activePage === 'rkat' && <RKATPage onNavigate={setActivePage} />}
+            {activePage === 'realisasi_anggaran' && <RealisasiAnggaranPage onNavigate={setActivePage} />}
+            {activePage === 'laporan_keuangan' && <LaporanKeuanganPage onNavigate={setActivePage} />}
+            {activePage === 'pegawai' && <PegawaiPage onNavigate={setActivePage} />}
+            {activePage === 'absensi' && <AbsensiPage onNavigate={setActivePage} />}
+            {activePage === 'kinerja' && <KinerjaPage onNavigate={setActivePage} />}
+            {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={setActivePage} />}
+            {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
+              <div className="flex flex-col items-center justify-center min-h-[400px] gap-2 text-center">
+                <h2 className="text-lg font-bold text-foreground">Halaman Belum Tersedia</h2>
+                <p className="text-xs text-muted-foreground">Modul "{activePage}" sedang dalam tahap pengembangan.</p>
+                <button 
+                  onClick={() => setActivePage('utama')} 
+                  className="px-3 py-1.5 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold cursor-pointer"
+                >
+                  Kembali ke Utama
+                </button>
+              </div>
+            )}
+          </Suspense>
+        </div>
+      </main>
+    </div>
   );
 }
 
 export default App;
+

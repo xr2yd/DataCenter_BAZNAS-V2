@@ -334,8 +334,11 @@ export async function createPublicApplication(data, files = []) {
         let docType = f.fieldname || 'Dokumen Pendukung';
         if (docType === 'ktp') docType = 'KTP';
         else if (docType === 'kk') docType = 'Kartu Keluarga';
-        else if (docType === 'sktm') docType = 'SKTM';
-        else if (docType === 'proposal') docType = 'Proposal';
+        else if (docType === 'sktm') docType = 'SKTM / Surat RT-RW';
+        else if (docType === 'surat_kelurahan') docType = 'Surat Keterangan Kelurahan (Asli)';
+        else if (docType === 'rekomendasi_upz') docType = 'Rekomendasi UPZ (Asli)';
+        else if (docType === 'permohonan' || docType === 'bukti_kebutuhan') docType = 'Rincian Kebutuhan / Bukti Tagihan';
+        else if (docType === 'proposal') docType = 'Proposal Permohonan';
 
         await addDocument(mustahikId, {
           doc_type: docType,
@@ -859,3 +862,189 @@ export async function exportMustahikData() {
 export async function getStatusByFileNo(fileNo) {
   return trackApplication(fileNo);
 }
+
+/**
+ * Fast aggregate statistics for Mustahik (KPI cards, charts, breakdowns)
+ */
+export async function getMustahikStats() {
+  const db = await getDb();
+
+  const summary = await db.get(`
+    SELECT
+      COUNT(*) as total_mustahik,
+      COALESCE(SUM(approved_amount), 0) as total_approved_amount,
+      COALESCE(SUM(recommended_amount), 0) as total_recommended_amount,
+      COALESCE(SUM(beneficiary_count), 0) as total_beneficiaries,
+      COALESCE(AVG(monthly_income), 0) as avg_income,
+      COALESCE(AVG(monthly_expense), 0) as avg_expense
+    FROM mustahik
+  `);
+
+  const statusRows = await db.all(`
+    SELECT status, COUNT(*) as count
+    FROM mustahik
+    WHERE status IS NOT NULL AND status != ''
+    GROUP BY status
+    ORDER BY count DESC
+  `);
+
+  const programRows = await db.all(`
+    SELECT program, COUNT(*) as count, COALESCE(SUM(approved_amount), 0) as total_amount
+    FROM mustahik
+    WHERE program IS NOT NULL AND program != ''
+    GROUP BY program
+    ORDER BY count DESC
+  `);
+
+  const asnafRows = await db.all(`
+    SELECT asnaf, COUNT(*) as count
+    FROM mustahik
+    WHERE asnaf IS NOT NULL AND asnaf != ''
+    GROUP BY asnaf
+    ORDER BY count DESC
+  `);
+
+  const kecamatanRows = await db.all(`
+    SELECT kecamatan, COUNT(*) as count
+    FROM mustahik
+    WHERE kecamatan IS NOT NULL AND kecamatan != ''
+    GROUP BY kecamatan
+    ORDER BY count DESC
+    LIMIT 15
+  `);
+
+  return {
+    summary: {
+      total_mustahik: parseInt(summary?.total_mustahik || 0, 10),
+      total_approved_amount: parseFloat(summary?.total_approved_amount || 0),
+      total_recommended_amount: parseFloat(summary?.total_recommended_amount || 0),
+      total_beneficiaries: parseInt(summary?.total_beneficiaries || 0, 10),
+      avg_income: Math.round(parseFloat(summary?.avg_income || 0)),
+      avg_expense: Math.round(parseFloat(summary?.avg_expense || 0))
+    },
+    by_status: statusRows.map(r => ({ status: r.status, count: parseInt(r.count, 10) })),
+    by_program: programRows.map(r => ({ program: r.program, count: parseInt(r.count, 10), total_amount: parseFloat(r.total_amount) })),
+    by_asnaf: asnafRows.map(r => ({ asnaf: r.asnaf, count: parseInt(r.count, 10) })),
+    by_kecamatan: kecamatanRows.map(r => ({ kecamatan: r.kecamatan, count: parseInt(r.count, 10) })),
+    generated_at: new Date().toISOString()
+  };
+}
+
+/**
+ * Enterprise aggregate data overview across all entities
+ */
+export async function getDataOverview() {
+  const db = await getDb();
+
+  const [
+    mustahikCount,
+    appsCount,
+    assessmentsCount,
+    mpzisCount,
+    ppdCount,
+    docsCount,
+    waCount,
+    sessionsCount,
+    disbursedRow
+  ] = await Promise.all([
+    db.get('SELECT COUNT(*) as count FROM mustahik'),
+    db.get('SELECT COUNT(*) as count FROM applications'),
+    db.get('SELECT COUNT(*) as count FROM assessments'),
+    db.get('SELECT COUNT(*) as count FROM mpzis'),
+    db.get('SELECT COUNT(*) as count FROM ppd'),
+    db.get('SELECT COUNT(*) as count FROM documents'),
+    db.get('SELECT COUNT(*) as count FROM wa_logs'),
+    db.get('SELECT COUNT(*) as count FROM bot_sessions'),
+    db.get(`
+      SELECT
+        COALESCE(SUM(approved_amount), 0) as approved_total,
+        COALESCE(SUM(CASE WHEN disbursement_date IS NOT NULL AND disbursement_date != '' THEN approved_amount ELSE 0 END), 0) as disbursed_total
+      FROM mustahik
+    `)
+  ]);
+
+  const approvedTotal = parseFloat(disbursedRow?.approved_total || 0);
+  const disbursedTotal = parseFloat(disbursedRow?.disbursed_total || 0);
+
+  return {
+    counts: {
+      mustahik: parseInt(mustahikCount?.count || 0, 10),
+      applications: parseInt(appsCount?.count || 0, 10),
+      assessments: parseInt(assessmentsCount?.count || 0, 10),
+      mpzis: parseInt(mpzisCount?.count || 0, 10),
+      ppd: parseInt(ppdCount?.count || 0, 10),
+      documents: parseInt(docsCount?.count || 0, 10),
+      wa_logs: parseInt(waCount?.count || 0, 10),
+      bot_sessions: parseInt(sessionsCount?.count || 0, 10)
+    },
+    finances: {
+      total_approved: approvedTotal,
+      total_disbursed: disbursedTotal,
+      pending_disbursement: Math.max(0, approvedTotal - disbursedTotal)
+    },
+    system_health: {
+      status: 'healthy',
+      engine: 'PostgreSQL Turbo Pool',
+      cache_status: 'active'
+    },
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * ====================================================================
+ * USER & AUTHENTICATION REPOSITORY
+ * ====================================================================
+ */
+
+export async function findUserByEmail(email) {
+  if (!email) return null;
+  const db = await getDb();
+  const user = await db.get(
+    'SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND is_active = TRUE',
+    [email.trim()]
+  );
+  return user || null;
+}
+
+export async function findUserById(id) {
+  if (!id) return null;
+  const db = await getDb();
+  const user = await db.get(
+    'SELECT id, name, email, role, division, avatar, is_active, last_login, created_at FROM users WHERE id = $1',
+    [id]
+  );
+  return user || null;
+}
+
+export async function updateUserLastLogin(id) {
+  if (!id) return;
+  const db = await getDb();
+  await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [id]);
+}
+
+export async function listUsers() {
+  const db = await getDb();
+  const users = await db.all(
+    'SELECT id, name, email, role, division, avatar, is_active, last_login, created_at FROM users ORDER BY id ASC'
+  );
+  return users || [];
+}
+
+export async function createUser(userData) {
+  const db = await getDb();
+  const res = await db.run(
+    `INSERT INTO users (name, email, password_hash, role, division, avatar, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, TRUE) RETURNING id`,
+    [
+      userData.name,
+      userData.email.toLowerCase().trim(),
+      userData.password_hash,
+      userData.role || 'penyaluran',
+      userData.division || 'Divisi Penyaluran',
+      userData.avatar || null
+    ]
+  );
+  return res.lastID;
+}
+

@@ -180,8 +180,12 @@ html, body {
 
 #root {
   display: flex;
+  flex-direction: column;
   width: 100%;
+  min-width: 100%;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   text-align: left;
   border: none;
 }
@@ -208,6 +212,11 @@ body {
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes portal-bar {
+  0% { left: -50%; }
+  100% { left: 100%; }
 }
 
 @keyframes pulse-soft {

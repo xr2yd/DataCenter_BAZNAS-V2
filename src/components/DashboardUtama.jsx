@@ -10,11 +10,11 @@ import QuickMenu from './QuickMenu';
 import Announcements from './Announcements';
 import { WalletIcon, HandHeartIcon, CoinsIcon, PeopleIcon } from './icons';
 
-export default function DashboardUtama() {
+export default function DashboardUtama({ currentUser, onNavigate }) {
   return (
     <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5 sm:space-y-6 md:space-y-8">
       {/* Row 1: Welcome Banner */}
-      <WelcomeBanner />
+      <WelcomeBanner currentUser={currentUser} />
 
       {/* Row 2: Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
@@ -91,7 +91,7 @@ export default function DashboardUtama() {
           </div>
         </div>
         <div className="flex flex-col gap-3 sm:gap-4">
-          <QuickMenu />
+          <QuickMenu onNavigate={onNavigate} />
           <Announcements />
         </div>
       </div>

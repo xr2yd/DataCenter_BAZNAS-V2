@@ -1,9 +1,21 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:3001/api');
+
+function getAuthToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('baznas_auth_token');
+}
 
 async function fetchJson(url, options = {}) {
+  const token = getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {})
+  };
+
   const response = await fetch(`${API_URL}${url}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
+    headers,
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({ message: 'Network error' }));
@@ -13,11 +25,16 @@ async function fetchJson(url, options = {}) {
 }
 
 export const api = {
+  // Authentication Methods
+  login: (credentials) => fetchJson('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  getMe: () => fetchJson('/auth/me'),
+  logout: () => fetchJson('/auth/logout', { method: 'POST' }),
+  listUsers: () => fetchJson('/auth/users'),
   // Public Portal Methods
   submitPublicApplication: async (formData) => {
     // If formData is an instance of FormData, send as multipart/form-data
     if (formData instanceof FormData) {
-      const response = await fetch(`${API_URL}/mustahik`, {
+      const response = await fetch(`${API_URL}/public/pengajuan`, {
         method: 'POST',
         body: formData,
       });
@@ -27,7 +44,7 @@ export const api = {
       }
       return response.json();
     }
-    return fetchJson('/mustahik', { method: 'POST', body: JSON.stringify(formData) });
+    return fetchJson('/public/pengajuan', { method: 'POST', body: JSON.stringify(formData) });
   },
 
   trackApplication: async (query) => {

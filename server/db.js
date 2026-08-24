@@ -1,7 +1,10 @@
 import pg from 'pg';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
 
 const { Pool } = pg;
 
@@ -76,7 +79,15 @@ export const MUSTAHIK_COLUMNS = [
 
 let poolInstance = null;
 let dbWrapper = null;
+let isPgActive = false;
 
+/**
+ * Returns optimized PostgreSQL Connection Pool instance
+ * Configured with:
+ * - max: 20 connection pool limit
+ * - idleTimeoutMillis: 30000 (30 seconds)
+ * - connectionTimeoutMillis: 5000 (5 seconds fast-fail)
+ */
 export function getPool() {
   if (!poolInstance) {
     const connectionConfig = process.env.DATABASE_URL
@@ -103,53 +114,65 @@ export function getPool() {
     });
 
     poolInstance.on('error', (err) => {
-      console.error('Unexpected error on idle PostgreSQL client:', err.message);
+      console.error('Unexpected error on idle PostgreSQL client pool:', err.message);
     });
   }
   return poolInstance;
 }
 
 /**
+ * Helper to adapt PostgreSQL queries ($1, $2, RETURNING, ILIKE) for SQLite fallback
+ */
+function adaptSqlForSqlite(sql) {
+  let adapted = sql;
+  adapted = adapted.replace(/ILIKE/gi, 'LIKE');
+  adapted = adapted.replace(/\$([0-9]+)/g, '?');
+  adapted = adapted.replace(/\s+RETURNING\s+[\w\s,*()]+/gi, '');
+  adapted = adapted.replace(/SERIAL\s+PRIMARY\s+KEY/gi, 'INTEGER PRIMARY KEY AUTOINCREMENT');
+  adapted = adapted.replace(/TIMESTAMP\s+WITH\s+TIME\s+ZONE/gi, 'TIMESTAMP');
+  adapted = adapted.replace(/TIMESTAMPTZ/gi, 'TIMESTAMP');
+  adapted = adapted.replace(/JSONB/gi, 'TEXT');
+  adapted = adapted.replace(/::jsonb/gi, '');
+  return adapted;
+}
+
+/**
  * Provides a database adapter with SQLite-compatible method ergonomics
- * (get, all, run, query, exec) powered 100% by PostgreSQL.
+ * (get, all, run, query, exec) powered by PostgreSQL Pool with resilient local fallback.
  */
 export async function getDb() {
-  if (!dbWrapper) {
-    const pool = getPool();
+  if (dbWrapper) return dbWrapper;
+
+  const pool = getPool();
+
+  try {
+    // Probe PostgreSQL connection with timeout
+    const testClient = await pool.connect();
+    testClient.release();
+    isPgActive = true;
+    console.log('⚡ Connected to PostgreSQL Database Engine (Pool max: 20, idle: 30s)');
 
     dbWrapper = {
+      isPg: true,
       pool,
 
-      /**
-       * Execute standard PostgreSQL query
-       */
       async query(text, params = []) {
         const normalizedParams = Array.isArray(params) ? params : [params];
         return pool.query(text, normalizedParams);
       },
 
-      /**
-       * Get single row (returns first row or null)
-       */
       async get(text, params = []) {
         const normalizedParams = Array.isArray(params) ? params : [params];
         const res = await pool.query(text, normalizedParams);
         return res.rows && res.rows.length > 0 ? res.rows[0] : null;
       },
 
-      /**
-       * Get all rows as array
-       */
       async all(text, params = []) {
         const normalizedParams = Array.isArray(params) ? params : [params];
         const res = await pool.query(text, normalizedParams);
         return res.rows || [];
       },
 
-      /**
-       * Run INSERT / UPDATE / DELETE statement.
-       * If query includes RETURNING clause, lastID is populated from res.rows[0].id or res.rows[0].chat_id.
-       */
       async run(text, params = []) {
         const normalizedParams = Array.isArray(params) ? params : [params];
         const res = await pool.query(text, normalizedParams);
@@ -163,14 +186,71 @@ export async function getDb() {
         };
       },
 
-      /**
-       * Execute multi-statement SQL text
-       */
       async exec(sql) {
         return pool.query(sql);
       }
     };
+  } catch (pgErr) {
+    console.warn(`⚠️ PostgreSQL unavailable (${pgErr.message}), activating high-speed SQLite adapter engine...`);
+    const sqlitePath = path.resolve(__dirname, 'baznas_demo.db');
+    const sqliteDb = await open({
+      filename: sqlitePath,
+      driver: sqlite3.Database
+    });
+
+    dbWrapper = {
+      isPg: false,
+      pool: null,
+      sqliteDb,
+
+      async query(text, params = []) {
+        const adapted = adaptSqlForSqlite(text);
+        const normalizedParams = Array.isArray(params) ? params : [params];
+        const rows = await sqliteDb.all(adapted, normalizedParams);
+        return { rows, rowCount: rows.length };
+      },
+
+      async get(text, params = []) {
+        const adapted = adaptSqlForSqlite(text);
+        const normalizedParams = Array.isArray(params) ? params : [params];
+        return sqliteDb.get(adapted, normalizedParams);
+      },
+
+      async all(text, params = []) {
+        const adapted = adaptSqlForSqlite(text);
+        const normalizedParams = Array.isArray(params) ? params : [params];
+        return sqliteDb.all(adapted, normalizedParams);
+      },
+
+      async run(text, params = []) {
+        const adapted = adaptSqlForSqlite(text);
+        const normalizedParams = Array.isArray(params) ? params : [params];
+        const res = await sqliteDb.run(adapted, normalizedParams);
+        return {
+          lastID: res.lastID,
+          rowCount: res.changes,
+          rows: []
+        };
+      },
+
+      async exec(sql) {
+        const statements = sql
+          .split(';')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        for (const stmt of statements) {
+          const adapted = adaptSqlForSqlite(stmt);
+          try {
+            await sqliteDb.exec(adapted);
+          } catch (e) {
+            // Ignore index or column exists notices
+          }
+        }
+      }
+    };
   }
+
   return dbWrapper;
 }
 
@@ -349,10 +429,31 @@ export async function initDb() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'penyaluran',
+        division VARCHAR(100) DEFAULT 'Divisi Penyaluran',
+        avatar VARCHAR(255),
+        is_active BOOLEAN DEFAULT TRUE,
+        last_login TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_mustahik_file_no ON mustahik(file_no);
       CREATE INDEX IF NOT EXISTS idx_mustahik_nik ON mustahik(nik);
       CREATE INDEX IF NOT EXISTS idx_mustahik_phone ON mustahik(phone);
       CREATE INDEX IF NOT EXISTS idx_mustahik_status ON mustahik(status);
+      CREATE INDEX IF NOT EXISTS idx_mustahik_program ON mustahik(program);
+      CREATE INDEX IF NOT EXISTS idx_mustahik_received_date ON mustahik(received_date);
+      CREATE INDEX IF NOT EXISTS idx_mustahik_kecamatan ON mustahik(kecamatan);
+      CREATE INDEX IF NOT EXISTS idx_mustahik_created_at ON mustahik(created_at);
+      CREATE INDEX IF NOT EXISTS idx_mustahik_asnaf ON mustahik(asnaf);
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
       CREATE INDEX IF NOT EXISTS idx_applications_mustahik ON applications(mustahik_id);
       CREATE INDEX IF NOT EXISTS idx_assessments_mustahik ON assessments(mustahik_id);
       CREATE INDEX IF NOT EXISTS idx_mpzis_mustahik ON mpzis(mustahik_id);
@@ -361,7 +462,149 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_wa_logs_mustahik ON wa_logs(mustahik_id);
     `);
 
+    // Ensure all 60 columns exist in mustahik (schema evolution)
+    try {
+      let existingCols = [];
+      if (db.isPg) {
+        const colRes = await db.all(`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'mustahik'
+        `);
+        existingCols = colRes.map(r => r.column_name.toLowerCase());
+      } else {
+        const colRes = await db.all(`PRAGMA table_info(mustahik)`);
+        existingCols = colRes.map(r => r.name.toLowerCase());
+      }
+
+      for (const col of MUSTAHIK_COLUMNS) {
+        if (col.name === 'id') continue;
+        if (!existingCols.includes(col.name.toLowerCase())) {
+          let colDef = col.type;
+          if (!db.isPg) {
+            colDef = adaptSqlForSqlite(colDef);
+          }
+          try {
+            await db.exec(`ALTER TABLE mustahik ADD COLUMN ${col.name} ${colDef}`);
+          } catch (e) {
+            // Ignore if added concurrently
+          }
+        }
+      }
+
+      // Ensure all fields exist on relation tables (schema evolution)
+      const tableSchemas = {
+        ppd: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'application_id', type: 'INTEGER' },
+          { name: 'form_number', type: 'VARCHAR(100)' },
+          { name: 'ppd_number', type: 'VARCHAR(100)' },
+          { name: 'transaction_number', type: 'VARCHAR(100)' },
+          { name: 'requester_name', type: 'VARCHAR(255)' },
+          { name: 'requester_role', type: 'VARCHAR(255)' },
+          { name: 'requester_department', type: 'VARCHAR(255)' },
+          { name: 'amount', type: 'NUMERIC' },
+          { name: 'amount_in_words', type: 'TEXT' },
+          { name: 'purpose', type: 'TEXT' },
+          { name: 'fund_source', type: 'TEXT' },
+          { name: 'bank_account_info', type: 'TEXT' },
+          { name: 'payment_type', type: 'VARCHAR(100)' },
+          { name: 'disbursement_date', type: 'VARCHAR(50)' },
+        ],
+        mpzis: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'application_id', type: 'INTEGER' },
+          { name: 'form_number', type: 'VARCHAR(100)' },
+          { name: 'mpzis_date', type: 'VARCHAR(50)' },
+          { name: 'program_classification', type: 'VARCHAR(100)' },
+          { name: 'purpose', type: 'TEXT' },
+          { name: 'asnaf', type: 'VARCHAR(100)' },
+          { name: 'fund_source', type: 'VARCHAR(100)' },
+          { name: 'recipient_name', type: 'VARCHAR(255)' },
+          { name: 'recipient_type', type: 'VARCHAR(100)' },
+          { name: 'beneficiary_count', type: 'INTEGER' },
+          { name: 'total_amount', type: 'NUMERIC' },
+          { name: 'proposed_by', type: 'VARCHAR(255)' },
+          { name: 'examined_by', type: 'VARCHAR(255)' },
+          { name: 'ashnaf_verifier', type: 'VARCHAR(255)' },
+          { name: 'responsible', type: 'VARCHAR(255)' },
+          { name: 'approved_by', type: 'VARCHAR(255)' },
+        ],
+        assessments: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'application_id', type: 'INTEGER' },
+          { name: 'surveyor_name', type: 'VARCHAR(255)' },
+          { name: 'surveyor_phone', type: 'VARCHAR(50)' },
+          { name: 'survey_date', type: 'VARCHAR(50)' },
+          { name: 'survey_method', type: 'VARCHAR(100)' },
+          { name: 'narrative_family', type: 'TEXT' },
+          { name: 'narrative_income', type: 'TEXT' },
+          { name: 'narrative_request', type: 'TEXT' },
+          { name: 'narrative_conclusion', type: 'TEXT' },
+          { name: 'house_index', type: 'INTEGER' },
+          { name: 'asset_index', type: 'INTEGER' },
+          { name: 'income_index', type: 'INTEGER' },
+          { name: 'spiritual_score', type: 'INTEGER' },
+          { name: 'overall_score', type: 'NUMERIC' },
+          { name: 'priority', type: 'VARCHAR(50)' },
+          { name: 'recommendation', type: 'TEXT' },
+          { name: 'notes', type: 'TEXT' },
+          { name: 'photos', type: 'TEXT' },
+        ],
+        applications: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'application_number', type: 'VARCHAR(100)' },
+          { name: 'program', type: 'VARCHAR(100)' },
+          { name: 'request_title', type: 'TEXT' },
+          { name: 'status', type: 'VARCHAR(100)' },
+          { name: 'notes', type: 'TEXT' },
+          { name: 'rejection_reason', type: 'TEXT' },
+        ],
+        documents: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'doc_type', type: 'VARCHAR(100)' },
+          { name: 'filename', type: 'VARCHAR(255)' },
+          { name: 'original_name', type: 'VARCHAR(255)' },
+          { name: 'file_url', type: 'TEXT' },
+        ],
+        wa_logs: [
+          { name: 'mustahik_id', type: 'INTEGER' },
+          { name: 'phone', type: 'VARCHAR(50)' },
+          { name: 'phase', type: 'VARCHAR(100)' },
+          { name: 'message', type: 'TEXT' },
+          { name: 'wa_url', type: 'TEXT' },
+          { name: 'status', type: 'VARCHAR(50)' },
+        ],
+        bot_sessions: [
+          { name: 'state', type: 'VARCHAR(50)' },
+          { name: 'temp_data', type: 'TEXT' },
+        ]
+      };
+
+      for (const [table, colDefs] of Object.entries(tableSchemas)) {
+        let cols = [];
+        if (db.isPg) {
+          const colRes = await db.all(`SELECT column_name FROM information_schema.columns WHERE table_name = $1`, [table]);
+          cols = colRes.map(r => r.column_name.toLowerCase());
+        } else {
+          const colRes = await db.all(`PRAGMA table_info(${table})`);
+          cols = colRes.map(r => r.name.toLowerCase());
+        }
+
+        for (const col of colDefs) {
+          if (!cols.includes(col.name.toLowerCase())) {
+            let colType = col.type;
+            if (!db.isPg) colType = adaptSqlForSqlite(colType);
+            try {
+              await db.exec(`ALTER TABLE ${table} ADD COLUMN ${col.name} ${colType}`);
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (colErr) {
+      console.warn('Column sync notice:', colErr.message);
+    }
+
     await seedDataIfEmpty(db);
+    await seedDefaultUsers(db);
     return db;
   } catch (err) {
     console.error('Database initialization notice/error:', err.message);
@@ -525,3 +768,60 @@ async function seedDataIfEmpty(db) {
     console.warn('Seeding notice (non-fatal):', err.message);
   }
 }
+
+export async function seedDefaultUsers(db) {
+  try {
+    const userCount = await db.get('SELECT COUNT(*) as cnt FROM users');
+    const cnt = userCount ? parseInt(userCount.cnt || userCount.count || 0, 10) : 0;
+    if (cnt > 0) return;
+
+    console.log('Seeding default BAZNAS role accounts...');
+    const defaultAccounts = [
+      {
+        name: 'Ahmad Naufal, S.E.I',
+        email: 'admin@baznas.go.id',
+        password: 'admin123',
+        role: 'admin',
+        division: 'Pimpinan & Super Admin',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      },
+      {
+        name: 'H. Rahmat Hidayat (Kabid Penyaluran)',
+        email: 'penyaluran@baznas.go.id',
+        password: 'penyaluran123',
+        role: 'penyaluran',
+        division: 'Bidang Pendistribusian & Pendayagunaan',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      },
+      {
+        name: 'Siti Rahmah, M.E (Kabid Penerimaan)',
+        email: 'penerimaan@baznas.go.id',
+        password: 'penerimaan123',
+        role: 'penerimaan',
+        division: 'Bidang Pengumpulan & ZIS',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      },
+      {
+        name: 'Bambang Irawan (Surveyor BAZNAS)',
+        email: 'surveyor@baznas.go.id',
+        password: 'surveyor123',
+        role: 'surveyor',
+        division: 'Tim Asesmen & Survey Lapangan',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+      },
+    ];
+
+    for (const acc of defaultAccounts) {
+      const passwordHash = await bcrypt.hash(acc.password, 10);
+      await db.run(
+        `INSERT INTO users (name, email, password_hash, role, division, avatar, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, TRUE)`,
+        [acc.name, acc.email, passwordHash, acc.role, acc.division, acc.avatar]
+      );
+    }
+    console.log('Default BAZNAS role accounts successfully seeded.');
+  } catch (err) {
+    console.warn('User seeding notice (non-fatal):', err.message);
+  }
+}
+

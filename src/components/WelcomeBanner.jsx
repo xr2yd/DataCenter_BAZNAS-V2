@@ -9,7 +9,16 @@ const formatCompact = (num) => {
   return num.toLocaleString('id-ID');
 };
 
-export default function WelcomeBanner() {
+export default function WelcomeBanner({ currentUser }) {
+  let user = currentUser;
+  if (!user && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('baznas_auth_user');
+      if (stored) user = JSON.parse(stored);
+    } catch (e) {}
+  }
+  const userName = user?.name || 'Ahmad Naufal';
+
   const greeting = getGreeting();
   const date = getFormattedDate();
   const hijri = getHijriDate();
@@ -42,7 +51,7 @@ export default function WelcomeBanner() {
               {date}
             </p>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mt-1 leading-tight">
-              {greeting}, <span className="text-amber-300 whitespace-nowrap">Ahmad Naufal</span>
+              {greeting}, <span className="text-amber-300 whitespace-nowrap">{userName}</span>
             </h1>
             <p className="text-emerald-100/70 text-[11px] sm:text-sm mt-1.5 flex items-center gap-2 flex-wrap">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
