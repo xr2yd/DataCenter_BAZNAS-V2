@@ -21,6 +21,7 @@ import {
   X,
   ClipboardList,
   Printer,
+  Compass,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -43,18 +44,18 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
-  const userName = currentUser?.name || 'Ahmad Naufal';
-  const userDivision = currentUser?.division || 'Divisi Penyaluran';
-  const userEmail = currentUser?.email || 'admin@baznas.go.id';
-  const userRole = currentUser?.role || 'admin';
-  const initials = userName
+  const userName = currentUser?.name || 'Amil BAZNAS';
+  const userRole = currentUser?.role || 'penyaluran';
+  const userDivision = currentUser?.division || 'Bidang Penyaluran & Pendistribusian';
+
+  const userInitials = userName
     .split(' ')
     .slice(0, 2)
     .map((n) => n[0])
     .join('')
     .toUpperCase();
 
-  // Define Top-Level Menus (Strictly Maximum 5 Items per Role with Dropdown Groups)
+  // Define Top-Level Menus (Strictly Maximum 5 Items per Role)
   const getNavItems = () => {
     if (userRole === 'penyaluran' || userRole === 'surveyor') {
       return [
@@ -73,16 +74,18 @@ export default function Navbar({
           type: 'link',
         },
         {
-          id: 'penyaluran_group',
-          label: 'Penyaluran',
-          icon: HeartHandshake,
-          type: 'dropdown',
-          activeKeys: ['penyaluran', 'program_bantuan', 'laporan_penyaluran', 'portal'],
-          items: [
-            { label: 'Program Bantuan 5 Pilar', page: 'program_bantuan', icon: ClipboardList, desc: 'Pendidikan, Kesehatan, Ekonomi, Dakwah, Kemanusiaan' },
-            { label: 'Laporan & LPJ Penyaluran', page: 'laporan_penyaluran', icon: FileText, desc: 'Rekapitulasi distribusi & export data' },
-            { label: 'Portal Publik Mustahik', page: 'portal', icon: Globe, desc: 'Preview portal permohonan publik online' },
-          ],
+          id: 'program_bantuan',
+          label: 'Program 5 Pilar',
+          icon: ClipboardList,
+          page: 'program_bantuan',
+          type: 'link',
+        },
+        {
+          id: 'peta_sebaran',
+          label: 'Peta Sebaran (GIS)',
+          icon: Compass,
+          page: 'peta_sebaran',
+          type: 'link',
         },
         {
           id: 'export_pdf',
@@ -90,13 +93,6 @@ export default function Navbar({
           icon: Printer,
           type: 'action',
           action: () => setShowExportModal(true),
-        },
-        {
-          id: 'ai_tools',
-          label: 'AI Data Entry',
-          icon: Bot,
-          page: 'ai_entry',
-          type: 'link',
         },
       ];
     }

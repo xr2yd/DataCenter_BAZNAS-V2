@@ -24,6 +24,7 @@ const PegawaiPage = lazy(() => import('./components/PegawaiPage'));
 const AbsensiPage = lazy(() => import('./components/AbsensiPage'));
 const KinerjaPage = lazy(() => import('./components/KinerjaPage'));
 const AIDataEntryPage = lazy(() => import('./components/AIDataEntryPage'));
+const PetaSebaranPage = lazy(() => import('./components/PetaSebaranPage'));
 
 function PageFallbackSkeleton() {
   return (
@@ -216,6 +217,7 @@ function App() {
             {activePage === 'muzakki' && <MuzakkiPage onNavigate={setActivePage} />}
             {activePage === 'mustahik' && <MustahikPage onNavigate={setActivePage} />}
             {activePage === 'program_bantuan' && <ProgramBantuanPage onNavigate={setActivePage} />}
+            {activePage === 'peta_sebaran' && <PetaSebaranPage onNavigate={setActivePage} />}
             {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage onNavigate={setActivePage} />}
             {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage onNavigate={setActivePage} />}
             {activePage === 'data_upz' && <UPZPage onNavigate={setActivePage} />}
@@ -229,7 +231,7 @@ function App() {
             {activePage === 'absensi' && <AbsensiPage onNavigate={setActivePage} />}
             {activePage === 'kinerja' && <KinerjaPage onNavigate={setActivePage} />}
             {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={setActivePage} />}
-            {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
+            {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'peta_sebaran', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
               <div className="flex flex-col items-center justify-center min-h-[400px] gap-2 text-center">
                 <h2 className="text-lg font-bold text-foreground">Halaman Belum Tersedia</h2>
                 <p className="text-xs text-muted-foreground">Modul "{activePage}" sedang dalam tahap pengembangan.</p>
