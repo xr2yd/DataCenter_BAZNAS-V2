@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -311,7 +310,10 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
                     tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                     tickFormatter={(val) => `${(val / 1_000_000_000).toFixed(0)}M`}
                   />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatRupiah(v)} />} />
+                  <Tooltip 
+                    formatter={(v) => [formatRupiah(v), '']} 
+                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.5rem', fontSize: '11px' }}
+                  />
                   <Bar dataKey="pendidikan" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="kesehatan" stackId="a" fill="#059669" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="sosial" stackId="a" fill="#e11d48" radius={[0, 0, 0, 0]} />
@@ -359,7 +361,10 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatRupiah(v)} />} />
+                  <Tooltip 
+                    formatter={(v) => [formatRupiah(v), '']} 
+                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.5rem', fontSize: '11px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
