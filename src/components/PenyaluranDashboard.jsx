@@ -1,26 +1,30 @@
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
-import StatCard from './StatCard';
+import { Badge } from '@/components/ui/badge';
 import {
-  HandHeartIcon,
-  CalendarIcon,
-  UsersIcon,
-  TrendingUpIcon,
-  WalletIcon,
   Search,
   Plus,
   Download,
   CheckCircle2,
   X,
-  HeartHandshake,
-  Wallet,
-  GraduationCap,
+  Users,
   TrendingUp,
+  ArrowUpRight,
+  Printer,
+  Calendar,
+  Layers,
+  Sparkles,
+  DollarSign,
+  Compass,
+  ArrowRight,
+  ShieldCheck,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
 import {
   PENYALURAN_METRICS,
@@ -32,9 +36,8 @@ import {
 } from '../data/penerimaanData';
 import { getGreeting, getFormattedDate, getHijriDate } from '../data/dashboardData';
 import { formatRupiah, formatRupiahChart } from '../utils/format';
-import useCountUp from '../hooks/useCountUp';
 
-const programChartConfig = {
+const PILAR_CONFIG = {
   pendidikan: { label: 'Tangerang Cerdas', color: '#2563eb' },
   kesehatan: { label: 'Tangerang Sehat', color: '#059669' },
   sosial: { label: 'Tangerang Peduli', color: '#e11d48' },
@@ -48,12 +51,6 @@ const periods = [
   { label: '3 Bulan', months: 3 },
 ];
 
-const statusStyles = {
-  Disalurkan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400',
-  Diproses: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
-  Gagal: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400',
-};
-
 export default function PenyaluranDashboard({ currentUser, onNavigate }) {
   let user = currentUser;
   if (!user && typeof window !== 'undefined') {
@@ -62,7 +59,7 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
       if (stored) user = JSON.parse(stored);
     } catch (e) {}
   }
-  const userName = user?.name || 'H. Rahmat Hidayat, S.Sos.';
+  const userName = user?.name || 'Amil Penyaluran';
   const greeting = getGreeting();
   const date = getFormattedDate();
   const hijri = getHijriDate();
@@ -71,7 +68,6 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
   const monthsToShow = periods[period].months;
   const chartData = PENYALURAN_CHART_12M.slice(-monthsToShow);
 
-  // Dynamic state for distribution transactions
   const [transactions, setTransactions] = useState(PENYALURAN_TRANSACTIONS);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showAllSheet, setShowAllSheet] = useState(false);
@@ -83,21 +79,18 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
   const [formAmount, setFormAmount] = useState('');
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Search & Filter states for Lihat Semua
+  // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProgram, setFilterProgram] = useState('Semua');
 
   // Custom Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4000);
+  const [toast, setToast] = useState({ show: false, message: '' });
+  const showToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: '' }), 4000);
   };
 
-  // Recalculate metrics based on transactions
+  // Metrics calculation
   const metrics = useMemo(() => {
     const addedAmount = transactions.slice(PENYALURAN_TRANSACTIONS.length).reduce((sum, trx) => sum + trx.amount, 0);
     const totalPenyaluran = PENYALURAN_METRICS.totalPenyaluran + addedAmount;
@@ -112,16 +105,7 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
     };
   }, [transactions]);
 
-
-
-  const animatedTotal = useCountUp(metrics.totalPenyaluran, 1500, '', '', true);
-  const animatedMonthly = useCountUp(metrics.penyaluranBulanIni, 1200, '', '', true);
-  const animatedMustahik = useCountUp(metrics.totalMustahik, 1500, '', '', true);
-  const animatedEfektivitas = useCountUp(metrics.efektivitasPenyaluran, 1000, '', '%');
-  const animatedBalance = useCountUp(metrics.balance, 1500, '', '', true);
-
   const totalByAsnaf = useMemo(() => {
-    // Dynamic recalculation of Asnaf chart
     const baseObj = {
       'Fakir': ASNAF_DISTRIBUTION[0].value,
       'Miskin': ASNAF_DISTRIBUTION[1].value,
@@ -157,7 +141,7 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
   const handleAddSubmit = (e) => {
     e.preventDefault();
     if (!formMustahik || !formAmount) {
-      showToast('Harap isi semua kolom input!', 'error');
+      alert('Harap isi semua kolom input!');
       return;
     }
 
@@ -174,21 +158,10 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
     setShowAddSheet(false);
     showToast(`Penyaluran dana ke ${formMustahik} berhasil dicatat!`);
 
-    // Reset Form
     setFormMustahik('');
     setFormAmount('');
-    setFormProgram('Tangerang Cerdas');
-    setFormAsnaf('Miskin');
   };
 
-  const handleExportPDF = () => {
-    showToast('Mengekspor laporan penyaluran ke format PDF...');
-    setTimeout(() => {
-      showToast('Laporan PDF Penyaluran Berhasil diunduh!', 'success');
-    }, 2000);
-  };
-
-  // Filtered transactions for the Detail sheet
   const filteredTransactions = useMemo(() => {
     return transactions.filter((trx) => {
       const matchSearch = trx.mustahik.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -200,443 +173,364 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
   }, [transactions, searchTerm, filterProgram]);
 
   return (
-    <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5 sm:space-y-6 md:space-y-8 relative">
-      
-      {/* Toast Notification */}
+    <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5">
+      {/* Toast */}
       {toast.show && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-card border border-border shadow-2xl rounded-xl p-4 animate-fade-in pr-10 min-w-[300px]">
-          <CheckCircle2 className={`size-5 shrink-0 ${toast.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`} />
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-semibold text-foreground">
-              {toast.type === 'success' ? 'Berhasil' : 'Pemberitahuan'}
-            </span>
-            <span className="text-[11px] text-muted-foreground">{toast.message}</span>
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 bg-card border border-border shadow-2xl rounded-xl p-3.5 animate-fade-in pr-10 min-w-[320px]">
+          <CheckCircle2 className="size-4.5 text-emerald-600 shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold text-foreground">Pemberitahuan</p>
+            <p className="text-muted-foreground">{toast.message}</p>
           </div>
-          <button 
-            onClick={() => setToast(prev => ({ ...prev, show: false }))}
-            className="absolute top-2 right-2 text-muted-foreground/60 hover:text-foreground"
-          >
+          <button onClick={() => setToast({ show: false, message: '' })} className="absolute top-2.5 right-2.5 text-muted-foreground hover:text-foreground cursor-pointer">
             <X className="size-3.5" />
           </button>
         </div>
       )}
 
-      {/* Row 1: Welcome Banner Khusus Divisi Penyaluran */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 via-emerald-800 to-teal-700 text-white animate-slide-down shadow-md">
-        {/* Geometric pattern overlay */}
-        <div className="absolute inset-0 bg-geometric opacity-40 pointer-events-none" />
-
-        {/* Decorative gold accent line */}
-        <div className="absolute top-0 left-8 right-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-
-        {/* Content */}
-        <div className="relative px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 lg:px-10">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6">
-            {/* Left: Dynamic Greeting */}
-            <div className="min-w-0">
-              <p className="text-emerald-100/80 text-[11px] sm:text-xs font-medium tracking-wide truncate">
-                {date}
-              </p>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mt-1 leading-tight">
-                {greeting}, <span className="text-amber-300 whitespace-nowrap">{userName}</span>
-              </h1>
-              <p className="text-emerald-100/75 text-[11px] sm:text-xs mt-1.5 flex items-center gap-2 flex-wrap">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
-                <span className="truncate">{hijri}</span>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/70 shrink-0" />
-                <span>Divisi Penyaluran & Pendistribusian BAZNAS Kota Tangerang</span>
-              </p>
-            </div>
-
-            {/* Right: Penyaluran Specific Stat Pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 shrink-0">
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
-                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300">
-                  <HeartHandshake className="size-4 shrink-0" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-emerald-100/70 font-medium">Mustahik</p>
-                  <p className="text-xs sm:text-sm font-bold text-white">{animatedMustahik}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300">
-                  <Wallet className="size-4 shrink-0" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-emerald-100/70 font-medium">Disalurkan</p>
-                  <p className="text-xs sm:text-sm font-bold text-amber-300">Rp 1,89 M</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
-                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300">
-                  <GraduationCap className="size-4 shrink-0" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-emerald-100/70 font-medium">5 Pilar</p>
-                  <p className="text-xs sm:text-sm font-bold text-white">5 Program</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/15 transition-all">
-                <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-300">
-                  <TrendingUp className="size-4 shrink-0" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-emerald-100/70 font-medium">Efektivitas</p>
-                  <p className="text-xs sm:text-sm font-bold text-emerald-300">92.4%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Page Title & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* 1. Header Command Strip (Linear Clean Aesthetic) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/80">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">Ikhtisar & Statistik Distribusi</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Pantau pendistribusian dana zakat, infak, dan sedekah kepada mustahik secara akurat
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+              Dashboard Penyaluran & Asesmen
+            </h1>
+            <Badge variant="outline" className="text-[10px] font-medium py-0 px-2 text-muted-foreground">
+              {hijri}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Selamat bekerja, <span className="font-semibold text-foreground">{userName}</span> • {date}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 cursor-pointer" onClick={handleExportPDF}>
-            <Download className="size-3.5" /> Export PDF
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs font-semibold rounded-lg cursor-pointer"
+            onClick={() => onNavigate && onNavigate('peta_sebaran')}
+          >
+            <Compass className="size-3.5 text-emerald-600 mr-1.5" /> Peta Sebaran 13 Kec.
           </Button>
-          <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 cursor-pointer" onClick={() => setShowAddSheet(true)}>
-            <Plus className="size-3.5" /> Catat Penyaluran
+
+          <Button
+            size="sm"
+            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-2xs cursor-pointer px-3"
+            onClick={() => onNavigate && onNavigate('mustahik')}
+          >
+            Data Mustahik <ArrowRight className="size-3.5 ml-1" />
           </Button>
         </div>
       </div>
 
-      {/* Row 1: KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-        <StatCard
-          icon={HandHeartIcon}
-          iconBg="#eff6ff"
-          iconColor="#3b82f6"
-          label="Total Penyaluran"
-          value={animatedTotal}
-          rawValue={metrics.totalPenyaluran}
-          change="8,7%"
-          delay={0}
-        />
-        <StatCard
-          icon={CalendarIcon}
-          iconBg="#ecfdf5"
-          iconColor="#059669"
-          label="Penyaluran Bulan Ini"
-          value={animatedMonthly}
-          rawValue={metrics.penyaluranBulanIni}
-          change="10,2%"
-          delay={100}
-        />
-        <StatCard
-          icon={UsersIcon}
-          iconBg="#f5f3ff"
-          iconColor="#7c3aed"
-          label="Total Mustahik"
-          value={animatedMustahik}
-          rawValue={metrics.totalMustahik}
-          change="9,1%"
-          delay={200}
-        />
-        <StatCard
-          icon={TrendingUpIcon}
-          iconBg="#f0fdfa"
-          iconColor="#14b8a6"
-          label="Tingkat Efektivitas"
-          value={`${animatedEfektivitas}%`}
-          rawValue={metrics.efektivitasPenyaluran}
-          change="Sangat Efektif"
-          delay={300}
-        />
-        <StatCard
-          icon={WalletIcon}
-          iconBg="#fffbeb"
-          iconColor="#d97706"
-          label="Saldo Tersedia"
-          value={animatedBalance}
-          rawValue={metrics.balance}
-          change="Sufficient"
-          trend="up"
-          delay={400}
-        />
+      {/* 2. High-Density Executive Metrics Strip */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-px bg-border rounded-xl overflow-hidden border border-border">
+        <div className="bg-card p-4 space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Total Penyaluran ZIS</p>
+          <p className="text-lg sm:text-xl font-bold font-mono tracking-tight text-foreground">
+            {formatRupiah(metrics.totalPenyaluran, true)}
+          </p>
+          <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+            <TrendingUp className="size-3" /> +12.4% vs tahun lalu
+          </div>
+        </div>
+
+        <div className="bg-card p-4 space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Penyaluran Bulan Ini</p>
+          <p className="text-lg sm:text-xl font-bold font-mono tracking-tight text-foreground">
+            {formatRupiah(metrics.penyaluranBulanIni, true)}
+          </p>
+          <p className="text-[10px] text-muted-foreground">87 Berkas Terealisasi</p>
+        </div>
+
+        <div className="bg-card p-4 space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Mustahik Terbantu</p>
+          <p className="text-lg sm:text-xl font-bold font-mono tracking-tight text-foreground">
+            {metrics.totalMustahik.toLocaleString('id-ID')}
+          </p>
+          <p className="text-[10px] text-emerald-600 font-medium">100% Terverifikasi</p>
+        </div>
+
+        <div className="bg-card p-4 space-y-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Efektivitas (SROI)</p>
+          <p className="text-lg sm:text-xl font-bold font-mono tracking-tight text-emerald-600">
+            {metrics.efektivitasPenyaluran}%
+          </p>
+          <p className="text-[10px] text-muted-foreground">Standar Nasional &gt;90%</p>
+        </div>
+
+        <div className="bg-card p-4 space-y-1 col-span-2 md:col-span-1">
+          <p className="text-[11px] font-medium text-muted-foreground">Sisa Alokasi Siap Salur</p>
+          <p className="text-lg sm:text-xl font-bold font-mono tracking-tight text-amber-600">
+            {formatRupiah(metrics.balance, true)}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Kas Penyaluran Aktif</p>
+        </div>
       </div>
 
-      {/* Row 2: Trend Chart + Distribusi Asnaf */}
-      <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-3 sm:gap-4">
-        {/* Trend Chart */}
-        <Card className="card-spotlight shadow-card transition-all-smooth hover:shadow-card-hover animate-fade-in-up">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold">Trend Penyaluran per Program</CardTitle>
-            <div className="flex gap-1">
+      {/* 3. Analytics Section: 5 Pilar Trend Chart & Asnaf Pie Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Trend Penyaluran 5 Pilar (7 Cols) */}
+        <Card className="lg:col-span-7 xl:col-span-8 shadow-2xs border-border rounded-xl">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0 border-b border-border/60">
+            <div>
+              <CardTitle className="text-xs font-bold text-foreground uppercase tracking-wider">
+                Tren Distribusi 5 Pilar BAZNAS
+              </CardTitle>
+              <p className="text-[11px] text-muted-foreground">Realisasi program per bulan (Rp Miliar)</p>
+            </div>
+
+            {/* Segmented Period Control */}
+            <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/60">
               {periods.map((p, idx) => (
-                <Button
+                <button
                   key={p.label}
-                  variant={idx === period ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-6 sm:h-7 text-[10px] sm:text-[11px] px-1.5 sm:px-2"
                   onClick={() => setPeriod(idx)}
+                  className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all cursor-pointer ${
+                    period === idx
+                      ? 'bg-card text-foreground shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 >
                   {p.label}
-                </Button>
+                </button>
               ))}
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[200px] sm:h-[260px] md:h-[300px] w-full">
-              <ChartContainer config={programChartConfig} className="h-full w-full">
-                <BarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                  <CartesianGrid stroke="var(--border)" vertical={false} strokeOpacity={0.5} />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
-                    dy={8}
-                    interval={monthsToShow > 6 ? 1 : 0}
-                  />
+
+          <CardContent className="p-4 pt-3">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 5, left: -15, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
                   <YAxis
-                    axisLine={false}
                     tickLine={false}
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
-                    tickFormatter={formatRupiahChart}
-                    width={45}
+                    axisLine={false}
+                    tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+                    tickFormatter={(val) => `${(val / 1_000_000_000).toFixed(0)}M`}
                   />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) =>
-                          new Intl.NumberFormat('id-ID', {
-                            style: 'currency',
-                            currency: 'IDR',
-                            maximumFractionDigits: 0,
-                          }).format(value)
-                        }
-                      />
-                    }
-                  />
-                  <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="left" />
-                  <Bar dataKey="pendidikan" stackId="a" fill="#2563eb" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="kesehatan" stackId="a" fill="#059669" />
-                  <Bar dataKey="sosial" stackId="a" fill="#e11d48" />
-                  <Bar dataKey="ekonomi" stackId="a" fill="#d97706" />
-                  <Bar dataKey="dakwah" stackId="a" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatRupiah(v)} />} />
+                  <Bar dataKey="pendidikan" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="kesehatan" stackId="a" fill="#059669" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="sosial" stackId="a" fill="#e11d48" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="ekonomi" stackId="a" fill="#d97706" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="dakwah" stackId="a" fill="#7c3aed" radius={[2, 2, 0, 0]} />
                 </BarChart>
-              </ChartContainer>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Clean Chart Legends */}
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-3 border-t border-border/60 text-[11px] text-muted-foreground">
+              {Object.entries(PILAR_CONFIG).map(([key, config]) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-xs" style={{ backgroundColor: config.color }} />
+                  <span>{config.label}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Distribusi Asnaf */}
-        <Card className="card-spotlight shadow-card transition-all-smooth hover:shadow-card-hover animate-fade-in-up">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold">Penyaluran per Asnaf</CardTitle>
+        {/* 8 Asnaf Distribution (5 Cols) */}
+        <Card className="lg:col-span-5 xl:col-span-4 shadow-2xs border-border rounded-xl flex flex-col justify-between">
+          <CardHeader className="p-4 pb-2 border-b border-border/60">
+            <CardTitle className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Alokasi 8 Golongan Asnaf
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground">Proporsi pembagian syariat penyaluran ZIS</p>
           </CardHeader>
-          <CardContent>
-            <div className="h-[220px] w-full relative">
-              <PieChart width={260} height={220} className="mx-auto">
-                <Pie
-                  data={totalByAsnaf}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="55%"
-                  outerRadius="85%"
-                  paddingAngle={2}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {totalByAsnaf.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
+
+          <CardContent className="p-4 pt-2 space-y-3 flex-1 flex flex-col justify-between">
+            <div className="h-44 w-full relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={totalByAsnaf}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={48}
+                    outerRadius={68}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {totalByAsnaf.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--card)" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatRupiah(v)} />} />
+                </PieChart>
+              </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-xs font-bold text-foreground">{formatRupiah(sumAsnafTotal, true)}</p>
-                <p className="text-[10px] text-muted-foreground">Total</p>
+                <span className="text-[10px] text-muted-foreground">Total Asnaf</span>
+                <span className="text-xs font-bold font-mono text-foreground">{formatRupiah(sumAsnafTotal, true)}</span>
               </div>
             </div>
-            <div className="space-y-1.5 mt-3 overflow-y-auto max-h-[140px] pr-1">
-              {totalByAsnaf.map((item) => {
-                const percent = Math.round((item.value / sumAsnafTotal) * 100);
-                return (
-                  <div key={item.name} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="truncate text-muted-foreground">{item.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-semibold text-foreground">{formatRupiah(item.value, true)}</span>
-                      <span className="text-[10px] text-muted-foreground w-8 text-right">{percent}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Row 3: Progres Program & Transaksi */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_2fr] gap-3 sm:gap-4">
-        {/* Realisasi Program */}
-        <Card className="card-spotlight shadow-card transition-all-smooth hover:shadow-card-hover animate-fade-in-up">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs sm:text-sm font-semibold">Realisasi Program Pilar BAZNAS</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {PENYALURAN_PROGRAMS.map((item) => {
-              const prc = Math.round((item.realized / item.budget) * 100);
-              return (
-                <div key={item.name} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground truncate max-w-[200px]">{item.name}</span>
-                    <span className="text-muted-foreground">{prc}%</span>
+            {/* Asnaf Legend Matrix */}
+            <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-border/60 text-xs">
+              {totalByAsnaf.map((item) => (
+                <div key={item.name} className="p-1.5 rounded-md bg-muted/30 flex items-center justify-between text-[10px]">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="size-2 rounded-xs shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="truncate text-foreground font-medium">{item.name}</span>
                   </div>
-                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${prc}%`, backgroundColor: item.color }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>Realisasi: {formatRupiah(item.realized, true)}</span>
-                    <span>Anggaran: {formatRupiah(item.budget, true)}</span>
-                  </div>
+                  <span className="font-mono font-bold text-foreground shrink-0">{formatRupiah(item.value, true)}</span>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Tabel Penyaluran Terbaru */}
-        <Card className="card-spotlight shadow-card transition-all-smooth hover:shadow-card-hover animate-fade-in-up flex flex-col">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-xs sm:text-sm font-semibold">Transaksi Penyaluran Terbaru</CardTitle>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700" onClick={() => setShowAllSheet(true)}>
-              Lihat Semua
-            </Button>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
-            <div className="min-w-[500px]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/50 sticky top-0">
-                  <tr>
-                    <th className="px-2 py-2 font-medium text-muted-foreground rounded-l-lg">Tanggal</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Penerima (Mustahik)</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Program</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Asnaf</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground text-right">Jumlah</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground text-right rounded-r-lg">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {transactions.slice(0, 8).map((trx, idx) => (
-                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-2 py-2.5 text-muted-foreground">{trx.date}</td>
-                      <td className="px-2 py-2.5 font-medium text-foreground truncate max-w-[140px]">{trx.mustahik}</td>
-                      <td className="px-2 py-2.5 text-muted-foreground">{trx.program}</td>
-                      <td className="px-2 py-2.5 text-muted-foreground">{trx.asnaf}</td>
-                      <td className="px-2 py-2.5 text-right font-semibold text-foreground">{formatRupiah(trx.amount)}</td>
-                      <td className="px-2 py-2.5 text-right">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${statusStyles[trx.status] || 'bg-gray-100 text-gray-700'}`}>
-                          {trx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Sheet 1: Catat Penyaluran */}
+      {/* 4. Recent Distribution Ledger Table */}
+      <Card className="shadow-2xs border-border rounded-xl overflow-hidden">
+        <CardHeader className="p-4 pb-3 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Buku Kas Transaksi Penyaluran Terkini
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground">
+              Daftar realisasi permohonan bantuan yang telah disalurkan kepada mustahik
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7.5 text-xs font-semibold rounded-lg cursor-pointer"
+              onClick={() => setShowAddSheet(true)}
+            >
+              <Plus className="size-3.5 mr-1 text-emerald-600" /> Catat Realisasi
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              onClick={() => setShowAllSheet(true)}
+            >
+              Lihat Semua ({transactions.length})
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-muted/40 border-b border-border text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                <tr>
+                  <th className="px-4 py-2.5">Tanggal</th>
+                  <th className="px-4 py-2.5">Nama Mustahik</th>
+                  <th className="px-4 py-2.5">Program 5 Pilar</th>
+                  <th className="px-4 py-2.5">Asnaf</th>
+                  <th className="px-4 py-2.5 text-right">Nominal (Rp)</th>
+                  <th className="px-4 py-2.5 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {transactions.slice(0, 6).map((trx, idx) => (
+                  <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{trx.date}</td>
+                    <td className="px-4 py-2.5 font-semibold text-foreground">{trx.mustahik}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{trx.program}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-foreground">
+                        {trx.asnaf}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 font-mono font-bold text-right text-foreground">
+                      {formatRupiah(trx.amount)}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <Badge variant="outline" className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300 border-emerald-500/30 bg-emerald-500/10">
+                        {trx.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sheet: Catat Penyaluran Baru */}
       <Sheet open={showAddSheet} onOpenChange={setShowAddSheet}>
-        <SheetContent side="right" className="sm:max-w-md bg-card text-card-foreground border-l border-border p-6 flex flex-col h-full z-50">
+        <SheetContent className="w-full sm:max-w-md p-5 overflow-y-auto">
           <SheetHeader className="pb-4 border-b border-border">
-            <SheetTitle className="text-lg font-bold text-foreground">Catat Penyaluran Baru</SheetTitle>
-            <SheetDescription className="text-xs text-muted-foreground mt-1">
-              Catat pendistribusian dana zakat/infak baru ke mustahik atau program bantuan
-            </SheetDescription>
+            <SheetTitle className="text-base font-bold text-foreground">Catat Realisasi Penyaluran</SheetTitle>
           </SheetHeader>
-          <form onSubmit={handleAddSubmit} className="space-y-4 py-4 flex-1 overflow-y-auto pr-1">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Nama Penerima / Deskripsi Bantuan</label>
+          <form onSubmit={handleAddSubmit} className="space-y-4 pt-4 text-xs">
+            <div className="space-y-1">
+              <label className="font-semibold text-foreground">Nama Penerima / Mustahik *</label>
               <Input
-                placeholder="Contoh: Beasiswa Pendidikan SMP Negeri 1, Bpk. Mulyadi"
+                required
+                placeholder="Contoh: Sdr. Sulaiman"
                 value={formMustahik}
                 onChange={(e) => setFormMustahik(e.target.value)}
-                className="h-9 text-xs focus-visible:ring-emerald-500 border-border"
-                required
+                className="h-8 text-xs"
               />
             </div>
-            
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Program Pilar BAZNAS</label>
-              <select
-                value={formProgram}
-                onChange={(e) => setFormProgram(e.target.value)}
-                className="w-full h-9 text-xs rounded-md border border-input border-border bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-              >
-                <option value="Tangerang Cerdas">Tangerang Cerdas (Pendidikan)</option>
-                <option value="Tangerang Sehat">Tangerang Sehat (Kesehatan)</option>
-                <option value="Tangerang Peduli">Tangerang Peduli (Sosial)</option>
-                <option value="Tangerang Makmur">Tangerang Makmur (Ekonomi)</option>
-                <option value="Tangerang Takwa">Tangerang Takwa (Dakwah)</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Program 5 Pilar</label>
+                <select
+                  value={formProgram}
+                  onChange={(e) => setFormProgram(e.target.value)}
+                  className="w-full h-8 text-xs rounded-lg border border-border bg-background px-2 text-foreground"
+                >
+                  <option value="Tangerang Cerdas">Tangerang Cerdas (Pendidikan)</option>
+                  <option value="Tangerang Sehat">Tangerang Sehat (Kesehatan)</option>
+                  <option value="Tangerang Peduli">Tangerang Peduli (Kemanusiaan)</option>
+                  <option value="Tangerang Makmur">Tangerang Makmur (Ekonomi)</option>
+                  <option value="Tangerang Takwa">Tangerang Takwa (Dakwah)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Golongan Asnaf</label>
+                <select
+                  value={formAsnaf}
+                  onChange={(e) => setFormAsnaf(e.target.value)}
+                  className="w-full h-8 text-xs rounded-lg border border-border bg-background px-2 text-foreground"
+                >
+                  <option value="Fakir">Fakir</option>
+                  <option value="Miskin">Miskin</option>
+                  <option value="Mualaf">Mualaf</option>
+                  <option value="Gharimin">Gharimin</option>
+                  <option value="Fisabilillah">Fisabilillah</option>
+                  <option value="Ibnu Sabil">Ibnu Sabil</option>
+                </select>
+              </div>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Golongan Asnaf</label>
-              <select
-                value={formAsnaf}
-                onChange={(e) => setFormAsnaf(e.target.value)}
-                className="w-full h-9 text-xs rounded-md border border-input border-border bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-              >
-                <option value="Fakir">Fakir</option>
-                <option value="Miskin">Miskin</option>
-                <option value="Amil">Amil</option>
-                <option value="Mualaf">Mualaf</option>
-                <option value="Fisabilillah">Fisabilillah</option>
-                <option value="Gharimin">Gharimin</option>
-                <option value="Ibnu Sabil">Ibnu Sabil</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Nominal (Rp) *</label>
+                <Input
+                  required
+                  type="number"
+                  placeholder="5000000"
+                  value={formAmount}
+                  onChange={(e) => setFormAmount(e.target.value)}
+                  className="h-8 text-xs font-mono font-bold"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-foreground">Tanggal</label>
+                <Input
+                  type="date"
+                  value={formDate}
+                  onChange={(e) => setFormDate(e.target.value)}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Jumlah Bantuan (IDR)</label>
-              <Input
-                type="number"
-                placeholder="Contoh: 15000000"
-                value={formAmount}
-                onChange={(e) => setFormAmount(e.target.value)}
-                className="h-9 text-xs focus-visible:ring-emerald-500 border-border"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Tanggal Penyaluran</label>
-              <Input
-                type="date"
-                value={formDate}
-                onChange={(e) => setFormDate(e.target.value)}
-                className="h-9 text-xs focus-visible:ring-emerald-500 border-border"
-                required
-              />
-            </div>
-
-            <div className="pt-4 flex gap-2 border-t border-border mt-6">
-              <Button type="button" variant="outline" className="flex-1 text-xs h-9" onClick={() => setShowAddSheet(false)}>
+            <div className="pt-3 border-t border-border flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowAddSheet(false)}>
                 Batal
               </Button>
-              <Button type="submit" className="flex-1 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+              <Button type="submit" size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
                 Simpan Penyaluran
               </Button>
             </div>
@@ -644,83 +538,53 @@ export default function PenyaluranDashboard({ currentUser, onNavigate }) {
         </SheetContent>
       </Sheet>
 
-      {/* Sheet 2: Lihat Semua Penyaluran */}
+      {/* Sheet: Lihat Semua Transaksi */}
       <Sheet open={showAllSheet} onOpenChange={setShowAllSheet}>
-        <SheetContent side="right" className="sm:max-w-2xl bg-card text-card-foreground border-l border-border p-6 flex flex-col h-full z-50">
-          <SheetHeader className="pb-4 border-b border-border">
-            <SheetTitle className="text-lg font-bold text-foreground">Daftar Lengkap Penyaluran</SheetTitle>
-            <SheetDescription className="text-xs text-muted-foreground mt-1">
-              Telusuri dan saring seluruh catatan transaksi penyaluran bantuan BAZNAS
-            </SheetDescription>
+        <SheetContent className="w-full sm:max-w-2xl p-5 overflow-y-auto">
+          <SheetHeader className="pb-3 border-b border-border">
+            <SheetTitle className="text-base font-bold text-foreground">Riwayat Semua Penyaluran</SheetTitle>
           </SheetHeader>
-
-          {/* Filter Bar */}
-          <div className="flex gap-2 py-4 border-b border-border/80">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Cari penerima, asnaf, program..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 pl-8 text-xs focus-visible:ring-emerald-500 border-border"
-              />
-            </div>
-            <select
-              value={filterProgram}
-              onChange={(e) => setFilterProgram(e.target.value)}
-              className="h-8 text-[11px] rounded-md border border-border bg-background px-2 py-0.5 focus-visible:ring-2 focus-visible:ring-emerald-500"
-            >
-              <option value="Semua">Semua Program</option>
-              <option value="Tangerang Cerdas">Tangerang Cerdas</option>
-              <option value="Tangerang Sehat">Tangerang Sehat</option>
-              <option value="Tangerang Peduli">Tangerang Peduli</option>
-              <option value="Tangerang Makmur">Tangerang Makmur</option>
-              <option value="Tangerang Takwa">Tangerang Takwa</option>
-            </select>
-          </div>
-
-          {/* Table content */}
-          <div className="flex-1 overflow-y-auto py-2">
-            {filteredTransactions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-xs">
-                Tidak ada data transaksi penyaluran yang cocok.
+          <div className="space-y-3 pt-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Cari mustahik / program..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 pl-8 text-xs"
+                />
               </div>
-            ) : (
-              <table className="w-full text-left text-[11px] sm:text-xs">
-                <thead className="bg-muted/50 sticky top-0">
-                  <tr>
-                    <th className="px-2 py-2 font-medium text-muted-foreground rounded-l-md">Tanggal</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Penerima</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Program</th>
-                    <th className="px-2 py-2 font-medium text-muted-foreground">Asnaf</th>
-                    <th className="px-2 py-2 text-right font-medium text-muted-foreground">Jumlah</th>
-                    <th className="px-2 py-2 text-right font-medium text-muted-foreground rounded-r-md">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredTransactions.map((trx, idx) => (
-                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-2 py-2 text-muted-foreground">{trx.date}</td>
-                      <td className="px-2 py-2 font-medium text-foreground truncate max-w-[130px]">{trx.mustahik}</td>
-                      <td className="px-2 py-2 text-muted-foreground">{trx.program}</td>
-                      <td className="px-2 py-2 text-muted-foreground">{trx.asnaf}</td>
-                      <td className="px-2 py-2 text-right font-semibold text-foreground">{formatRupiah(trx.amount)}</td>
-                      <td className="px-2 py-2 text-right">
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusStyles[trx.status] || 'bg-gray-100 text-gray-700'}`}>
-                          {trx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-          <div className="pt-3 border-t border-border mt-auto flex justify-between items-center text-xs text-muted-foreground">
-            <span>Menampilkan {filteredTransactions.length} dari {transactions.length} penyaluran</span>
-            <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => setShowAllSheet(false)}>
-              Tutup
-            </Button>
+              <select
+                value={filterProgram}
+                onChange={(e) => setFilterProgram(e.target.value)}
+                className="h-8 text-xs rounded-lg border border-border bg-background px-2 text-foreground"
+              >
+                <option value="Semua">Semua Program</option>
+                <option value="Tangerang Cerdas">Tangerang Cerdas</option>
+                <option value="Tangerang Sehat">Tangerang Sehat</option>
+                <option value="Tangerang Peduli">Tangerang Peduli</option>
+                <option value="Tangerang Makmur">Tangerang Makmur</option>
+                <option value="Tangerang Takwa">Tangerang Takwa</option>
+              </select>
+            </div>
+
+            <div className="divide-y divide-border border border-border rounded-lg overflow-hidden text-xs max-h-[500px] overflow-y-auto">
+              {filteredTransactions.map((trx, idx) => (
+                <div key={idx} className="p-3 hover:bg-muted/20 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-foreground">{trx.mustahik}</p>
+                    <p className="text-[11px] text-muted-foreground">{trx.program} • Asnaf {trx.asnaf} • {trx.date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono font-bold text-foreground">{formatRupiah(trx.amount)}</p>
+                    <Badge variant="outline" className="text-[9px] py-0 text-emerald-600 border-emerald-500/30">
+                      {trx.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

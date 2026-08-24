@@ -684,8 +684,8 @@ export default function MustahikPage({ onNavigate }) {
         </div>
       </div>
 
-      {/* 5-Step Interactive Visual Pipeline Stepper */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-2 sm:gap-2.5">
+      {/* Linear-Style Clean Segmented Pipeline Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/50 border border-border/80 rounded-xl no-scrollbar">
         {PIPELINE_STEPS.map((step) => {
           const isActive = activeTab === step.id;
           const count =
@@ -699,40 +699,19 @@ export default function MustahikPage({ onNavigate }) {
             <button
               key={step.id}
               onClick={() => setActiveTab(step.id)}
-              className={`flex flex-col p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-card border-emerald-600 shadow-md ring-2 ring-emerald-500/20'
-                  : 'bg-card/70 border-border/70 hover:bg-card hover:border-border hover:shadow-xs'
+                  ? 'bg-card text-foreground shadow-2xs font-bold border border-border'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
               }`}
             >
-              {/* Active top indicator line */}
-              {isActive && <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-600" />}
-
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span
-                  className={`size-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                    isActive
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-muted text-muted-foreground group-hover:bg-emerald-500/20 group-hover:text-emerald-700'
-                  }`}
-                >
-                  {step.stepNum}
-                </span>
-                <span
-                  className={`text-xs font-extrabold px-1.5 py-0.5 rounded-md ${
-                    isActive
-                      ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {count}
-                </span>
-              </div>
-
-              <span className={`text-xs font-bold truncate ${isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-foreground'}`}>
-                {step.label}
+              <span className={`size-4.5 rounded-full flex items-center justify-center text-[10px] ${isActive ? 'bg-emerald-600 text-white font-bold' : 'bg-muted-foreground/20 text-muted-foreground font-medium'}`}>
+                {step.stepNum}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate">{step.desc}</span>
+              <span>{step.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${isActive ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold' : 'bg-muted-foreground/10 text-muted-foreground'}`}>
+                {count}
+              </span>
             </button>
           );
         })}
