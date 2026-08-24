@@ -94,24 +94,117 @@ function getInitialUser() {
   return null;
 }
 
+const ROUTE_MAP = {
+  utama: '/',
+  dashboard: '/',
+  mustahik: '/mustahik',
+  program_bantuan: '/program-5-pilar',
+  peta_sebaran: '/peta-sebaran',
+  penyaluran: '/penyaluran',
+  penerimaan: '/penerimaan',
+  muzakki: '/muzakki',
+  data_upz: '/data-upz',
+  laporan_upz: '/laporan-upz',
+  kerjasama: '/kerjasama',
+  keuangan_dashboard: '/keuangan',
+  rkat: '/rkat',
+  realisasi_anggaran: '/realisasi-anggaran',
+  laporan_keuangan: '/laporan-keuangan',
+  pegawai: '/pegawai',
+  absensi: '/absensi',
+  kinerja: '/kinerja',
+  ai_entry: '/ai-data-entry',
+  portal: '/portal',
+  login: '/login',
+};
+
+const PATH_TO_PAGE = {
+  '/': 'utama',
+  '/beranda': 'utama',
+  '/dashboard': 'utama',
+  '/mustahik': 'mustahik',
+  '/program-5-pilar': 'program_bantuan',
+  '/program-bantuan': 'program_bantuan',
+  '/peta-sebaran': 'peta_sebaran',
+  '/penyaluran': 'penyaluran',
+  '/penerimaan': 'penerimaan',
+  '/muzakki': 'muzakki',
+  '/data-upz': 'data_upz',
+  '/upz': 'data_upz',
+  '/laporan-upz': 'laporan_upz',
+  '/kerjasama': 'kerjasama',
+  '/keuangan': 'keuangan_dashboard',
+  '/rkat': 'rkat',
+  '/realisasi-anggaran': 'realisasi_anggaran',
+  '/laporan-keuangan': 'laporan_keuangan',
+  '/pegawai': 'pegawai',
+  '/absensi': 'absensi',
+  '/kinerja': 'kinerja',
+  '/ai-data-entry': 'ai_entry',
+  '/ai-entry': 'ai_entry',
+  '/portal': 'portal',
+  '/login': 'login',
+};
+
 function getInitialPage() {
-  if (typeof window === 'undefined') return 'portal';
+  if (typeof window === 'undefined') return 'utama';
   const hostname = window.location.hostname.toLowerCase();
-  const pathname = window.location.pathname.toLowerCase();
+  const rawPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
   const searchParams = new URLSearchParams(window.location.search);
   
   if (searchParams.get('page')) {
     return searchParams.get('page');
   }
-  if (hostname.startsWith('portal.') || pathname.startsWith('/portal')) {
+  if (hostname.startsWith('portal.') || rawPath === '/portal') {
     return 'portal';
   }
-  return 'utama';
+  if (rawPath === '/login') {
+    return 'login';
+  }
+  return PATH_TO_PAGE[rawPath] || 'utama';
 }
 
 function App() {
   const [activePage, setActivePage] = useState(getInitialPage);
   const [currentUser, setCurrentUser] = useState(getInitialUser);
+
+  // Synchronize state changes to browser URL & history
+  const navigateTo = (page, replace = false) => {
+    setActivePage(page);
+    if (typeof window !== 'undefined') {
+      const targetPath = ROUTE_MAP[page] || `/${page}`;
+      if (window.location.pathname !== targetPath) {
+        if (replace) {
+          window.history.replaceState({ page }, '', targetPath);
+        } else {
+          window.history.pushState({ page }, '', targetPath);
+        }
+      }
+    }
+  };
+
+  // Sync initial URL on mount if needed
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const initialPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      const expectedPage = PATH_TO_PAGE[initialPath] || 'utama';
+      if (expectedPage !== activePage) {
+        setActivePage(expectedPage);
+      }
+    }
+  }, []);
+
+  // Listen to browser Back / Forward (popstate)
+  useEffect(() => {
+    const handlePopState = (e) => {
+      const currentPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+      const targetPage = e.state?.page || PATH_TO_PAGE[currentPath] || 'utama';
+      setActivePage(targetPage);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Check auth session validity on mount
   useEffect(() => {
@@ -136,11 +229,11 @@ function App() {
   const handleLoginSuccess = (user, token) => {
     setCurrentUser(user);
     if (user.role === 'penyaluran' || user.role === 'surveyor') {
-      setActivePage('mustahik');
+      navigateTo('mustahik');
     } else if (user.role === 'penerimaan') {
-      setActivePage('penerimaan');
+      navigateTo('penerimaan');
     } else {
-      setActivePage('utama');
+      navigateTo('utama');
     }
   };
 
@@ -148,13 +241,19 @@ function App() {
     localStorage.removeItem('baznas_auth_token');
     localStorage.removeItem('baznas_auth_user');
     setCurrentUser(null);
-    setActivePage('utama');
+    navigateTo('utama', true);
   };
 
   // Update document title dynamically
   if (typeof document !== 'undefined') {
     if (activePage === 'portal' || activePage === 'portal_publik') {
       document.title = "Portal Layanan Mustahik - BAZNAS Kota Tangerang";
+    } else if (activePage === 'mustahik') {
+      document.title = "Data Mustahik - BAZNAS Kota Tangerang";
+    } else if (activePage === 'program_bantuan') {
+      document.title = "Program 5 Pilar & RKAT - BAZNAS Kota Tangerang";
+    } else if (activePage === 'peta_sebaran') {
+      document.title = "Peta Sebaran GIS - BAZNAS Kota Tangerang";
     } else {
       document.title = "Data Center & Dashboard Internal - BAZNAS Kota Tangerang";
     }
@@ -170,10 +269,10 @@ function App() {
             if (hostname.startsWith('portal.')) {
               window.location.href = 'https://muhammadrofiq.my.id/';
             } else {
-              setActivePage(page || 'utama');
+              navigateTo(page || 'utama');
             }
           }} 
-          onNavigate={setActivePage} 
+          onNavigate={navigateTo} 
         />
       </Suspense>
     );
@@ -185,7 +284,7 @@ function App() {
       <Suspense fallback={<PortalFallbackSkeleton />}>
         <LoginPage 
           onLoginSuccess={handleLoginSuccess}
-          onNavigateToPortal={() => setActivePage('portal')}
+          onNavigateToPortal={() => navigateTo('portal')}
         />
       </Suspense>
     );
@@ -195,7 +294,7 @@ function App() {
     <div className="min-h-screen w-full bg-slate-50/60 dark:bg-slate-950 flex flex-col font-sans">
       <Navbar 
         activePage={activePage} 
-        onNavigate={setActivePage} 
+        onNavigate={navigateTo} 
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -205,38 +304,38 @@ function App() {
           <Suspense fallback={<PageFallbackSkeleton />}>
             {(activePage === 'utama' || activePage === 'dashboard') && (
               currentUser?.role === 'penyaluran' || currentUser?.role === 'surveyor' ? (
-                <PenyaluranDashboard currentUser={currentUser} onNavigate={setActivePage} />
+                <PenyaluranDashboard currentUser={currentUser} onNavigate={navigateTo} />
               ) : currentUser?.role === 'penerimaan' ? (
-                <PenerimaanDashboard currentUser={currentUser} onNavigate={setActivePage} />
+                <PenerimaanDashboard currentUser={currentUser} onNavigate={navigateTo} />
               ) : (
-                <DashboardUtama currentUser={currentUser} onNavigate={setActivePage} />
+                <DashboardUtama currentUser={currentUser} onNavigate={navigateTo} />
               )
             )}
-            {activePage === 'penerimaan' && <PenerimaanDashboard currentUser={currentUser} onNavigate={setActivePage} />}
-            {activePage === 'penyaluran' && <PenyaluranDashboard currentUser={currentUser} onNavigate={setActivePage} />}
-            {activePage === 'muzakki' && <MuzakkiPage onNavigate={setActivePage} />}
-            {activePage === 'mustahik' && <MustahikPage onNavigate={setActivePage} />}
-            {activePage === 'program_bantuan' && <ProgramBantuanPage onNavigate={setActivePage} />}
-            {activePage === 'peta_sebaran' && <PetaSebaranPage onNavigate={setActivePage} />}
-            {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage onNavigate={setActivePage} />}
-            {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage onNavigate={setActivePage} />}
-            {activePage === 'data_upz' && <UPZPage onNavigate={setActivePage} />}
-            {activePage === 'laporan_upz' && <LaporanUPZPage onNavigate={setActivePage} />}
-            {activePage === 'kerjasama' && <KerjasamaPage onNavigate={setActivePage} />}
-            {activePage === 'keuangan_dashboard' && <KeuanganDashboard onNavigate={setActivePage} />}
-            {activePage === 'rkat' && <RKATPage onNavigate={setActivePage} />}
-            {activePage === 'realisasi_anggaran' && <RealisasiAnggaranPage onNavigate={setActivePage} />}
-            {activePage === 'laporan_keuangan' && <LaporanKeuanganPage onNavigate={setActivePage} />}
-            {activePage === 'pegawai' && <PegawaiPage onNavigate={setActivePage} />}
-            {activePage === 'absensi' && <AbsensiPage onNavigate={setActivePage} />}
-            {activePage === 'kinerja' && <KinerjaPage onNavigate={setActivePage} />}
-            {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={setActivePage} />}
+            {activePage === 'penerimaan' && <PenerimaanDashboard currentUser={currentUser} onNavigate={navigateTo} />}
+            {activePage === 'penyaluran' && <PenyaluranDashboard currentUser={currentUser} onNavigate={navigateTo} />}
+            {activePage === 'muzakki' && <MuzakkiPage onNavigate={navigateTo} />}
+            {activePage === 'mustahik' && <MustahikPage onNavigate={navigateTo} />}
+            {activePage === 'program_bantuan' && <ProgramBantuanPage onNavigate={navigateTo} />}
+            {activePage === 'peta_sebaran' && <PetaSebaranPage onNavigate={navigateTo} />}
+            {activePage === 'laporan_penerimaan' && <LaporanPenerimaanPage onNavigate={navigateTo} />}
+            {activePage === 'laporan_penyaluran' && <LaporanPenyaluranPage onNavigate={navigateTo} />}
+            {activePage === 'data_upz' && <UPZPage onNavigate={navigateTo} />}
+            {activePage === 'laporan_upz' && <LaporanUPZPage onNavigate={navigateTo} />}
+            {activePage === 'kerjasama' && <KerjasamaPage onNavigate={navigateTo} />}
+            {activePage === 'keuangan_dashboard' && <KeuanganDashboard onNavigate={navigateTo} />}
+            {activePage === 'rkat' && <RKATPage onNavigate={navigateTo} />}
+            {activePage === 'realisasi_anggaran' && <RealisasiAnggaranPage onNavigate={navigateTo} />}
+            {activePage === 'laporan_keuangan' && <LaporanKeuanganPage onNavigate={navigateTo} />}
+            {activePage === 'pegawai' && <PegawaiPage onNavigate={navigateTo} />}
+            {activePage === 'absensi' && <AbsensiPage onNavigate={navigateTo} />}
+            {activePage === 'kinerja' && <KinerjaPage onNavigate={navigateTo} />}
+            {activePage === 'ai_entry' && <AIDataEntryPage onNavigate={navigateTo} />}
             {!['utama', 'dashboard', 'penerimaan', 'penyaluran', 'muzakki', 'mustahik', 'program_bantuan', 'peta_sebaran', 'laporan_penerimaan', 'laporan_penyaluran', 'data_upz', 'laporan_upz', 'kerjasama', 'keuangan_dashboard', 'rkat', 'realisasi_anggaran', 'laporan_keuangan', 'pegawai', 'absensi', 'kinerja', 'ai_entry'].includes(activePage) && (
               <div className="flex flex-col items-center justify-center min-h-[400px] gap-2 text-center">
                 <h2 className="text-lg font-bold text-foreground">Halaman Belum Tersedia</h2>
                 <p className="text-xs text-muted-foreground">Modul "{activePage}" sedang dalam tahap pengembangan.</p>
                 <button 
-                  onClick={() => setActivePage('utama')} 
+                  onClick={() => navigateTo('utama')} 
                   className="px-3 py-1.5 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-semibold cursor-pointer"
                 >
                   Kembali ke Utama
