@@ -63,6 +63,19 @@ describe('ProgramPilarWorkspace', () => {
     expect(screen.queryByText('Pasien Mustahik Dilayani')).not.toBeInTheDocument();
   });
 
+  it('memindahkan pilar aktif dengan tombol panah keyboard', () => {
+    render(<ProgramPilarWorkspace />);
+
+    const sehatTab = screen.getByRole('tab', { name: /Tangerang Sehat/i });
+    const takwaTab = screen.getByRole('tab', { name: /Tangerang Takwa/i });
+
+    sehatTab.focus();
+    fireEvent.keyDown(sehatTab, { key: 'ArrowRight' });
+
+    expect(takwaTab).toHaveFocus();
+    expect(takwaTab).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('menampilkan prioritas tindak lanjut dan portofolio program sebagai bagian yang mudah dikenali', () => {
     render(<ProgramPilarWorkspace />);
 
