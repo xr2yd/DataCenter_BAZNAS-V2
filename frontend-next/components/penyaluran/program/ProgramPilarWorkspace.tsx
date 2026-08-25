@@ -456,69 +456,67 @@ export function ProgramPilarWorkspace() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. ROW 2: ANALYTICS ROW (FUNNEL, ASNAF, KECAMATAN, COMBINED TARGET CARD) */}
+      {/* 4. ROW 2: ANALYTICS 6 CARDS (SEPARATE COLUMNS AS IN GAMBAR 2)            */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-2.5 items-stretch">
-        {/* Card 1: Funnel outcome program (lg:col-span-3) */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-stretch">
+        {/* Card 1: Funnel outcome program */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900 mb-2">Funnel outcome program</h3>
-            <div className="space-y-2">
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-2">Funnel outcome program</h3>
+            <div className="space-y-1.5">
               {[
                 { label: 'Proposal diterima', count: 42, color: 'bg-[#008B5A]', w: '100%' },
                 { label: 'Verifikasi kelayakan', count: 36, color: 'bg-emerald-400', w: '85%' },
-                { label: 'Disetujui', count: 28, color: 'bg-sky-400', w: '66%' },
-                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-amber-400', w: '52%' },
+                { label: 'Disetujui', count: 28, color: 'bg-amber-400', w: '66%' },
+                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-sky-400', w: '52%' },
                 { label: 'Bantuan tersalurkan', count: 18, color: 'bg-purple-400', w: '42%' },
               ].map((f) => (
-                <div key={f.label} className="space-y-0.5">
-                  <div className="flex justify-between text-[8.5px]">
-                    <span className="text-zinc-600">{f.label}</span>
-                    <span className="font-bold text-zinc-900 font-mono">{f.count}</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                <div key={f.label} className="flex items-center justify-between gap-1 text-[7.5px]">
+                  <span className="w-18 shrink-0 text-zinc-600 truncate">{f.label}</span>
+                  <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${f.color}`} style={{ width: f.w }} />
                   </div>
+                  <span className="w-4 text-right font-bold text-zinc-900 font-mono text-[8px]">{f.count}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Card 2: Komposisi asnaf penerima manfaat (lg:col-span-3) */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-3">
+        {/* Card 2: Komposisi asnaf penerima manfaat */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900 mb-2">Komposisi asnaf penerima manfaat</h3>
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-2">Komposisi asnaf penerima manfaat</h3>
             
-            <div className="flex items-center gap-2.5 pt-1">
-              {/* Donut chart SVG with Center Total */}
-              <div className="size-18 shrink-0 relative flex items-center justify-center">
+            <div className="flex items-center gap-1.5">
+              {/* Donut chart SVG */}
+              <div className="size-13 shrink-0 relative">
                 <svg viewBox="0 0 36 36" className="size-full -rotate-90">
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#00704A" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="0" />
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="-33" />
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#6ee7b7" strokeWidth="4.5" strokeDasharray="12 100" strokeDashoffset="-66" />
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#0ea5e9" strokeWidth="4.5" strokeDasharray="10 100" strokeDashoffset="-78" />
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-88" />
-                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-94" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#00704A" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="0" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="-33" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#6ee7b7" strokeWidth="4.5" strokeDasharray="12 100" strokeDashoffset="-66" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="10 100" strokeDashoffset="-78" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-88" />
+                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#cbd5e1" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-94" />
                 </svg>
               </div>
 
               {/* Legend List */}
-              <div className="flex-1 space-y-0.5 text-[8.5px]">
+              <div className="flex-1 space-y-0.5 text-[7px]">
                 {[
                   { name: 'Fakir', count: '4.128', pct: '33%', bg: 'bg-[#00704A]' },
                   { name: 'Miskin', count: '4.046', pct: '33%', bg: 'bg-[#10b981]' },
                   { name: 'Amil', count: '1.511', pct: '12%', bg: 'bg-[#6ee7b7]' },
-                  { name: 'Mualaf', count: '1.187', pct: '10%', bg: 'bg-[#0ea5e9]' },
-                  { name: 'Gharimin', count: '769', pct: '6%', bg: 'bg-[#f59e0b]' },
-                  { name: 'Lainnya', count: '733', pct: '6%', bg: 'bg-[#a855f7]' },
+                  { name: 'Mualaf', count: '1.187', pct: '10%', bg: 'bg-[#f59e0b]' },
+                  { name: 'Gharimin', count: '769', pct: '6%', bg: 'bg-[#a855f7]' },
+                  { name: 'Lainnya', count: '733', pct: '6%', bg: 'bg-[#cbd5e1]' },
                 ].map((as) => (
                   <div key={as.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`size-1.5 rounded-full ${as.bg}`} />
-                      <span className="text-zinc-600 font-medium">{as.name}</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`size-1 rounded-full ${as.bg}`} />
+                      <span className="text-zinc-600 truncate">{as.name}</span>
                     </div>
-                    <span className="font-mono text-zinc-900 font-bold">{as.count} <span className="text-zinc-400 font-normal text-[7.5px]">({as.pct})</span></span>
+                    <span className="font-mono text-zinc-900 font-bold">{as.count} <span className="text-zinc-400 font-normal">({as.pct})</span></span>
                   </div>
                 ))}
               </div>
@@ -526,12 +524,12 @@ export function ProgramPilarWorkspace() {
           </div>
         </div>
 
-        {/* Card 3: Top kecamatan penerima manfaat (lg:col-span-2) */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-2">
+        {/* Card 3: Top kecamatan penerima manfaat */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900 mb-1.5">Top kecamatan penerima manfaat</h3>
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-1.5">Top kecamatan penerima manfaat</h3>
             
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {[
                 { rank: 1, name: 'Karawaci', count: '2.186', pct: '18%' },
                 { rank: 2, name: 'Ciledug', count: '1.846', pct: '15%' },
@@ -539,45 +537,44 @@ export function ProgramPilarWorkspace() {
                 { rank: 4, name: 'Batuceper', count: '1.435', pct: '12%' },
                 { rank: 5, name: 'Periuk', count: '1.221', pct: '10%' },
               ].map((kec) => (
-                <div key={kec.name} className="flex items-center justify-between py-0.5 text-[8.5px]">
+                <div key={kec.name} className="flex items-center justify-between py-0.5 text-[7.5px]">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-[8px] font-bold text-zinc-400 w-2.5">{kec.rank}</span>
+                    <span className="font-mono text-[7px] font-bold text-zinc-400 w-2">{kec.rank}</span>
                     <span className="font-medium text-zinc-900">{kec.name}</span>
                   </div>
                   <span className="font-mono text-zinc-900 font-bold">
-                    {kec.count} <span className="text-zinc-400 font-normal text-[7.5px]">({kec.pct})</span>
+                    {kec.count} <span className="text-zinc-400 font-normal text-[6.5px]">({kec.pct})</span>
                   </span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-1.5">
+          <div className="pt-1.5 border-t border-zinc-50 mt-1">
             <Link
               href="/penyaluran/peta"
-              className="inline-flex items-center gap-1 text-[8.5px] font-bold text-emerald-800 hover:text-emerald-950"
+              className="inline-flex items-center gap-0.5 text-[7.5px] font-bold text-emerald-800 hover:text-emerald-950"
             >
               <span>Lihat semua (13 kecamatan)</span>
-              <ArrowRight className="size-2.5" />
+              <ArrowRight className="size-2" />
             </Link>
           </div>
         </div>
 
-        {/* Card 4: COMBINED 3-COLUMN CARD (Target vs Realisasi, Efisiensi, Timeline) (lg:col-span-4) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs lg:col-span-4 gap-2.5 sm:gap-0">
-          {/* Sub-col 1: Target vs realisasi */}
-          <div className="sm:pr-2.5 flex flex-col justify-between space-y-1.5">
-            <h3 className="text-[10px] font-bold text-zinc-900">
-              Target vs realisasi <span className="text-[7.5px] font-normal text-zinc-400">(Jan–Agu 2026)</span>
+        {/* Card 4: Target vs realisasi */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+          <div>
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-1.5">
+              Target vs realisasi <span className="text-[7px] font-normal text-zinc-400">(Jan–Agu 2026)</span>
             </h3>
             
             <div className="space-y-1.5">
               <div>
-                <div className="flex justify-between text-[8px]">
+                <div className="flex justify-between text-[7.5px]">
                   <span className="text-zinc-600 font-medium">Penyaluran</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7px] text-zinc-400">
+                <div className="flex justify-between text-[6.5px] text-zinc-400">
                   <span>Rp 9,21 M / Rp 11,00 M</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -586,11 +583,11 @@ export function ProgramPilarWorkspace() {
               </div>
 
               <div>
-                <div className="flex justify-between text-[8px]">
+                <div className="flex justify-between text-[7.5px]">
                   <span className="text-zinc-600 font-medium">Penerima manfaat</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7px] text-zinc-400">
+                <div className="flex justify-between text-[6.5px] text-zinc-400">
                   <span>12.374 / 15.000</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -599,11 +596,11 @@ export function ProgramPilarWorkspace() {
               </div>
 
               <div>
-                <div className="flex justify-between text-[8px]">
+                <div className="flex justify-between text-[7.5px]">
                   <span className="text-zinc-600 font-medium">Program aktif</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7px] text-zinc-400">
+                <div className="flex justify-between text-[6.5px] text-zinc-400">
                   <span>18 / 22</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -612,34 +609,38 @@ export function ProgramPilarWorkspace() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Sub-col 2: Efisiensi anggaran */}
-          <div className="sm:px-2.5 pt-2 sm:pt-0 flex flex-col justify-between space-y-1.5">
-            <h4 className="text-[10px] font-bold text-zinc-900">Efisiensi anggaran</h4>
+        {/* Card 5: Efisiensi anggaran */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+          <div>
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-1.5">Efisiensi anggaran</h3>
             
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div>
-                <p className="font-mono font-bold text-zinc-950 text-xs">92,4%</p>
+                <p className="font-mono font-black text-emerald-800 text-sm">92,4%</p>
                 <p className="text-[7.5px] text-zinc-400">Dana tersalurkan</p>
               </div>
               
               <div>
-                <p className="font-mono font-bold text-zinc-950 text-xs">7,6%</p>
+                <p className="font-mono font-bold text-zinc-800 text-xs">7,6%</p>
                 <p className="text-[7.5px] text-zinc-400">Biaya operasional</p>
               </div>
             </div>
-
-            <div className="pt-1">
-              <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-700">
-                <Check className="size-2.5" /> Efisien
-              </span>
-              <p className="text-[7px] text-zinc-400">Di bawah batas maksimal 12%</p>
-            </div>
           </div>
 
-          {/* Sub-col 3: Timeline tonggak penting */}
-          <div className="sm:pl-2.5 pt-2 sm:pt-0 flex flex-col justify-between space-y-1">
-            <h4 className="text-[10px] font-bold text-zinc-900 mb-0.5">Timeline tonggak penting</h4>
+          <div className="pt-1.5 border-t border-zinc-100 mt-1">
+            <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-700">
+              <Check className="size-2.5" /> Efisien
+            </span>
+            <p className="text-[6.5px] text-zinc-400">Di bawah batas maksimal 12%</p>
+          </div>
+        </div>
+
+        {/* Card 6: Timeline tonggak penting */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+          <div>
+            <h3 className="text-[10px] font-bold text-zinc-900 mb-1.5">Timeline tonggak penting</h3>
             
             <div className="space-y-1 text-[7px]">
               {[
