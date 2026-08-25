@@ -13,7 +13,6 @@ import {
   Wallet,
   ClipboardList,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
   TrendingUp,
   Stethoscope,
@@ -114,7 +113,7 @@ export function ProgramPilarWorkspace() {
   const activePilarData = PILAR_CARDS.find((p) => p.id === selectedPilar) || PILAR_CARDS[2]!;
 
   return (
-    <div className="mx-auto max-w-[1560px] space-y-3.5 pb-12 text-slate-800 antialiased text-[11px]">
+    <div className="mx-auto max-w-[1560px] space-y-3 pb-12 text-slate-800 antialiased text-[11px]">
       {/* ========================================================================= */}
       {/* 1. HEADER TITLE & STATUS TOOLBAR                                         */}
       {/* ========================================================================= */}
@@ -137,9 +136,9 @@ export function ProgramPilarWorkspace() {
 
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00704A] px-3 py-1.5 text-[10px] font-bold text-white shadow-xs hover:bg-[#005a3b] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00704A] px-3.5 py-1.5 text-[10.5px] font-bold text-white shadow-xs hover:bg-[#005a3b] transition-colors cursor-pointer"
           >
-            <Briefcase className="size-3" />
+            <Briefcase className="size-3.5" />
             <span>Kelola Portofolio</span>
           </button>
         </div>
@@ -212,7 +211,7 @@ export function ProgramPilarWorkspace() {
       {/* ========================================================================= */}
       {/* 3. ROW 1: DARI ANGGARAN KE DAMPAK (LEFT) & DAMPAK UTAMA (RIGHT)          */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 items-stretch">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 items-stretch">
         {/* ----------------- LEFT LARGE CARD (7 COLS) ----------------- */}
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-7 space-y-3">
           {/* Top Half: Value Chain (5 Steps with Centered Icon Circles) */}
@@ -457,28 +456,24 @@ export function ProgramPilarWorkspace() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. ROW 2: ANALYTICS 4-CARDS ROW                                          */}
+      {/* 4. ROW 2: ANALYTICS ROW (FUNNEL, ASNAF, KECAMATAN, COMBINED TARGET CARD) */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
-        {/* Card 1: Funnel outcome program */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-2.5 items-stretch">
+        {/* Card 1: Funnel outcome program (lg:col-span-3) */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-3">
           <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-[11px] font-bold text-zinc-900">Funnel outcome program</h3>
-              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">42,8% konversi</span>
-            </div>
-
-            <div className="mt-3 space-y-2.5">
+            <h3 className="text-[11px] font-bold text-zinc-900 mb-2">Funnel outcome program</h3>
+            <div className="space-y-2">
               {[
                 { label: 'Proposal diterima', count: 42, color: 'bg-[#008B5A]', w: '100%' },
-                { label: 'Verifikasi kelayakan', count: 36, color: 'bg-emerald-500', w: '85%' },
-                { label: 'Disetujui', count: 28, color: 'bg-sky-500', w: '66%' },
-                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-amber-500', w: '52%' },
-                { label: 'Bantuan tersalurkan', count: 18, color: 'bg-purple-500', w: '42%' },
+                { label: 'Verifikasi kelayakan', count: 36, color: 'bg-emerald-400', w: '85%' },
+                { label: 'Disetujui', count: 28, color: 'bg-sky-400', w: '66%' },
+                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-amber-400', w: '52%' },
+                { label: 'Bantuan tersalurkan', count: 18, color: 'bg-purple-400', w: '42%' },
               ].map((f) => (
-                <div key={f.label} className="space-y-1">
-                  <div className="flex justify-between text-[9px]">
-                    <span className="font-medium text-zinc-700">{f.label}</span>
+                <div key={f.label} className="space-y-0.5">
+                  <div className="flex justify-between text-[8.5px]">
+                    <span className="text-zinc-600">{f.label}</span>
                     <span className="font-bold text-zinc-900 font-mono">{f.count}</span>
                   </div>
                   <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
@@ -488,21 +483,16 @@ export function ProgramPilarWorkspace() {
               ))}
             </div>
           </div>
-
-          <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[8.5px] text-zinc-400">
-            <span>Rasio akhir tersalurkan</span>
-            <span className="font-bold text-zinc-800 font-mono">18 dari 42 proposal</span>
-          </div>
         </div>
 
-        {/* Card 2: Komposisi asnaf penerima manfaat */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
+        {/* Card 2: Komposisi asnaf penerima manfaat (lg:col-span-3) */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-3">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900">Komposisi asnaf penerima manfaat</h3>
+            <h3 className="text-[11px] font-bold text-zinc-900 mb-2">Komposisi asnaf penerima manfaat</h3>
             
-            <div className="mt-3 flex items-center gap-3">
+            <div className="flex items-center gap-2.5 pt-1">
               {/* Donut chart SVG with Center Total */}
-              <div className="size-20 shrink-0 relative flex items-center justify-center">
+              <div className="size-18 shrink-0 relative flex items-center justify-center">
                 <svg viewBox="0 0 36 36" className="size-full -rotate-90">
                   <circle cx="18" cy="18" r="14" fill="transparent" stroke="#00704A" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="0" />
                   <circle cx="18" cy="18" r="14" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="-33" />
@@ -511,14 +501,10 @@ export function ProgramPilarWorkspace() {
                   <circle cx="18" cy="18" r="14" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-88" />
                   <circle cx="18" cy="18" r="14" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-94" />
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-[10px] font-black text-zinc-950 font-mono leading-none">12,3k</span>
-                  <span className="text-[6.5px] text-zinc-400 uppercase font-bold tracking-tight mt-0.5">Jiwa</span>
-                </div>
               </div>
 
               {/* Legend List */}
-              <div className="flex-1 space-y-1 text-[8.5px]">
+              <div className="flex-1 space-y-0.5 text-[8.5px]">
                 {[
                   { name: 'Fakir', count: '4.128', pct: '33%', bg: 'bg-[#00704A]' },
                   { name: 'Miskin', count: '4.046', pct: '33%', bg: 'bg-[#10b981]' },
@@ -538,48 +524,38 @@ export function ProgramPilarWorkspace() {
               </div>
             </div>
           </div>
-
-          <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[8.5px] text-zinc-400">
-            <span>Dominasi prioritas</span>
-            <span className="font-bold text-emerald-800">66% Fakir & Miskin</span>
-          </div>
         </div>
 
-        {/* Card 3: Top kecamatan penerima manfaat */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
+        {/* Card 3: Top kecamatan penerima manfaat (lg:col-span-2) */}
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-2">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900">Top kecamatan penerima manfaat</h3>
+            <h3 className="text-[11px] font-bold text-zinc-900 mb-1.5">Top kecamatan penerima manfaat</h3>
             
-            <div className="mt-2.5 space-y-1.5">
+            <div className="space-y-1">
               {[
-                { rank: 1, name: 'Karawaci', count: '2.186', pct: '18%', w: '100%' },
-                { rank: 2, name: 'Ciledug', count: '1.846', pct: '15%', w: '84%' },
-                { rank: 3, name: 'Cipondoh', count: '1.672', pct: '14%', w: '76%' },
-                { rank: 4, name: 'Batuceper', count: '1.435', pct: '12%', w: '65%' },
-                { rank: 5, name: 'Periuk', count: '1.221', pct: '10%', w: '55%' },
+                { rank: 1, name: 'Karawaci', count: '2.186', pct: '18%' },
+                { rank: 2, name: 'Ciledug', count: '1.846', pct: '15%' },
+                { rank: 3, name: 'Cipondoh', count: '1.672', pct: '14%' },
+                { rank: 4, name: 'Batuceper', count: '1.435', pct: '12%' },
+                { rank: 5, name: 'Periuk', count: '1.221', pct: '10%' },
               ].map((kec) => (
-                <div key={kec.name} className="space-y-0.5">
-                  <div className="flex items-center justify-between text-[9px]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[8px] font-bold text-zinc-400 w-2.5">{kec.rank}</span>
-                      <span className="font-medium text-zinc-900">{kec.name}</span>
-                    </div>
-                    <span className="font-mono text-zinc-900 font-bold">
-                      {kec.count} <span className="text-zinc-400 font-normal text-[8px]">({kec.pct})</span>
-                    </span>
+                <div key={kec.name} className="flex items-center justify-between py-0.5 text-[8.5px]">
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-[8px] font-bold text-zinc-400 w-2.5">{kec.rank}</span>
+                    <span className="font-medium text-zinc-900">{kec.name}</span>
                   </div>
-                  <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-600 rounded-full" style={{ width: kec.w }} />
-                  </div>
+                  <span className="font-mono text-zinc-900 font-bold">
+                    {kec.count} <span className="text-zinc-400 font-normal text-[7.5px]">({kec.pct})</span>
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-3 pt-2 border-t border-zinc-100">
+          <div className="pt-1.5">
             <Link
               href="/penyaluran/peta"
-              className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 hover:text-emerald-950"
+              className="inline-flex items-center gap-1 text-[8.5px] font-bold text-emerald-800 hover:text-emerald-950"
             >
               <span>Lihat semua (13 kecamatan)</span>
               <ArrowRight className="size-2.5" />
@@ -587,21 +563,21 @@ export function ProgramPilarWorkspace() {
           </div>
         </div>
 
-        {/* Card 4: Target vs Realisasi + Efisiensi + Timeline */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs space-y-2.5">
-          {/* Target vs Realisasi */}
-          <div className="space-y-1">
-            <h3 className="text-[11px] font-bold text-zinc-900">
-              Target vs realisasi <span className="text-[8px] font-normal text-zinc-400">(Jan–Agu 2026)</span>
+        {/* Card 4: COMBINED 3-COLUMN CARD (Target vs Realisasi, Efisiensi, Timeline) (lg:col-span-4) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs lg:col-span-4 gap-2.5 sm:gap-0">
+          {/* Sub-col 1: Target vs realisasi */}
+          <div className="sm:pr-2.5 flex flex-col justify-between space-y-1.5">
+            <h3 className="text-[10px] font-bold text-zinc-900">
+              Target vs realisasi <span className="text-[7.5px] font-normal text-zinc-400">(Jan–Agu 2026)</span>
             </h3>
             
-            <div className="space-y-1.5 pt-1">
+            <div className="space-y-1.5">
               <div>
-                <div className="flex justify-between text-[8.5px]">
+                <div className="flex justify-between text-[8px]">
                   <span className="text-zinc-600 font-medium">Penyaluran</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
+                <div className="flex justify-between text-[7px] text-zinc-400">
                   <span>Rp 9,21 M / Rp 11,00 M</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -610,11 +586,11 @@ export function ProgramPilarWorkspace() {
               </div>
 
               <div>
-                <div className="flex justify-between text-[8.5px]">
+                <div className="flex justify-between text-[8px]">
                   <span className="text-zinc-600 font-medium">Penerima manfaat</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
+                <div className="flex justify-between text-[7px] text-zinc-400">
                   <span>12.374 / 15.000</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -623,11 +599,11 @@ export function ProgramPilarWorkspace() {
               </div>
 
               <div>
-                <div className="flex justify-between text-[8.5px]">
+                <div className="flex justify-between text-[8px]">
                   <span className="text-zinc-600 font-medium">Program aktif</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
+                <div className="flex justify-between text-[7px] text-zinc-400">
                   <span>18 / 22</span>
                 </div>
                 <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
@@ -637,28 +613,35 @@ export function ProgramPilarWorkspace() {
             </div>
           </div>
 
-          {/* Efisiensi Anggaran Badge */}
-          <div className="pt-2 border-t border-zinc-100">
-            <h4 className="text-[8.5px] font-bold text-zinc-700">Efisiensi anggaran</h4>
-            <div className="mt-1 flex items-center justify-between text-[8px]">
+          {/* Sub-col 2: Efisiensi anggaran */}
+          <div className="sm:px-2.5 pt-2 sm:pt-0 flex flex-col justify-between space-y-1.5">
+            <h4 className="text-[10px] font-bold text-zinc-900">Efisiensi anggaran</h4>
+            
+            <div className="space-y-1">
               <div>
-                <span className="font-mono font-bold text-zinc-900">92,4%</span>
+                <p className="font-mono font-bold text-zinc-950 text-xs">92,4%</p>
                 <p className="text-[7.5px] text-zinc-400">Dana tersalurkan</p>
               </div>
+              
               <div>
-                <span className="font-mono font-bold text-zinc-900">7,6%</span>
+                <p className="font-mono font-bold text-zinc-950 text-xs">7,6%</p>
                 <p className="text-[7.5px] text-zinc-400">Biaya operasional</p>
               </div>
-              <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-bold text-emerald-700">
+            </div>
+
+            <div className="pt-1">
+              <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-700">
                 <Check className="size-2.5" /> Efisien
               </span>
+              <p className="text-[7px] text-zinc-400">Di bawah batas maksimal 12%</p>
             </div>
           </div>
 
-          {/* Timeline Tonggak Penting */}
-          <div className="pt-2 border-t border-zinc-100">
-            <h4 className="text-[8.5px] font-bold text-zinc-700 mb-1">Timeline tonggak penting</h4>
-            <div className="space-y-1 text-[7.5px]">
+          {/* Sub-col 3: Timeline tonggak penting */}
+          <div className="sm:pl-2.5 pt-2 sm:pt-0 flex flex-col justify-between space-y-1">
+            <h4 className="text-[10px] font-bold text-zinc-900 mb-0.5">Timeline tonggak penting</h4>
+            
+            <div className="space-y-1 text-[7px]">
               {[
                 { date: 'Jan 2026', text: 'Kick-off program kesehatan', active: false },
                 { date: 'Mar 2026', text: 'Peluncuran layanan mobile klinik', active: false },
@@ -666,9 +649,9 @@ export function ProgramPilarWorkspace() {
                 { date: 'Jul 2026', text: 'Program gizi ibu & anak diperluas', active: false },
                 { date: 'Agu 2026', text: 'Review capaian & optimasi program', active: true },
               ].map((t) => (
-                <div key={t.date} className="flex items-center gap-1.5">
-                  <span className={`size-1.5 rounded-full shrink-0 ${t.active ? 'bg-emerald-600' : 'border border-zinc-300 bg-white'}`} />
-                  <span className="font-mono text-zinc-400 w-10">{t.date}</span>
+                <div key={t.date} className="flex items-center gap-1">
+                  <span className={`size-1 rounded-full shrink-0 ${t.active ? 'bg-emerald-600' : 'border border-zinc-300 bg-white'}`} />
+                  <span className="font-mono text-zinc-400 w-8.5">{t.date}</span>
                   <span className={`truncate ${t.active ? 'font-bold text-zinc-900' : 'text-zinc-600'}`}>{t.text}</span>
                 </div>
               ))}
@@ -680,7 +663,7 @@ export function ProgramPilarWorkspace() {
       {/* ========================================================================= */}
       {/* 5. ROW 3: INISIATIF AKTIF TABLE (LEFT) & REKOMENDASI PRIORITAS (RIGHT)   */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 items-start">
         {/* Left: Inisiatif Aktif Table (8 cols) */}
         <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-8 space-y-2">
           <h2 className="text-[11px] font-bold text-zinc-900">
@@ -709,14 +692,13 @@ export function ProgramPilarWorkspace() {
                         <Activity className="size-2.5" />
                       </div>
                       <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Klinik Mustahik</p>
-                        <p className="text-[8px] text-zinc-400">(Layanan Kesehatan Primer)</p>
+                        <p className="font-bold text-zinc-900 text-[10px]">Klinik Mustahik (Layanan Kesehatan Primer)</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Klinik Mitra</td>
                   <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1 py-0.2 text-[7.5px] font-bold text-emerald-700">
+                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
                       Berjalan
                     </span>
                   </td>
@@ -726,12 +708,12 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">4.982</td>
                   <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 3,42 M</span>
                       <span className="font-mono text-[8px] font-bold text-emerald-700">82%</span>
-                    </div>
-                    <div className="h-0.5 w-12 bg-zinc-100 rounded-full overflow-hidden ml-auto mt-0.5">
-                      <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
+                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
+                      </div>
                     </div>
                   </td>
                   <td className="py-1.5 pl-1 text-right">
@@ -753,7 +735,7 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan</td>
                   <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1 py-0.2 text-[7.5px] font-bold text-emerald-700">
+                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
                       Berjalan
                     </span>
                   </td>
@@ -763,12 +745,12 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">3.765</td>
                   <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 2,68 M</span>
                       <span className="font-mono text-[8px] font-bold text-emerald-700">84%</span>
-                    </div>
-                    <div className="h-0.5 w-12 bg-zinc-100 rounded-full overflow-hidden ml-auto mt-0.5">
-                      <div className="h-full bg-emerald-600 rounded-full" style={{ width: '84%' }} />
+                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '84%' }} />
+                      </div>
                     </div>
                   </td>
                   <td className="py-1.5 pl-1 text-right">
@@ -790,7 +772,7 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & PKK Kota</td>
                   <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1 py-0.2 text-[7.5px] font-bold text-emerald-700">
+                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
                       Berjalan
                     </span>
                   </td>
@@ -800,12 +782,12 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">2.143</td>
                   <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 1,56 M</span>
                       <span className="font-mono text-[8px] font-bold text-emerald-700">79%</span>
-                    </div>
-                    <div className="h-0.5 w-12 bg-zinc-100 rounded-full overflow-hidden ml-auto mt-0.5">
-                      <div className="h-full bg-emerald-600 rounded-full" style={{ width: '79%' }} />
+                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '79%' }} />
+                      </div>
                     </div>
                   </td>
                   <td className="py-1.5 pl-1 text-right">
@@ -827,7 +809,7 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Lazismu</td>
                   <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1 py-0.2 text-[7.5px] font-bold text-emerald-700">
+                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
                       Berjalan
                     </span>
                   </td>
@@ -837,12 +819,12 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.484</td>
                   <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,89 M</span>
                       <span className="font-mono text-[8px] font-bold text-emerald-700">91%</span>
-                    </div>
-                    <div className="h-0.5 w-12 bg-zinc-100 rounded-full overflow-hidden ml-auto mt-0.5">
-                      <div className="h-full bg-emerald-600 rounded-full" style={{ width: '91%' }} />
+                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '91%' }} />
+                      </div>
                     </div>
                   </td>
                   <td className="py-1.5 pl-1 text-right">
@@ -864,7 +846,7 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Puskesmas</td>
                   <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-amber-50 px-1 py-0.2 text-[7.5px] font-bold text-amber-700">
+                    <span className="inline-flex rounded bg-amber-50 px-1.5 py-0.5 text-[7.5px] font-bold text-amber-700">
                       Perlu perhatian
                     </span>
                   </td>
@@ -874,12 +856,12 @@ export function ProgramPilarWorkspace() {
                   </td>
                   <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.021</td>
                   <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1.5">
                       <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,66 M</span>
                       <span className="font-mono text-[8px] font-bold text-amber-700">61%</span>
-                    </div>
-                    <div className="h-0.5 w-12 bg-zinc-100 rounded-full overflow-hidden ml-auto mt-0.5">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '61%' }} />
+                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '61%' }} />
+                      </div>
                     </div>
                   </td>
                   <td className="py-1.5 pl-1 text-right">
@@ -895,67 +877,58 @@ export function ProgramPilarWorkspace() {
         <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-4 flex flex-col justify-between space-y-2">
           <div>
             <h2 className="text-[11px] font-bold text-zinc-900">Rekomendasi prioritas</h2>
-            <div className="mt-1.5 space-y-1.5">
+            <div className="mt-2 space-y-2">
               {/* Item 1 */}
-              <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 space-y-1">
-                <div className="flex items-start gap-1.5">
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[#008B5A] text-[8px] font-bold text-white">
+              <div className="flex items-start justify-between gap-2 p-1">
+                <div className="flex items-start gap-2">
+                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#008B5A] text-[9px] font-bold text-white mt-0.5">
                     1
                   </span>
                   <p className="text-[9px] text-zinc-800 leading-snug font-medium">
                     Perluas intervensi gizi ibu & anak ke 3 kecamatan prioritas untuk percepat capaian target penerima.
                   </p>
                 </div>
-                <div className="text-right">
-                  <button type="button" className="inline-flex items-center gap-0.5 text-[8.5px] font-bold text-emerald-800 hover:text-emerald-950 cursor-pointer">
-                    <span>Lihat detail</span>
-                    <ArrowRight className="size-2" />
-                  </button>
-                </div>
+                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
+                  Lihat detail &gt;
+                </button>
               </div>
 
               {/* Item 2 */}
-              <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 space-y-1">
-                <div className="flex items-start gap-1.5">
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white">
+              <div className="flex items-start justify-between gap-2 p-1">
+                <div className="flex items-start gap-2">
+                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white mt-0.5">
                     2
                   </span>
                   <p className="text-[9px] text-zinc-800 leading-snug font-medium">
                     Tingkatkan verifikasi & follow-up bantuan pengobatan agar rasio keberhasilan intervensi naik &gt;75%.
                   </p>
                 </div>
-                <div className="text-right">
-                  <button type="button" className="inline-flex items-center gap-0.5 text-[8.5px] font-bold text-amber-700 hover:text-amber-800 cursor-pointer">
-                    <span>Lihat detail</span>
-                    <ArrowRight className="size-2" />
-                  </button>
-                </div>
+                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
+                  Lihat detail &gt;
+                </button>
               </div>
 
               {/* Item 3 */}
-              <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 space-y-1">
-                <div className="flex items-start gap-1.5">
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-purple-600 text-[8px] font-bold text-white">
+              <div className="flex items-start justify-between gap-2 p-1">
+                <div className="flex items-start gap-2">
+                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-[9px] font-bold text-white mt-0.5">
                     3
                   </span>
                   <p className="text-[9px] text-zinc-800 leading-snug font-medium">
                     Optimalkan kolaborasi fasilitas kesehatan agar layanan klinik lebih merata di wilayah timur kota.
                   </p>
                 </div>
-                <div className="text-right">
-                  <button type="button" className="inline-flex items-center gap-0.5 text-[8.5px] font-bold text-purple-700 hover:text-purple-800 cursor-pointer">
-                    <span>Lihat detail</span>
-                    <ArrowRight className="size-2" />
-                  </button>
-                </div>
+                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
+                  Lihat detail &gt;
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="pt-1 border-t border-zinc-100">
+          <div className="pt-2 border-t border-zinc-100">
             <Link
               href="/penyaluran/laporan"
-              className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-800 hover:text-emerald-950"
+              className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 hover:text-emerald-950"
             >
               <span>Lihat semua rekomendasi</span>
               <ArrowRight className="size-2.5" />
