@@ -1,10 +1,17 @@
+import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Support static export if needed or server mode
   images: {
     unoptimized: true,
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': path.resolve(__dirname),
+    };
+    return config;
   },
 };
 
