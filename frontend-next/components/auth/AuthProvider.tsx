@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { CurrentUser } from '@/lib/api/types';
 import { getCachedUser, getClientToken, setClientSession, clearClientSession } from '@/lib/auth/session';
-import { api } from '@/lib/api/client';
+import { api, ApiError } from '@/lib/api/client';
 
 interface AuthContextType {
   user: CurrentUser | null;
@@ -25,11 +25,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initial synchronous hydration from localStorage
+  useEffect(() => {
+    const cached = getCachedUser();
+    const token = getClientToken();
+
+    if (cached && token) {
+      setUser(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(false);
+    }
+
+    // Background verify if token is a real JWT (non-demo)
+    if (token && !token.startsWith('demo-')) {
+      api.getMe()
+        .then((res) => {
+          if (res.user) {
+            setUser(res.user);
+            setClientSession(token, res.user);
+          }
+        })
+        .catch((err) => {
+          // Only clear session if explicitly rejected with 401/403
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            clearClientSession();
+            setUser(null);
+          }
+        });
+    }
+  }, []);
+
   const refreshUser = async () => {
     const token = getClientToken();
     if (!token) {
       setUser(null);
-      setIsLoading(false);
+      return;
+    }
+
+    if (token.startsWith('demo-')) {
+      const cached = getCachedUser();
+      if (cached) setUser(cached);
       return;
     }
 
@@ -39,32 +75,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(res.user);
         setClientSession(token, res.user);
       }
-    } catch {
-      // Invalid or expired token
-      clearClientSession();
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        clearClientSession();
+        setUser(null);
+      }
     }
   };
-
-  useEffect(() => {
-    // Initial optimistic hydrate from cache
-    const cached = getCachedUser();
-    if (cached) {
-      setUser(cached);
-    }
-    refreshUser();
-  }, []);
 
   const login = (token: string, newUser: CurrentUser) => {
     setClientSession(token, newUser);
     setUser(newUser);
+    setIsLoading(false);
   };
 
   const logout = () => {
     clearClientSession();
     setUser(null);
+    setIsLoading(false);
   };
 
   return (
