@@ -461,97 +461,122 @@ export function ProgramPilarWorkspace() {
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
         {/* Card 1: Funnel outcome program */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
           <div>
-            <h3 className="text-[11px] font-bold text-zinc-900">Funnel outcome program</h3>
-            <div className="mt-2.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[11px] font-bold text-zinc-900">Funnel outcome program</h3>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">42,8% konversi</span>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
               {[
-                { label: 'Proposal diterima', count: 42, color: 'bg-emerald-600', w: '100%' },
-                { label: 'Verifikasi kelayakan', count: 36, color: 'bg-emerald-400', w: '85%' },
-                { label: 'Disetujui', count: 28, color: 'bg-sky-400', w: '66%' },
-                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-amber-400', w: '52%' },
-                { label: 'Bantuan tersalurkan', count: 18, color: 'bg-purple-400', w: '42%' },
+                { label: 'Proposal diterima', count: 42, color: 'bg-[#008B5A]', w: '100%' },
+                { label: 'Verifikasi kelayakan', count: 36, color: 'bg-emerald-500', w: '85%' },
+                { label: 'Disetujui', count: 28, color: 'bg-sky-500', w: '66%' },
+                { label: 'Dalam pelaksanaan', count: 22, color: 'bg-amber-500', w: '52%' },
+                { label: 'Bantuan tersalurkan', count: 18, color: 'bg-purple-500', w: '42%' },
               ].map((f) => (
-                <div key={f.label} className="space-y-0.5">
-                  <div className="flex justify-between text-[8px]">
-                    <span className="text-zinc-600">{f.label}</span>
+                <div key={f.label} className="space-y-1">
+                  <div className="flex justify-between text-[9px]">
+                    <span className="font-medium text-zinc-700">{f.label}</span>
                     <span className="font-bold text-zinc-900 font-mono">{f.count}</span>
                   </div>
-                  <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${f.color}`} style={{ width: f.w }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
+          <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[8.5px] text-zinc-400">
+            <span>Rasio akhir tersalurkan</span>
+            <span className="font-bold text-zinc-800 font-mono">18 dari 42 proposal</span>
+          </div>
         </div>
 
         {/* Card 2: Komposisi asnaf penerima manfaat */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
           <div>
             <h3 className="text-[11px] font-bold text-zinc-900">Komposisi asnaf penerima manfaat</h3>
-            <div className="mt-2 flex items-center gap-2">
-              {/* Donut chart SVG */}
-              <div className="size-16 shrink-0 relative">
+            
+            <div className="mt-3 flex items-center gap-3">
+              {/* Donut chart SVG with Center Total */}
+              <div className="size-20 shrink-0 relative flex items-center justify-center">
                 <svg viewBox="0 0 36 36" className="size-full -rotate-90">
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#047857" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="0" />
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="-33" />
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#a7f3d0" strokeWidth="4.5" strokeDasharray="12 100" strokeDashoffset="-66" />
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#38bdf8" strokeWidth="4.5" strokeDasharray="10 100" strokeDashoffset="-78" />
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#fbbf24" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-88" />
-                  <circle cx="18" cy="18" r="13" fill="transparent" stroke="#c084fc" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-94" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#00704A" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="0" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="33 100" strokeDashoffset="-33" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#6ee7b7" strokeWidth="4.5" strokeDasharray="12 100" strokeDashoffset="-66" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#0ea5e9" strokeWidth="4.5" strokeDasharray="10 100" strokeDashoffset="-78" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-88" />
+                  <circle cx="18" cy="18" r="14" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="6 100" strokeDashoffset="-94" />
                 </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] font-black text-zinc-950 font-mono leading-none">12,3k</span>
+                  <span className="text-[6.5px] text-zinc-400 uppercase font-bold tracking-tight mt-0.5">Jiwa</span>
+                </div>
               </div>
 
               {/* Legend List */}
-              <div className="flex-1 space-y-0.5 text-[8px]">
+              <div className="flex-1 space-y-1 text-[8.5px]">
                 {[
-                  { name: 'Fakir', count: '4.128', pct: '33%', bg: 'bg-[#047857]' },
+                  { name: 'Fakir', count: '4.128', pct: '33%', bg: 'bg-[#00704A]' },
                   { name: 'Miskin', count: '4.046', pct: '33%', bg: 'bg-[#10b981]' },
-                  { name: 'Amil', count: '1.511', pct: '12%', bg: 'bg-[#a7f3d0]' },
-                  { name: 'Mualaf', count: '1.187', pct: '10%', bg: 'bg-[#38bdf8]' },
-                  { name: 'Gharimin', count: '769', pct: '6%', bg: 'bg-[#fbbf24]' },
-                  { name: 'Lainnya', count: '733', pct: '6%', bg: 'bg-[#c084fc]' },
+                  { name: 'Amil', count: '1.511', pct: '12%', bg: 'bg-[#6ee7b7]' },
+                  { name: 'Mualaf', count: '1.187', pct: '10%', bg: 'bg-[#0ea5e9]' },
+                  { name: 'Gharimin', count: '769', pct: '6%', bg: 'bg-[#f59e0b]' },
+                  { name: 'Lainnya', count: '733', pct: '6%', bg: 'bg-[#a855f7]' },
                 ].map((as) => (
                   <div key={as.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <span className={`size-1.5 rounded-full ${as.bg}`} />
-                      <span className="text-zinc-600">{as.name}</span>
+                      <span className="text-zinc-600 font-medium">{as.name}</span>
                     </div>
-                    <span className="font-mono text-zinc-900 font-bold">{as.count} <span className="text-zinc-400 font-normal">({as.pct})</span></span>
+                    <span className="font-mono text-zinc-900 font-bold">{as.count} <span className="text-zinc-400 font-normal text-[7.5px]">({as.pct})</span></span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+
+          <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[8.5px] text-zinc-400">
+            <span>Dominasi prioritas</span>
+            <span className="font-bold text-emerald-800">66% Fakir & Miskin</span>
+          </div>
         </div>
 
         {/* Card 3: Top kecamatan penerima manfaat */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs">
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs">
           <div>
             <h3 className="text-[11px] font-bold text-zinc-900">Top kecamatan penerima manfaat</h3>
-            <div className="mt-1.5 space-y-0.5 text-xs">
+            
+            <div className="mt-2.5 space-y-1.5">
               {[
-                { rank: 1, name: 'Karawaci', count: '2.186', pct: '18%' },
-                { rank: 2, name: 'Ciledug', count: '1.846', pct: '15%' },
-                { rank: 3, name: 'Cipondoh', count: '1.672', pct: '14%' },
-                { rank: 4, name: 'Batuceper', count: '1.435', pct: '12%' },
-                { rank: 5, name: 'Periuk', count: '1.221', pct: '10%' },
+                { rank: 1, name: 'Karawaci', count: '2.186', pct: '18%', w: '100%' },
+                { rank: 2, name: 'Ciledug', count: '1.846', pct: '15%', w: '84%' },
+                { rank: 3, name: 'Cipondoh', count: '1.672', pct: '14%', w: '76%' },
+                { rank: 4, name: 'Batuceper', count: '1.435', pct: '12%', w: '65%' },
+                { rank: 5, name: 'Periuk', count: '1.221', pct: '10%', w: '55%' },
               ].map((kec) => (
-                <div key={kec.name} className="flex items-center justify-between py-0.5 border-b border-zinc-50 last:border-0">
-                  <div className="flex items-center gap-1">
-                    <span className="font-mono text-[8px] font-bold text-zinc-400 w-2">{kec.rank}</span>
-                    <span className="text-[9px] font-medium text-zinc-900">{kec.name}</span>
+                <div key={kec.name} className="space-y-0.5">
+                  <div className="flex items-center justify-between text-[9px]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[8px] font-bold text-zinc-400 w-2.5">{kec.rank}</span>
+                      <span className="font-medium text-zinc-900">{kec.name}</span>
+                    </div>
+                    <span className="font-mono text-zinc-900 font-bold">
+                      {kec.count} <span className="text-zinc-400 font-normal text-[8px]">({kec.pct})</span>
+                    </span>
                   </div>
-                  <span className="font-mono text-[9px] font-bold text-zinc-900">
-                    {kec.count} <span className="text-zinc-400 font-normal">({kec.pct})</span>
-                  </span>
+                  <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-600 rounded-full" style={{ width: kec.w }} />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-1">
+          <div className="mt-3 pt-2 border-t border-zinc-100">
             <Link
               href="/penyaluran/peta"
               className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 hover:text-emerald-950"
@@ -563,46 +588,49 @@ export function ProgramPilarWorkspace() {
         </div>
 
         {/* Card 4: Target vs Realisasi + Efisiensi + Timeline */}
-        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3 shadow-2xs space-y-2">
+        <div className="flex flex-col justify-between rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs space-y-2.5">
           {/* Target vs Realisasi */}
-          <div className="space-y-0.5">
-            <h3 className="text-[11px] font-bold text-zinc-900">Target vs realisasi <span className="text-[8px] font-normal text-zinc-400">(Jan–Agu 2026)</span></h3>
-            <div className="space-y-0.5 pt-0.5">
+          <div className="space-y-1">
+            <h3 className="text-[11px] font-bold text-zinc-900">
+              Target vs realisasi <span className="text-[8px] font-normal text-zinc-400">(Jan–Agu 2026)</span>
+            </h3>
+            
+            <div className="space-y-1.5 pt-1">
               <div>
-                <div className="flex justify-between text-[8px]">
-                  <span className="text-zinc-600">Penyaluran</span>
+                <div className="flex justify-between text-[8.5px]">
+                  <span className="text-zinc-600 font-medium">Penyaluran</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400">
+                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
                   <span>Rp 9,21 M / Rp 11,00 M</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
+                <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
                   <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-[8px]">
-                  <span className="text-zinc-600">Penerima manfaat</span>
+                <div className="flex justify-between text-[8.5px]">
+                  <span className="text-zinc-600 font-medium">Penerima manfaat</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400">
+                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
                   <span>12.374 / 15.000</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
+                <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
                   <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between text-[8px]">
-                  <span className="text-zinc-600">Program aktif</span>
+                <div className="flex justify-between text-[8.5px]">
+                  <span className="text-zinc-600 font-medium">Program aktif</span>
                   <span className="font-mono font-bold text-zinc-900">82%</span>
                 </div>
-                <div className="flex justify-between text-[7.5px] text-zinc-400">
+                <div className="flex justify-between text-[7.5px] text-zinc-400 mt-0.2">
                   <span>18 / 22</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
+                <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden mt-0.5">
                   <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
                 </div>
               </div>
@@ -610,9 +638,9 @@ export function ProgramPilarWorkspace() {
           </div>
 
           {/* Efisiensi Anggaran Badge */}
-          <div className="pt-1 border-t border-zinc-100">
-            <h4 className="text-[8px] font-bold text-zinc-700">Efisiensi anggaran</h4>
-            <div className="mt-0.5 flex items-center justify-between text-[8px]">
+          <div className="pt-2 border-t border-zinc-100">
+            <h4 className="text-[8.5px] font-bold text-zinc-700">Efisiensi anggaran</h4>
+            <div className="mt-1 flex items-center justify-between text-[8px]">
               <div>
                 <span className="font-mono font-bold text-zinc-900">92,4%</span>
                 <p className="text-[7.5px] text-zinc-400">Dana tersalurkan</p>
@@ -621,16 +649,16 @@ export function ProgramPilarWorkspace() {
                 <span className="font-mono font-bold text-zinc-900">7,6%</span>
                 <p className="text-[7.5px] text-zinc-400">Biaya operasional</p>
               </div>
-              <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1 py-0.2 text-[7.5px] font-bold text-emerald-700">
-                <Check className="size-2" /> Efisien
+              <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-bold text-emerald-700">
+                <Check className="size-2.5" /> Efisien
               </span>
             </div>
           </div>
 
           {/* Timeline Tonggak Penting */}
-          <div className="pt-1 border-t border-zinc-100">
-            <h4 className="text-[8px] font-bold text-zinc-700 mb-0.5">Timeline tonggak penting</h4>
-            <div className="space-y-0.5 text-[7.5px]">
+          <div className="pt-2 border-t border-zinc-100">
+            <h4 className="text-[8.5px] font-bold text-zinc-700 mb-1">Timeline tonggak penting</h4>
+            <div className="space-y-1 text-[7.5px]">
               {[
                 { date: 'Jan 2026', text: 'Kick-off program kesehatan', active: false },
                 { date: 'Mar 2026', text: 'Peluncuran layanan mobile klinik', active: false },
@@ -638,9 +666,9 @@ export function ProgramPilarWorkspace() {
                 { date: 'Jul 2026', text: 'Program gizi ibu & anak diperluas', active: false },
                 { date: 'Agu 2026', text: 'Review capaian & optimasi program', active: true },
               ].map((t) => (
-                <div key={t.date} className="flex items-center gap-1">
-                  <span className={`size-1 rounded-full shrink-0 ${t.active ? 'bg-emerald-600' : 'border border-zinc-300'}`} />
-                  <span className="font-mono text-zinc-400 w-9">{t.date}</span>
+                <div key={t.date} className="flex items-center gap-1.5">
+                  <span className={`size-1.5 rounded-full shrink-0 ${t.active ? 'bg-emerald-600' : 'border border-zinc-300 bg-white'}`} />
+                  <span className="font-mono text-zinc-400 w-10">{t.date}</span>
                   <span className={`truncate ${t.active ? 'font-bold text-zinc-900' : 'text-zinc-600'}`}>{t.text}</span>
                 </div>
               ))}
