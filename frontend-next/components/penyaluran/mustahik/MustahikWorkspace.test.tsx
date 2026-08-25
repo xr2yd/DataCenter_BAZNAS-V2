@@ -1,0 +1,56 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MustahikWorkspace } from './MustahikWorkspace';
+
+vi.mock('@/lib/api/client', () => ({
+  api: {
+    getMustahikList: vi.fn().mockRejectedValue(new Error('offline')),
+  },
+}));
+
+describe('MustahikWorkspace', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('uses a master-detail workspace and updates the profile when an applicant is selected', async () => {
+    render(<MustahikWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Data Mustahik' })).toBeInTheDocument();
+    expect(screen.getByText('Antrean verifikasi')).toBeInTheDocument();
+    expect(screen.getByText('Profil & kelayakan')).toBeInTheDocument();
+    expect(screen.getByText('Panel keputusan')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /pilih ahmad fauzi/i }));
+
+    expect(screen.getByRole('heading', { name: 'Ahmad Fauzi' })).toBeInTheDocument();
+    expect(screen.getByText('Tangerang Peduli')).toBeInTheDocument();
+  });
+
+  it('filters the queue by workflow stage', async () => {
+    render(<MustahikWorkspace />);
+    await screen.findByText('Antrean verifikasi');
+
+    fireEvent.click(screen.getByRole('button', { name: /pilih ahmad fauzi/i }));
+    fireEvent.click(screen.getByRole('button', { name: /survey 8/i }));
+
+    expect(screen.getByRole('button', { name: /pilih siti maryam/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /pilih ahmad fauzi/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Siti Maryam' })).toBeInTheDocument();
+  });
+
+  it('shows an actionable empty state when search has no match', async () => {
+    render(<MustahikWorkspace />);
+    const search = await screen.findByPlaceholderText('Cari nama, NIK, atau no. pengajuan…');
+
+    fireEvent.change(search, { target: { value: 'tidak-ada-orang-ini' } });
+
+    await waitFor(() => expect(screen.getByText('Data tidak ditemukan')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Hapus pencarian' })).toBeInTheDocument();
+  });
+
+  it('shows the score as one centered value and a real location map', async () => {
+    render(<MustahikWorkspace />);
+
+    expect(await screen.findByLabelText('Skor kelayakan 86 dari 100')).toHaveTextContent('86/100');
+    expect(screen.getByRole('region', { name: 'Peta lokasi Siti Maryam' })).toBeInTheDocument();
+  });
+});

@@ -1,7 +1,7 @@
 import { MustahikWorkspace } from '@/components/penyaluran/mustahik/MustahikWorkspace';
 
 export const metadata = {
-  title: 'Data Mustahik 60 Kolom',
+  title: 'Data Mustahik | Penyaluran BAZNAS',
 };
 
 export default function MustahikPage() {

@@ -1,37 +1,51 @@
-# Design QA — Observatorium Dampak Penyaluran
+# Design QA — Data Mustahik Option 2
 
-## Evidence
+- Source visual truth: `C:/Users/xrunc/.codex/generated_images/01a0333b-e487-7082-ba65-6fdc237e8d60/exec-b58676c7-ffee-4ece-9a94-193fef5b72c3.png`
+- Implementation screenshot: `D:/BAZNAS/data-center/frontend-next/design-qa-mustahik-option-2-final.png`
+- Intended CSS viewport: 1440 × 1024 at device density 1
+- Source pixels: 1487 × 1058
+- Implementation capture pixels: 1434 × 873 (in-app browser content viewport after browser chrome)
+- State: authenticated Data Mustahik, Siti Maryam selected, all-stage queue visible
+- Normalization: full-view images were displayed together and visually fit to the same comparison frame. No density scaling was required.
 
-- Source visual truth: `C:/Users/xrunc/.codex/generated_images/01a0333b-e487-7082-ba65-6fdc237e8d60/exec-bbc9d221-8814-49a8-8319-d881d506c8af.png`
-- Implementation screenshot: `D:/BAZNAS/data-center/frontend-next/design-qa-dashboard-30d-v2.png`
-- Viewport: 1440 × 1024 CSS px, device scale factor 1.
-- State: desktop, light theme, authenticated local preview, period `30 Hari` selected.
-- Full-view evidence: source and implementation were opened together in the same comparison run on 2026-08-24.
-- Focused regions checked: navigation/hero, metric strip, period control, trend, asnaf list, priority rail.
+## Full-view comparison evidence
 
-## Comparison History
+The implementation preserves the source composition: centered application navigation, compact page command bar, workflow stage ribbon, left applicant queue, central profile/eligibility workspace, and persistent right decision panel. The main grid proportions, emerald semantic color, white/light-slate surfaces, rounded cards, and status hierarchy remain consistent with the selected mockup.
 
-### Initial comparison
+The first comparison found a P2 density mismatch: the page header stacked sync information above the title, making the workspace begin materially lower than the source. The header was rebuilt as a desktop three-column command bar (title left, sync center, actions right), then recaptured. The final comparison shows matching above-the-fold hierarchy and substantially closer vertical rhythm.
 
-- [P2] The opening band and asnaf rows were too tall, pushing geographic context below the first desktop view.
-  - Fix: condensed the opening band, retained 14px body-scale labels, and changed each asnaf entry to a compact single-line allocation row.
+## Focused region comparison evidence
 
-### Post-fix comparison
+- Header: source and final implementation both use a single-row command structure on desktop. Typography remains slightly larger in the implementation to address the user's prior readability concern.
+- Master list: selected-row highlight, initials, SLA dots, masked NIK, district, and stage status match the source's information hierarchy.
+- Profile: identity, completeness, address, asnaf indicators, program/nominal, household, process, and document sections are visibly grouped like the source.
+- Decision panel: score, recommendation, verification checks, missing-document warning, assessor note, history, and approval action match the source's decision flow.
+- Assets: no photographic or generated raster asset was required. The existing BAZNAS logo and the project's icon library are used; all UI copy remains editable HTML.
 
-- Typography: bold dashboard hierarchy, readable body copy, and compact labels are clear at desktop scale. The implementation intentionally uses the existing sans-serif system rather than introducing a serif display face.
-- Spacing and layout rhythm: white surface, thin dividers, 16–24px rhythm, restrained corner radius, and action rail align with the source composition. The map follows the primary data row to preserve 8-asnaf readability.
-- Colors and tokens: white base, emerald navigation and selected period, subdued tinted priority states, and five program accents preserve BAZNAS-led visual hierarchy.
-- Image and asset fidelity: existing BAZNAS logo asset and map tiles are retained; no placeholder imagery or substituted brand marks were added.
-- Copy and content: all selected mockup data domains are present—period, summary, trend, eight asnaf, five pilar, map, actions, and activity. Values are clearly marked as demo-ready data.
+## Required fidelity surfaces
 
-## Residual Polish
+- Fonts and typography: Plus Jakarta Sans/Manrope-aligned sans hierarchy, clear 10–24 px operational scale, readable weights, no collisions or truncation in the tested desktop state.
+- Spacing and layout rhythm: responsive three-column master-detail grid, consistent 12–16 px internal gaps, 16–22 px radii, restrained elevation, balanced dense layout.
+- Colors and tokens: emerald primary, slate foreground/background, amber warnings, and rose SLA states map consistently to their semantic roles with accessible contrast.
+- Image quality and assets: existing BAZNAS logo remains crisp; map preview is intentionally a code-native non-geographic placeholder surface because the selected mockup did not require a real map asset. Icons use the established project library.
+- Copy and content: Indonesian operational copy is concise and specific to verification, eligibility, documents, and decision making.
 
-- [P3] Trend is rendered as a readable three-series operational bar chart rather than the source mockup’s line/area chart; the current form makes target, current, and previous values easier to distinguish without adding a chart dependency.
-- [P3] The full peta follows the insight row rather than sharing the source mockup’s exact first-fold position; it remains the next visual section with its own clear heading and selection interaction.
+## Interaction verification
 
-## Interaction Checks
+- Selecting Ahmad Fauzi updates the central profile.
+- Choosing Survey filters the queue and moves selection to Siti Maryam.
+- Search with no results shows an actionable empty state and clear reset control.
+- Approval action shows a success status message.
+- Browser console: 0 errors in the tested state.
 
-- Period control: selecting `7 Hari` changed active state and simultaneously updated total, asnaf period copy, trend, programs, map fallback values, and action counts.
-- Browser console: a fresh local browser session completed with no warnings or errors. A transient React Leaflet hot-reload error was isolated to the development refresh path and did not occur in a fresh session.
+## Comparison history
+
+1. P2 — Header was too tall and pushed workspace content down.
+   - Fix: changed header to a single desktop command row and reduced supporting copy scale.
+   - Post-fix evidence: `design-qa-mustahik-option-2-final.png`; no actionable P0/P1/P2 mismatch remains.
+
+## Follow-up polish
+
+- P3: the implementation includes a “Semua” stage and slightly larger operational typography than the generated source. Both are intentional usability improvements and do not alter the selected master-detail concept.
 
 final result: passed

@@ -23,9 +23,9 @@ export function PenyaluranTopNav() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/95 backdrop-blur-xs">
-      <div className="mx-auto flex h-14 max-w-[1920px] items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto grid h-14 max-w-[1920px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6">
         {/* Left: Brand Identity */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center">
           <Link href="/penyaluran" className="flex items-center gap-2.5">
             <div className="relative size-8 shrink-0 overflow-hidden rounded-md">
               <img
@@ -44,8 +44,10 @@ export function PenyaluranTopNav() {
             </div>
           </Link>
 
-          {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1">
+        </div>
+
+        {/* Desktop nav stays mathematically centered regardless of brand/profile width. */}
+        <nav className="hidden md:flex items-center gap-1">
             {PENYALURAN_NAV_ITEMS.map((item) => {
               const isActive = item.exact
                 ? pathname === item.href
@@ -70,11 +72,10 @@ export function PenyaluranTopNav() {
                 </Link>
               );
             })}
-          </nav>
-        </div>
+        </nav>
 
         {/* Right: User Profile & Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-self-end">
           <div className="relative">
             <button
               type="button"

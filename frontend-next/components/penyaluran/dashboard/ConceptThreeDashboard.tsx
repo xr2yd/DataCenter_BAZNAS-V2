@@ -9,17 +9,12 @@ import { DashboardPeriodControl } from './DashboardPeriodControl';
 import { TrendPanel } from './TrendPanel';
 import { AsnafBreakdown } from './AsnafBreakdown';
 import { ProgramImpactGrid } from './ProgramImpactGrid';
+import { DecisionStudioHero } from './DecisionStudioHero';
 import { getDashboardData, type DashboardPeriod } from './dashboard-data';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { api } from '@/lib/api/client';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
-import {
-  Compass,
-  ArrowRight,
-  Users,
-  CalendarDays,
-  MapPinned,
-} from 'lucide-react';
+import { ArrowRight, MapPinned } from 'lucide-react';
 
 const RealKecamatanMap = dynamic(
   () => import('../map/RealKecamatanMap'),
@@ -60,27 +55,7 @@ export function ConceptThreeDashboard() {
 
   return (
     <div className="mx-auto max-w-[1540px] space-y-6 pb-10">
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-[linear-gradient(120deg,#ffffff_0%,#f1fbf7_54%,#ffffff_100%)] px-5 py-5 shadow-[0_14px_40px_rgba(5,150,105,0.06)] sm:px-7 sm:py-5">
-        <div className="absolute -right-10 -top-20 size-64 rounded-full bg-emerald-100/60 blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold text-emerald-700">Selamat pagi, {user?.name ? user.name.split(' ')[0] : 'Pak Rahmat'}</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-950 sm:text-[2.05rem]">Ruang Operasional Penyaluran ZIS</h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-600">Pantau dampak bantuan, sebaran kecamatan, dan prioritas yang membutuhkan keputusan Anda.</p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-600"><CalendarDays className="size-4 text-emerald-700" /> Senin, 24 Agustus 2026</div>
-            <DashboardPeriodControl value={period} onChange={setPeriod} />
-          </div>
-        </div>
-        <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-emerald-100 pt-3">
-          <p className="text-xs font-medium text-zinc-500"><span className="mr-1.5 inline-block size-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />Data demo · siap diganti real-time</p>
-          <div className="flex items-center gap-2">
-            <Link href="/penyaluran/peta" className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 transition-colors hover:border-emerald-300 hover:text-emerald-800"><MapPinned className="size-3.5 text-emerald-700" />Peta Sebaran GIS</Link>
-            <Link href="/penyaluran/mustahik" className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800"><Users className="size-3.5" />Data Mustahik<ArrowRight className="size-3.5" /></Link>
-          </div>
-        </div>
-      </section>
+      <DecisionStudioHero data={data} />
 
       <ImpactMetrics data={data} />
 
