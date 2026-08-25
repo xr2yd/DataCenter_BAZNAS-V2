@@ -9,29 +9,16 @@ import {
   Landmark,
   Shield,
   Check,
-  Briefcase,
   Wallet,
   ClipboardList,
   CheckCircle2,
   ArrowRight,
-  TrendingUp,
   Stethoscope,
   FileText,
   MapPin,
-  UserPlus,
-  Ambulance,
-  Activity,
-  Apple,
-  ShieldAlert,
   Target,
   Award,
-  Clock,
   Layers,
-  ChevronLeft,
-  Sparkles,
-  Plus,
-  AlertTriangle,
-  CalendarDays,
 } from 'lucide-react';
 
 interface PilarCardData {
@@ -81,6 +68,12 @@ interface PilarCardData {
     pct: number;
   }[];
 }
+
+const formatMiliar = (value: number) =>
+  `Rp ${(value / 1_000_000_000).toLocaleString('id-ID', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} M`;
 
 const PILAR_CARDS: PilarCardData[] = [
   {
@@ -423,9 +416,12 @@ const PILAR_CARDS: PilarCardData[] = [
   },
 ];
 
-function LegacyProgramPilarWorkspace() {
+export function ProgramPilarWorkspace() {
   const [selectedPilar, setSelectedPilar] = useState('sehat');
   const activePilarData = PILAR_CARDS.find((p) => p.id === selectedPilar) || PILAR_CARDS[2]!;
+  const remainingBudget = Math.max(activePilarData.rawBudget - activePilarData.rawAmount, 0);
+  const projectedAmount = activePilarData.rawAmount * 1.22;
+  const projectedPercent = Math.round((projectedAmount / activePilarData.rawBudget) * 100);
 
   return (
     <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5 sm:space-y-6 pb-12 text-slate-800 antialiased">
@@ -467,16 +463,46 @@ function LegacyProgramPilarWorkspace() {
       {/* ========================================================================= */}
       {/* 2. TOP 5 PILAR CARDS SELECTOR (GRID 5 COLS)                              */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
-        {PILAR_CARDS.map((pilar) => {
+      <div
+        role="tablist"
+        aria-label="Pilih Program 5 Pilar"
+        className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5"
+      >
+        {PILAR_CARDS.map((pilar, index) => {
           const isSelected = selectedPilar === pilar.id;
           const Icon = pilar.icon;
 
           return (
             <button
               key={pilar.id}
+              type="button"
+              role="tab"
+              id={`pilar-tab-${pilar.id}`}
+              aria-controls="pilar-detail-panel"
+              aria-selected={isSelected}
+              tabIndex={isSelected ? 0 : -1}
               onClick={() => setSelectedPilar(pilar.id)}
-              className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none ${
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+
+                event.preventDefault();
+                const lastIndex = PILAR_CARDS.length - 1;
+                const nextIndex = event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? lastIndex
+                    : event.key === 'ArrowRight'
+                      ? (index + 1) % PILAR_CARDS.length
+                      : (index - 1 + PILAR_CARDS.length) % PILAR_CARDS.length;
+                const nextPilar = PILAR_CARDS[nextIndex];
+
+                if (!nextPilar) return;
+                setSelectedPilar(nextPilar.id);
+                event.currentTarget.parentElement
+                  ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                  [nextIndex]?.focus();
+              }}
+              className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 select-none sm:last:col-span-2 lg:last:col-span-1 ${
                 isSelected
                   ? 'border-[#008B5A] shadow-md bg-emerald-50/20'
                   : 'border-zinc-200/90 hover:border-zinc-300 hover:shadow-xs'
@@ -532,10 +558,16 @@ function LegacyProgramPilarWorkspace() {
         })}
       </div>
 
-      {/* ========================================================================= */}
-      {/* 3. VALUE CHAIN: FULL WIDTH HARMONIOUS 5-STEP SECTION                     */}
-      {/* ========================================================================= */}
-      <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+      <div
+        id="pilar-detail-panel"
+        role="tabpanel"
+        aria-labelledby={`pilar-tab-${selectedPilar}`}
+        className="space-y-5 sm:space-y-6"
+      >
+        {/* ========================================================================= */}
+        {/* 3. VALUE CHAIN: FULL WIDTH HARMONIOUS 5-STEP SECTION                     */}
+        {/* ========================================================================= */}
+        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-zinc-100 pb-3">
           <div>
             <h2 className="text-base sm:text-lg font-black text-zinc-950 flex items-center gap-2">
@@ -623,182 +655,138 @@ function LegacyProgramPilarWorkspace() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 4. BALANCED SPLIT ROW: CHARTS (LEFT 7 COLS) & 6 KPIS (RIGHT 5 COLS)       */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 items-stretch">
-        {/* Left: Monthly Trend & Proyeksi Card (7 cols) */}
-        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs lg:col-span-7 flex flex-col justify-between space-y-5">
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <h3 className="text-base font-bold text-zinc-950">Tren Penyaluran Bulanan</h3>
-                <p className="text-xs text-zinc-500">Nominal realisasi penyaluran vs target bulanan (Rp Juta)</p>
-              </div>
-              <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-xs bg-[#008B5A]" /> Realisasi
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-cyan-500" /> Target RKAT
-                </span>
-              </div>
-            </div>
-
-            {/* Monthly Bar Chart */}
-            <div className="h-56 w-full flex items-end justify-between gap-2 border-b border-zinc-200 pb-2 mt-4">
-              {activePilarData.monthlyBars.map((bar) => (
-                <div key={bar.m} className="flex flex-1 flex-col items-center gap-1.5 h-full justify-end">
-                  {bar.active ? (
-                    <div
-                      className="w-full max-w-[16px] rounded-t-sm bg-gradient-to-t from-[#008B5A] to-emerald-500 transition-all duration-300"
-                      style={{ height: `${bar.realisasi}%` }}
-                    />
-                  ) : (
-                    <div
-                      className="w-full max-w-[16px] rounded-t-sm bg-zinc-200"
-                      style={{ height: `${bar.target * 0.7}%` }}
-                    />
-                  )}
-                  <span className="text-xs text-zinc-500 font-semibold">{bar.m}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Proyeksi & Target 2026 Strip */}
-          <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <section
+        role="region"
+        aria-label="Kinerja Program Terpadu"
+        className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-2xs"
+      >
+        <div className="border-b border-zinc-100 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Proyeksi Serapan 2026:</p>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-xl font-black text-zinc-950 font-mono">Rp 11,23 M</span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
-                  102% target
-                </span>
-              </div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-700">Kinerja Program Terpadu</p>
+              <h2 id="kinerja-program-terpadu-title" className="mt-1 text-lg font-black text-zinc-950 sm:text-xl">
+                Kinerja {activePilarData.name}
+              </h2>
+              <p className="mt-1 text-xs font-medium text-zinc-500 sm:text-sm">
+                Tren realisasi, dampak utama, dan ruang penyaluran dalam satu pandangan.
+              </p>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div>
-                <p className="text-zinc-500">Pagu Tahunan:</p>
-                <p className="font-bold text-zinc-900 font-mono">Rp 11,00 M</p>
+            <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 ring-1 ring-inset ring-emerald-200">
+              {activePilarData.percentage}% dari target RKAT
+            </span>
+          </div>
+
+          <div className="mt-5 grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,.6fr)] lg:gap-6">
+            <article className="min-w-0 rounded-2xl bg-zinc-50/70 p-4 sm:p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-zinc-950">Tren Penyaluran Bulanan</h3>
+                  <p className="mt-1 text-xs text-zinc-500">Realisasi dan target bulanan dalam indeks RKAT.</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-semibold text-zinc-500">
+                  <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[#008B5A]" />Realisasi</span>
+                  <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-amber-400" />Target</span>
+                </div>
               </div>
-              <div className="border-l border-zinc-200 pl-4">
-                <p className="text-zinc-500">Sisa Kuota:</p>
-                <p className="font-bold text-amber-700 font-mono">Rp 1,79 M</p>
-              </div>
+
+              <figure className="mt-4 w-full max-w-full overflow-x-auto" aria-label={`Tren penyaluran bulanan ${activePilarData.name}`}>
+                <figcaption className="sr-only">Perbandingan indeks realisasi dan target bulanan.</figcaption>
+                <ul className="sr-only">
+                  {activePilarData.monthlyBars.map((bar) => (
+                    <li key={`trend-${bar.m}`}>{bar.m}: realisasi {bar.realisasi}, target {bar.target}.</li>
+                  ))}
+                </ul>
+                <div className="flex h-56 min-w-[560px] items-end gap-3 border-b border-zinc-200 px-1 pb-2">
+                  {activePilarData.monthlyBars.map((bar) => (
+                    <div key={bar.m} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                      <div className="relative flex h-44 w-full max-w-7 items-end justify-center">
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-[-3px] right-[-3px] h-0.5 rounded-full bg-amber-400"
+                          style={{ bottom: `${Math.min(bar.target, 100)}%` }}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={`w-full rounded-t-md transition-[height] duration-500 motion-reduce:transition-none ${bar.active ? 'bg-gradient-to-t from-[#00704A] to-emerald-400' : 'bg-zinc-200'}`}
+                          style={{ height: `${Math.min(bar.realisasi, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-zinc-500">{bar.m}</span>
+                    </div>
+                  ))}
+                </div>
+              </figure>
+            </article>
+
+            <div role="list" aria-label="Empat indikator dampak utama" className="grid grid-cols-2 gap-3">
+              {[
+                { label: activePilarData.metrics.primaryLabel, value: activePilarData.metrics.primaryValue, note: `${activePilarData.metrics.primaryGrowth} vs periode lalu`, icon: Stethoscope },
+                { label: activePilarData.metrics.successLabel, value: activePilarData.metrics.successValue, note: `Tingkat sukses ${activePilarData.metrics.successRate}`, icon: CheckCircle2 },
+                { label: activePilarData.metrics.avgLabel, value: activePilarData.metrics.avgValue, note: 'Rata-rata per mustahik', icon: Wallet },
+                { label: activePilarData.metrics.progLabel, value: activePilarData.metrics.progValue, note: 'Layanan operasional aktif', icon: FileText },
+              ].map((metric) => {
+                const Icon = metric.icon;
+                return (
+                  <article role="listitem" key={metric.label} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                      <Icon className="size-4.5" />
+                    </div>
+                    <p className="mt-4 text-sm font-semibold leading-5 text-zinc-600">{metric.label}</p>
+                    <p className="mt-1 text-2xl font-black tracking-tight text-zinc-950">{metric.value}</p>
+                    <p className="mt-1 text-xs font-bold text-emerald-700">{metric.note}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Right: Dampak Utama 6 KPI Matrix (5 cols, 2x3 Grid that perfectly fills height) */}
-        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs lg:col-span-5 flex flex-col justify-between space-y-4">
-          <div>
-            <h3 className="text-base font-bold text-zinc-950">
-              Dampak Utama — <span className="text-[#008B5A]">{activePilarData.name}</span>
-            </h3>
-            <p className="text-xs text-zinc-500">Indikator kinerja kunci dan efektivitas bantuan mustahik</p>
+        <div
+          role="group"
+          aria-label="Ringkasan proyeksi dan jangkauan"
+          className="grid gap-px bg-zinc-200 sm:grid-cols-2 xl:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]"
+        >
+          <div className="bg-emerald-950 p-4 text-white sm:col-span-2 sm:p-5 xl:col-span-1">
+            <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-emerald-300">Proyeksi Serapan 2026</p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-2">
+              <strong className="text-2xl font-black">{formatMiliar(projectedAmount)}</strong>
+              <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-emerald-100">{projectedPercent}% target</span>
+            </div>
           </div>
-
-          {/* 6 KPI Cards arranged in 2 columns x 3 rows with NO vertical empty space */}
-          <div className="grid grid-cols-2 gap-3 flex-1">
-            {/* KPI 1 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Stethoscope className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.primaryLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.primaryValue}</p>
-                <p className="text-xs font-bold text-emerald-700 mt-0.5">{activePilarData.metrics.primaryGrowth} vs periode lalu</p>
-              </div>
-            </div>
-
-            {/* KPI 2 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.successLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.successValue}</p>
-                <p className="text-xs font-bold text-emerald-700 mt-0.5">Tingkat sukses {activePilarData.metrics.successRate}</p>
-              </div>
-            </div>
-
-            {/* KPI 3 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Wallet className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.avgLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.avgValue}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">Per mustahik</p>
-              </div>
-            </div>
-
-            {/* KPI 4 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <FileText className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.progLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.progValue}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">Layanan operasional</p>
-              </div>
-            </div>
-
-            {/* KPI 5 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <MapPin className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.districtLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.districtValue}</p>
-                <p className="text-xs font-bold text-emerald-700 mt-0.5">100% wilayah kota</p>
-              </div>
-            </div>
-
-            {/* KPI 6 */}
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50/70 p-3.5 flex flex-col justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <UserPlus className="size-3.5" />
-                </div>
-                <span className="text-xs font-semibold text-zinc-600 truncate">{activePilarData.metrics.newLabel}</span>
-              </div>
-              <div>
-                <p className="text-xl font-black text-zinc-950 font-mono mt-1">{activePilarData.metrics.newValue}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">Jan–Agu 2026</p>
-              </div>
-            </div>
+          <div className="bg-white p-4 sm:p-5">
+            <p className="text-xs font-semibold text-zinc-500">Pagu Tahunan</p>
+            <p className="mt-2 text-lg font-black text-zinc-950">{formatMiliar(activePilarData.rawBudget)}</p>
+          </div>
+          <div className="bg-white p-4 sm:p-5">
+            <p className="text-xs font-semibold text-zinc-500">Sisa Kuota</p>
+            <p className="mt-2 text-lg font-black text-amber-700">{formatMiliar(remainingBudget)}</p>
+          </div>
+          <div className="bg-white p-4 sm:p-5">
+            <p className="text-xs font-semibold text-zinc-500">Kecamatan Terjangkau</p>
+            <p className="mt-2 text-lg font-black text-zinc-950">{activePilarData.metrics.districtValue}</p>
+          </div>
+          <div className="bg-white p-4 sm:p-5">
+            <p className="text-xs font-semibold text-zinc-500">Penerima Baru</p>
+            <p className="mt-2 text-lg font-black text-zinc-950">{activePilarData.metrics.newValue}</p>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ========================================================================= */}
       {/* 5. 3-CARD ANALYTICS ROW (FUNNEL, ASNAF DONUT, TOP KECAMATAN)              */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+      <section
+        role="region"
+        aria-label="Analitik penyaluran program"
+        className="grid grid-cols-1 items-start gap-5 sm:grid-cols-2 xl:grid-cols-3"
+      >
         {/* Card 1: Funnel outcome program */}
-        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="space-y-5 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-2xs sm:p-6">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-zinc-950 flex items-center gap-2">
-              <Layers className="size-4 text-emerald-600" /> Funnel Outcome Program
+              <Layers className="size-4 text-emerald-600" /> Alur Dampak Program
             </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">Alur konversi proposal ke penyaluran tuntas</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Tahapan proposal hingga bantuan tersalurkan</p>
           </div>
 
           <div className="space-y-3">
@@ -823,7 +811,7 @@ function LegacyProgramPilarWorkspace() {
         </div>
 
         {/* Card 2: Komposisi Asnaf */}
-        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="space-y-5 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-2xs sm:p-6">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-zinc-950 flex items-center gap-2">
               <Award className="size-4 text-emerald-600" /> Komposisi Asnaf Penerima
@@ -860,7 +848,7 @@ function LegacyProgramPilarWorkspace() {
         </div>
 
         {/* Card 3: Top Kecamatan */}
-        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="space-y-5 rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-2xs sm:col-span-2 sm:p-6 xl:col-span-1">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-zinc-950 flex items-center gap-2">
               <MapPin className="size-4 text-emerald-600" /> Top Kecamatan Penerima
@@ -890,7 +878,7 @@ function LegacyProgramPilarWorkspace() {
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ========================================================================= */}
       {/* 6. SUB-PROGRAM PORTFOLIO TABLE (FULL WIDTH)                               */}
@@ -907,8 +895,55 @@ function LegacyProgramPilarWorkspace() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm">
+        <div
+          role="list"
+          aria-label="Portofolio sub-program untuk layar kecil"
+          className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden"
+        >
+          {activePilarData.subPrograms.map((sub) => (
+            <article
+              role="listitem"
+              key={`compact-${sub.code}`}
+              className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="rounded-md border border-emerald-200/70 bg-emerald-50 px-2 py-1 font-mono text-xs font-bold text-emerald-700">
+                  {sub.code}
+                </span>
+                <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                  {sub.status}
+                </span>
+              </div>
+
+              <h3 className="mt-3 text-sm font-black leading-5 text-zinc-950">{sub.name}</h3>
+
+              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-200 pt-4 text-xs">
+                <div className="col-span-2">
+                  <dt className="font-semibold text-zinc-500">Penanggung jawab</dt>
+                  <dd className="mt-1 font-bold text-zinc-800">{sub.pic}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-zinc-500">Monev berikutnya</dt>
+                  <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.nextMilestone}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-zinc-500">Mustahik</dt>
+                  <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.mustahik} Jiwa</dd>
+                </div>
+                <div className="col-span-2 flex items-end justify-between gap-3 rounded-xl bg-white p-3 ring-1 ring-inset ring-zinc-200">
+                  <div>
+                    <dt className="font-semibold text-zinc-500">Realisasi pagu</dt>
+                    <dd className="mt-1 font-mono text-sm font-black text-zinc-950">{sub.realized}</dd>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-emerald-700">{sub.pct}% terserap</span>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
+          <table className="min-w-[960px] w-full text-left text-sm">
             <thead className="border-b border-zinc-200 text-xs text-zinc-500 font-bold uppercase tracking-wider bg-zinc-50/50">
               <tr>
                 <th className="py-3 px-4">Kode & Nama Program</th>
@@ -953,501 +988,6 @@ function LegacyProgramPilarWorkspace() {
           </table>
         </div>
       </div>
-    </div>
-  );
-}
-
-export function ProgramPilarWorkspace() {
-  const [selectedPilar, setSelectedPilar] = useState('sehat');
-  const activePilarData = PILAR_CARDS.find((pilar) => pilar.id === selectedPilar) || PILAR_CARDS[2]!;
-  const totalRealized = PILAR_CARDS.reduce((total, pilar) => total + pilar.rawAmount, 0);
-  const totalBeneficiaries = PILAR_CARDS.reduce(
-    (total, pilar) => total + Number(pilar.beneficiaries.split(' ')[0]?.replace(/\./g, '') || 0),
-    0,
-  );
-  const totalPrograms = PILAR_CARDS.reduce(
-    (total, pilar) => total + Number.parseInt(pilar.metrics.progValue, 10),
-    0,
-  );
-  const averageAbsorption = Math.round(
-    PILAR_CARDS.reduce((total, pilar) => total + pilar.percentage, 0) / PILAR_CARDS.length,
-  );
-  const remainingBudget = Math.max(activePilarData.rawBudget - activePilarData.rawAmount, 0);
-  const chartMax = Math.max(
-    ...activePilarData.monthlyBars.flatMap((bar) => [bar.realisasi, bar.target]),
-    100,
-  );
-  const priorityPrograms = [...activePilarData.subPrograms]
-    .sort((first, second) => first.pct - second.pct)
-    .slice(0, 2);
-  const metricCards = [
-    {
-      label: activePilarData.metrics.primaryLabel,
-      value: activePilarData.metrics.primaryValue,
-      note: `${activePilarData.metrics.primaryGrowth} dari periode lalu`,
-      icon: Stethoscope,
-    },
-    {
-      label: activePilarData.metrics.successLabel,
-      value: activePilarData.metrics.successValue,
-      note: `Tingkat keberhasilan ${activePilarData.metrics.successRate}`,
-      icon: CheckCircle2,
-    },
-    {
-      label: activePilarData.metrics.progLabel,
-      value: activePilarData.metrics.progValue,
-      note: `${activePilarData.subPrograms.length} prioritas dipantau`,
-      icon: ClipboardList,
-    },
-    {
-      label: activePilarData.metrics.districtLabel,
-      value: activePilarData.metrics.districtValue,
-      note: 'Cakupan seluruh Kota Tangerang',
-      icon: MapPin,
-    },
-  ];
-
-  return (
-    <div className="program-pilar-workspace mx-auto w-full max-w-[1760px] space-y-5 pb-14 text-zinc-900 sm:space-y-6">
-      <header className="relative overflow-hidden rounded-[28px] border border-emerald-200/80 bg-[linear-gradient(125deg,#f8fffb_0%,#ffffff_48%,#ecfdf5_100%)] p-5 shadow-[0_22px_70px_-42px_rgba(0,112,74,0.45)] sm:p-7 lg:p-8">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(0,112,74,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,112,74,.07) 1px, transparent 1px)',
-            backgroundSize: '34px 34px',
-            maskImage: 'linear-gradient(to right, transparent, black 52%, black)',
-          }}
-        />
-        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] lg:items-end">
-          <div className="max-w-3xl">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="inline-flex min-h-8 items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-800">
-                <Sparkles className="size-3.5" /> Kendali Dampak 2026
-              </span>
-              <span className="inline-flex min-h-8 items-center rounded-full bg-amber-50 px-3 text-xs font-bold text-amber-800 ring-1 ring-inset ring-amber-200">
-                Data simulasi
-              </span>
-            </div>
-            <h1 className="max-w-2xl text-3xl font-black tracking-[-0.04em] text-zinc-950 sm:text-4xl lg:text-5xl">
-              Workspace Program 5 Pilar
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-zinc-600 sm:text-base sm:leading-7">
-              Pilih pilar untuk melihat capaian, prioritas, dan portofolio program dalam satu alur kerja yang mudah dipahami.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-2">
-            {[
-              ['Total tersalurkan', `Rp ${(totalRealized / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} M`],
-              ['Penerima manfaat', totalBeneficiaries.toLocaleString('id-ID')],
-              ['Program aktif', `${totalPrograms} program`],
-              ['Serapan rata-rata', `${averageAbsorption}%`],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-white/90 bg-white/75 p-3.5 shadow-sm backdrop-blur sm:p-4">
-                <p className="text-xs font-semibold text-zinc-500">{label}</p>
-                <p className="mt-1 text-lg font-black tracking-tight text-zinc-950 sm:text-xl">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative mt-6 flex flex-col gap-3 border-t border-emerald-200/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-zinc-600">
-            <span className="size-2.5 rounded-full bg-emerald-500 motion-safe:animate-pulse motion-reduce:animate-none" />
-            <span><strong className="text-zinc-900">Diperbarui</strong> 25 Agustus 2026, 10.15 WIB</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Link
-              href="/penyaluran/peta"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold text-zinc-800 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
-            >
-              <MapPin className="size-4" /> Peta Program
-            </Link>
-            <Link
-              href="/penyaluran/mustahik"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#00704a] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#005d3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
-            >
-              <Users className="size-4" /> Data Mustahik
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <section aria-labelledby="pilih-pilar-title" className="min-w-0 max-w-full space-y-3 overflow-hidden">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Fokus analisis</p>
-            <h2 id="pilih-pilar-title" className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:text-2xl">
-              Pilih pilar yang ingin ditinjau
-            </h2>
-          </div>
-          <p className="text-sm text-zinc-500">Gunakan tombol panah untuk berpindah dengan keyboard.</p>
-        </div>
-
-        <div
-          role="tablist"
-          aria-label="Navigasi Program 5 Pilar"
-          className="flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-5"
-        >
-          {PILAR_CARDS.map((pilar, index) => {
-            const isSelected = pilar.id === selectedPilar;
-            const Icon = pilar.icon;
-
-            return (
-              <button
-                key={pilar.id}
-                id={`pilar-tab-${pilar.id}`}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                aria-controls="pilar-detail-panel"
-                tabIndex={isSelected ? 0 : -1}
-                onClick={() => setSelectedPilar(pilar.id)}
-                onKeyDown={(event) => {
-                  if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
-                  event.preventDefault();
-                  const nextIndex = event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? PILAR_CARDS.length - 1
-                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + PILAR_CARDS.length) % PILAR_CARDS.length;
-                  const nextPilar = PILAR_CARDS[nextIndex];
-                  if (!nextPilar) return;
-                  setSelectedPilar(nextPilar.id);
-                  document.getElementById(`pilar-tab-${nextPilar.id}`)?.focus();
-                }}
-                className={`group min-w-[78vw] snap-start rounded-2xl border p-4 text-left shadow-sm transition-[transform,border-color,box-shadow,background-color] duration-200 motion-reduce:transition-none sm:min-w-0 ${
-                  isSelected
-                    ? 'border-emerald-500 bg-emerald-950 text-white shadow-[0_16px_35px_-24px_rgba(0,112,74,.9)]'
-                    : 'border-zinc-200 bg-white text-zinc-900 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md'
-                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${isSelected ? 'bg-white/14 text-white' : `${pilar.iconBg} text-white`}`}>
-                    <Icon className="size-5" />
-                  </span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-black ${isSelected ? 'bg-white/14 text-white' : 'bg-zinc-100 text-zinc-700'}`}>
-                    {pilar.percentage}%
-                  </span>
-                </div>
-                <p className="mt-4 text-base font-black leading-tight">{pilar.name}</p>
-                <p className={`mt-1 text-sm ${isSelected ? 'text-emerald-100' : 'text-zinc-500'}`}>{pilar.category}</p>
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div>
-                    <p className={`text-xs font-semibold ${isSelected ? 'text-emerald-200' : 'text-zinc-500'}`}>Realisasi</p>
-                    <p className="text-lg font-black tracking-tight">{pilar.amount}</p>
-                  </div>
-                  {isSelected && <span className="text-xs font-bold text-emerald-100">Pilar terpilih</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <div
-        id="pilar-detail-panel"
-        role="tabpanel"
-        aria-labelledby={`pilar-tab-${activePilarData.id}`}
-        aria-live="polite"
-        className="space-y-5 sm:space-y-6"
-      >
-        <section className="grid overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-[0_20px_60px_-42px_rgba(15,23,42,.45)] xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,.55fr)]">
-          <div className="relative p-5 sm:p-7 lg:p-8">
-            <div aria-hidden="true" className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-100/60 blur-3xl" />
-            <div className="relative">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-800 ring-1 ring-inset ring-emerald-200">
-                  {activePilarData.category}
-                </span>
-                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700">RKAT 2026</span>
-              </div>
-              <h2 className="mt-4 text-2xl font-black tracking-[-0.03em] text-zinc-950 sm:text-3xl">
-                Dari Anggaran ke Dampak Sosial — {activePilarData.name}
-              </h2>
-              <p className="mt-3 max-w-3xl text-sm font-medium leading-6 text-zinc-600 sm:text-base sm:leading-7">
-                {activePilarData.impactDesc}
-              </p>
-
-              <div className="mt-7 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                <div>
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-500">Realisasi penyaluran</p>
-                      <p className="mt-1 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl">{activePilarData.amount}</p>
-                    </div>
-                    <p className="text-3xl font-black text-emerald-700 sm:text-4xl">{activePilarData.percentage}%</p>
-                  </div>
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-100" aria-label={`Serapan anggaran ${activePilarData.percentage} persen`}>
-                    <div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,#00704a,#10b981)] transition-[width] duration-500 motion-reduce:transition-none"
-                      style={{ width: `${activePilarData.percentage}%` }}
-                    />
-                  </div>
-                  <div className="mt-2 flex justify-between text-sm text-zinc-500">
-                    <span>Tersalurkan</span>
-                    <span>Target Rp {(activePilarData.rawBudget / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} M</span>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 sm:min-w-48">
-                  <p className="text-xs font-bold text-amber-800">Sisa ruang penyaluran</p>
-                  <p className="mt-1 text-xl font-black text-amber-950">Rp {(remainingBudget / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} M</p>
-                </div>
-              </div>
-
-              <div className="mt-7 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
-                {metricCards.map((metric) => {
-                  const Icon = metric.icon;
-                  return (
-                    <article key={metric.label} className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 transition-colors hover:border-emerald-200 hover:bg-emerald-50/40">
-                      <div className="flex size-9 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm ring-1 ring-zinc-200">
-                        <Icon className="size-4.5" />
-                      </div>
-                      <p className="mt-4 text-sm font-semibold leading-5 text-zinc-600">{metric.label}</p>
-                      <p className="mt-1 text-2xl font-black tracking-tight text-zinc-950">{metric.value}</p>
-                      <p className="mt-1 text-xs font-medium leading-5 text-emerald-700">{metric.note}</p>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <aside
-            role="region"
-            aria-labelledby="prioritas-title"
-            className="border-t border-zinc-200 bg-zinc-950 p-5 text-white sm:p-7 xl:border-l xl:border-t-0"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-300">Fokus hari ini</p>
-                <h2 id="prioritas-title" className="mt-2 text-xl font-black">Prioritas Tindak Lanjut</h2>
-              </div>
-              <span className="rounded-full bg-amber-400/15 px-3 py-1 text-xs font-bold text-amber-200 ring-1 ring-inset ring-amber-300/30">
-                {priorityPrograms.length} butuh perhatian
-              </span>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">Dua program dengan serapan terendah untuk ditinjau lebih dulu.</p>
-
-            <div className="mt-6 space-y-3">
-              {priorityPrograms.map((program, index) => (
-                <article key={program.code} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition-colors hover:bg-white/[0.09]">
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${index === 0 ? 'bg-amber-400 text-zinc-950' : 'bg-emerald-400/15 text-emerald-300'}`}>
-                      {index === 0 ? <AlertTriangle className="size-4.5" /> : <Clock className="size-4.5" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-bold text-zinc-400">{program.code} · Segera ditinjau</p>
-                          <h3 className="mt-1 text-sm font-bold leading-5 text-white">{program.name}</h3>
-                        </div>
-                        <strong className="text-lg text-emerald-300">{program.pct}%</strong>
-                      </div>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
-                        <CalendarDays className="size-3.5" /> Evaluasi {program.nextMilestone}
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <Link
-              href="/penyaluran/laporan"
-              className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-black text-zinc-950 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-            >
-              Tinjau semua program <ArrowRight className="size-4" />
-            </Link>
-          </aside>
-        </section>
-
-        <section aria-labelledby="analitik-title" className="min-w-0 space-y-3">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Analitik program</p>
-            <h2 id="analitik-title" className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:text-2xl">Capaian dan pemerataan dampak</h2>
-          </div>
-
-          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,.65fr)]">
-            <article className="min-w-0 rounded-[24px] border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-zinc-950">Tren realisasi bulanan</h3>
-                  <p className="mt-1 text-sm leading-6 text-zinc-500">Indeks realisasi dibanding target bulanan untuk {activePilarData.name}.</p>
-                </div>
-                <div className="flex gap-4 text-xs font-semibold text-zinc-600">
-                  <span className="flex items-center gap-2"><span className="size-2.5 rounded-sm bg-emerald-600" /> Realisasi</span>
-                  <span className="flex items-center gap-2"><span className="h-0.5 w-4 bg-amber-500" /> Target</span>
-                </div>
-              </div>
-
-              <figure aria-label={`Grafik tren realisasi bulanan ${activePilarData.name}`} className="mt-5 w-full max-w-full overflow-x-auto pb-2">
-                <figcaption className="sr-only">
-                  Realisasi tertinggi pada periode aktif adalah {Math.max(...activePilarData.monthlyBars.map((bar) => bar.realisasi))} dibanding indeks target.
-                </figcaption>
-                <ul className="sr-only">
-                  {activePilarData.monthlyBars.map((bar) => (
-                    <li key={`accessible-${bar.m}`}>
-                      {bar.m}: realisasi {bar.realisasi}, target {bar.target}.
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex h-64 min-w-[620px] items-end gap-3 border-b border-zinc-200 px-2">
-                  {activePilarData.monthlyBars.map((bar) => (
-                    <div key={bar.m} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                      <div className="relative flex h-[210px] w-full max-w-7 items-end justify-center">
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-[-3px] right-[-3px] z-10 h-0.5 rounded-full bg-amber-500"
-                          style={{ bottom: `${(bar.target / chartMax) * 100}%` }}
-                        />
-                        <span
-                          aria-hidden="true"
-                          className={`w-full rounded-t-md ${bar.active ? 'bg-[linear-gradient(180deg,#10b981,#00704a)]' : 'bg-zinc-200'}`}
-                          style={{ height: `${Math.max((bar.realisasi / chartMax) * 100, bar.active ? 4 : 1)}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-zinc-500">{bar.m}</span>
-                    </div>
-                  ))}
-                </div>
-              </figure>
-            </article>
-
-            <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-1">
-              <article className="min-w-0 rounded-[24px] border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-black text-zinc-950">Komposisi asnaf</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Penerima berdasarkan kelompok asnaf.</p>
-                  </div>
-                  <Award className="size-5 text-emerald-700" />
-                </div>
-                <div className="mt-5 space-y-3">
-                  {activePilarData.asnafBreakdown.map((asnaf) => (
-                    <div key={asnaf.name}>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="font-semibold text-zinc-700">{asnaf.name}</span>
-                        <span className="font-black text-zinc-950">{asnaf.count} · {asnaf.pct}</span>
-                      </div>
-                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-zinc-100">
-                        <div className="h-full rounded-full" style={{ width: asnaf.pct, backgroundColor: asnaf.color }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </article>
-
-              <article className="min-w-0 rounded-[24px] border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-black text-zinc-950">Kecamatan teratas</h3>
-                    <p className="mt-1 text-sm text-zinc-500">Sebaran penerima manfaat tertinggi.</p>
-                  </div>
-                  <MapPin className="size-5 text-emerald-700" />
-                </div>
-                <div className="mt-4 space-y-2">
-                  {activePilarData.topKecamatan.map((kecamatan) => (
-                    <div key={kecamatan.name} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5">
-                      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-black text-emerald-700 shadow-sm">{kecamatan.rank}</span>
-                      <span className="min-w-0 flex-1 text-sm font-bold text-zinc-800">{kecamatan.name}</span>
-                      <span className="text-sm font-black text-zinc-950">{kecamatan.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        <section role="region" aria-labelledby="portofolio-title" className="overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-zinc-200 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Pelaksanaan program</p>
-              <h2 id="portofolio-title" className="mt-1 text-xl font-black tracking-tight text-zinc-950 sm:text-2xl">Portofolio Program</h2>
-              <p className="mt-1 text-sm leading-6 text-zinc-500">Daftar program prioritas, penanggung jawab, evaluasi berikutnya, dan progres serapan.</p>
-            </div>
-            <span className="inline-flex min-h-9 w-fit items-center rounded-full bg-zinc-100 px-3 text-sm font-bold text-zinc-700">
-              {activePilarData.subPrograms.length} prioritas dari {activePilarData.metrics.progValue}
-            </span>
-          </div>
-
-          <div className="space-y-3 p-4 lg:hidden">
-            {activePilarData.subPrograms.map((program) => (
-              <article key={program.code} className="rounded-2xl border border-zinc-200 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-800">{program.code}</span>
-                    <h3 className="mt-3 text-base font-black leading-6 text-zinc-950">{program.name}</h3>
-                    <p className="mt-1 text-sm text-zinc-500">{program.pic}</p>
-                  </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${program.pct < 75 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>
-                    {program.pct}%
-                  </span>
-                </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-100">
-                  <div className="h-full rounded-full bg-emerald-600" style={{ width: `${program.pct}%` }} />
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <dt className="text-zinc-500">Penerima</dt>
-                    <dd className="mt-1 font-black text-zinc-900">{program.mustahik} jiwa</dd>
-                  </div>
-                  <div>
-                    <dt className="text-zinc-500">Realisasi</dt>
-                    <dd className="mt-1 font-black text-zinc-900">{program.realized}</dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-zinc-500">Evaluasi berikutnya</dt>
-                    <dd className="mt-1 flex items-center gap-2 font-bold text-zinc-900"><CalendarDays className="size-4 text-emerald-700" /> {program.nextMilestone}</dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-
-          <div className="hidden max-w-full overflow-x-auto lg:block" role="region" aria-label={`Tabel portofolio ${activePilarData.name}`} tabIndex={0}>
-            <table className="w-full min-w-[920px] text-left text-sm">
-              <caption className="sr-only">Portofolio program prioritas untuk {activePilarData.name}</caption>
-              <thead className="bg-zinc-50 text-xs font-extrabold uppercase tracking-[0.08em] text-zinc-500">
-                <tr>
-                  <th scope="col" className="px-5 py-4">Program</th>
-                  <th scope="col" className="px-5 py-4">Penanggung jawab</th>
-                  <th scope="col" className="px-5 py-4">Status</th>
-                  <th scope="col" className="px-5 py-4">Evaluasi berikutnya</th>
-                  <th scope="col" className="px-5 py-4 text-right">Penerima</th>
-                  <th scope="col" className="px-5 py-4 text-right">Realisasi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {activePilarData.subPrograms.map((program) => (
-                  <tr key={program.code} className="transition-colors hover:bg-emerald-50/30">
-                    <td className="px-5 py-4">
-                      <div className="flex items-start gap-3">
-                        <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-800">{program.code}</span>
-                        <span className="max-w-sm font-bold leading-5 text-zinc-900">{program.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 font-medium text-zinc-600">{program.pic}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${program.pct < 75 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>
-                        {program.pct < 75 ? 'Perlu perhatian' : program.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 font-bold text-zinc-700">{program.nextMilestone}</td>
-                    <td className="px-5 py-4 text-right font-black text-zinc-900">{program.mustahik}</td>
-                    <td className="px-5 py-4 text-right">
-                      <p className="font-black text-zinc-950">{program.realized}</p>
-                      <p className="mt-1 text-xs font-bold text-emerald-700">{program.pct}% terserap</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </div>
     </div>
   );

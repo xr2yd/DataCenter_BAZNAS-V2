@@ -3,88 +3,115 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ProgramPilarWorkspace } from './ProgramPilarWorkspace';
 
 describe('ProgramPilarWorkspace', () => {
-  it('menjelaskan tujuan workspace Program 5 Pilar sejak awal', () => {
+  it('membuka halaman dengan konteks Lima Pilar yang mudah dipahami', () => {
     render(<ProgramPilarWorkspace />);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /workspace program 5 pilar/i }),
+      screen.getByRole('heading', { level: 1, name: /lima pilar, satu dampak untuk kota tangerang/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/pilih pilar untuk melihat capaian, prioritas, dan portofolio program/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/transformasi akuntabel dana zakat/i)).toBeInTheDocument();
   });
 
-  it('menyajikan kelima pilar sebagai navigasi tab dengan status aktif yang jelas', () => {
+  it('menyajikan kelima pilar sebagai tab dengan Tangerang Sehat aktif', () => {
     render(<ProgramPilarWorkspace />);
 
-    const navigation = screen.getByRole('tablist', { name: /navigasi program 5 pilar/i });
+    const navigation = screen.getByRole('tablist', { name: /pilih program 5 pilar/i });
     const tabs = within(navigation).getAllByRole('tab');
 
     expect(tabs).toHaveLength(5);
-    expect(within(navigation).getByRole('tab', { name: /Tangerang Cerdas/i })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(within(navigation).getByRole('tab', { name: /Tangerang Makmur/i })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(within(navigation).getByRole('tab', { name: /Tangerang Sehat/i })).toHaveAttribute(
+    expect(within(navigation).getByRole('tab', { name: /tangerang sehat/i })).toHaveAttribute(
       'aria-selected',
       'true',
     );
-    expect(within(navigation).getByRole('tab', { name: /Tangerang Takwa/i })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
-    expect(within(navigation).getByRole('tab', { name: /Tangerang Peduli/i })).toHaveAttribute(
-      'aria-selected',
-      'false',
-    );
   });
 
-  it('memperbarui ringkasan detail ketika pengguna memilih pilar lain', () => {
+  it('memperbarui data terpadu saat pilar lain dipilih', () => {
     render(<ProgramPilarWorkspace />);
 
-    const sehatTab = screen.getByRole('tab', { name: /Tangerang Sehat/i });
-    const cerdasTab = screen.getByRole('tab', { name: /Tangerang Cerdas/i });
+    const makmurTab = screen.getByRole('tab', { name: /tangerang makmur/i });
+    fireEvent.click(makmurTab);
 
-    expect(sehatTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Pasien Mustahik Dilayani')).toBeInTheDocument();
+    const panel = screen.getByRole('tabpanel');
+    const insights = within(panel).getByRole('group', { name: /ringkasan proyeksi dan jangkauan/i });
 
-    fireEvent.click(cerdasTab);
-
-    expect(cerdasTab).toHaveAttribute('aria-selected', 'true');
-    expect(sehatTab).toHaveAttribute('aria-selected', 'false');
     expect(
-      screen.getByRole('heading', { name: /Dari Anggaran ke Dampak Sosial — Tangerang Cerdas/i }),
+      screen.getByRole('heading', { name: /dari anggaran ke dampak sosial — tangerang makmur/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Siswa / Mahasiswa Terbantu')).toBeInTheDocument();
-    expect(screen.queryByText('Pasien Mustahik Dilayani')).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('region', { name: /kinerja program terpadu/i })).getByRole('heading', {
+        name: /kinerja tangerang makmur/i,
+      }),
+    ).toBeInTheDocument();
+    expect(makmurTab).toHaveAttribute('aria-controls', panel.id);
+    expect(panel).toHaveAttribute('aria-labelledby', makmurTab.id);
+    expect(within(insights).getByText('Rp 9,13 M')).toBeInTheDocument();
+    expect(within(insights).getByText('Rp 11,30 M')).toBeInTheDocument();
+    expect(within(insights).getByText('Rp 3,82 M')).toBeInTheDocument();
+    expect(within(insights).getByText('81% target')).toBeInTheDocument();
   });
 
-  it('memindahkan pilar aktif dengan tombol panah keyboard', () => {
+  it('mendukung perpindahan pilar dengan tombol panah keyboard', () => {
     render(<ProgramPilarWorkspace />);
 
-    const sehatTab = screen.getByRole('tab', { name: /Tangerang Sehat/i });
-    const takwaTab = screen.getByRole('tab', { name: /Tangerang Takwa/i });
+    const sehat = screen.getByRole('tab', { name: /tangerang sehat/i });
+    fireEvent.keyDown(sehat, { key: 'ArrowRight' });
 
-    sehatTab.focus();
-    fireEvent.keyDown(sehatTab, { key: 'ArrowRight' });
-
-    expect(takwaTab).toHaveFocus();
-    expect(takwaTab).toHaveAttribute('aria-selected', 'true');
+    const takwa = screen.getByRole('tab', { name: /tangerang takwa/i });
+    expect(takwa).toHaveAttribute('aria-selected', 'true');
+    expect(takwa).toHaveFocus();
   });
 
-  it('menampilkan prioritas tindak lanjut dan portofolio program sebagai bagian yang mudah dikenali', () => {
+  it('menggabungkan grafik dan tepat empat KPI utama tanpa panel dampak terpisah', () => {
     render(<ProgramPilarWorkspace />);
 
-    const priorities = screen.getByRole('region', { name: /prioritas tindak lanjut/i });
-    const portfolio = screen.getByRole('region', { name: /portofolio program/i });
+    const region = screen.getByRole('region', { name: /kinerja program terpadu/i });
+    const metrics = within(region).getByRole('list', { name: /empat indikator dampak utama/i });
 
-    expect(within(priorities).getByRole('heading', { name: /prioritas tindak lanjut/i })).toBeInTheDocument();
-    expect(within(priorities).getByText(/butuh perhatian/i)).toBeInTheDocument();
-    expect(within(portfolio).getByRole('heading', { name: /portofolio program/i })).toBeInTheDocument();
-    expect(within(portfolio).getByRole('table')).toBeInTheDocument();
+    expect(within(region).getByRole('heading', { name: /tren penyaluran bulanan/i })).toBeInTheDocument();
+    expect(within(metrics).getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.queryByRole('heading', { name: /^dampak utama/i })).not.toBeInTheDocument();
+  });
+
+  it('menempatkan proyeksi dan indikator sekunder dalam satu insight strip', () => {
+    render(<ProgramPilarWorkspace />);
+
+    const insights = within(
+      screen.getByRole('region', { name: /kinerja program terpadu/i }),
+    ).getByRole('group', { name: /ringkasan proyeksi dan jangkauan/i });
+
+    expect(within(insights).getByText(/proyeksi serapan 2026/i)).toBeInTheDocument();
+    expect(within(insights).getByText(/pagu tahunan/i)).toBeInTheDocument();
+    expect(within(insights).getByText(/sisa kuota/i)).toBeInTheDocument();
+    expect(within(insights).getByText(/kecamatan terjangkau/i)).toBeInTheDocument();
+    expect(within(insights).getByText(/penerima baru/i)).toBeInTheDocument();
+  });
+
+  it('menjaga komposisi tablet dan mobile tetap padat tanpa sel kosong paksa', () => {
+    render(<ProgramPilarWorkspace />);
+
+    const navigation = screen.getByRole('tablist', { name: /pilih program 5 pilar/i });
+    const tabs = within(navigation).getAllByRole('tab');
+    const region = screen.getByRole('region', { name: /kinerja program terpadu/i });
+    const metrics = within(region).getByRole('list', { name: /empat indikator dampak utama/i });
+    const insights = within(region).getByRole('group', { name: /ringkasan proyeksi dan jangkauan/i });
+    const analytics = screen.getByRole('region', { name: /analitik penyaluran program/i });
+
+    expect(tabs.at(-1)).toHaveClass('sm:last:col-span-2', 'lg:last:col-span-1');
+    expect(metrics).toHaveClass('grid-cols-2');
+    expect(insights.firstElementChild).toHaveClass('sm:col-span-2', 'xl:col-span-1');
+    expect(within(region).getByRole('article').parentElement).toHaveClass('items-start');
+    expect(analytics).toHaveClass('items-start');
+    expect(analytics).not.toHaveClass('xl:items-stretch');
+  });
+
+  it('menyediakan portofolio berbentuk kartu yang mudah dipindai pada layar kecil', () => {
+    render(<ProgramPilarWorkspace />);
+
+    const mobilePortfolio = screen.getByRole('list', {
+      name: /portofolio sub-program untuk layar kecil/i,
+    });
+
+    expect(within(mobilePortfolio).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(mobilePortfolio).getByText(/klinik mustahik/i)).toBeInTheDocument();
   });
 });
