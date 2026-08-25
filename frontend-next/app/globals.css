@@ -87,6 +87,33 @@ body {
   }
 }
 
+@keyframes mustahik-profile-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mustahik-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mustahik-overlay-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .mustahik-row {
   animation: mustahik-row-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -95,9 +122,75 @@ body {
   animation: mustahik-toast-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.mustahik-profile-enter {
+  animation: mustahik-profile-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mustahik-decision-sheet {
+  animation: mustahik-sheet-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.mustahik-overlay {
+  animation: mustahik-overlay-enter 200ms ease-out both;
+}
+
+/* A rectangular scoreplate is more legible and stable than a faux radial gauge. */
+[aria-label^="Skor kelayakan"] {
+  width: 96px !important;
+  height: 72px !important;
+  padding: 0 !important;
+  border: 1px solid rgb(167 243 208) !important;
+  border-radius: 14px !important;
+  background: rgb(255 255 255 / 0.92) !important;
+  box-shadow: 0 10px 24px rgb(4 120 87 / 0.08);
+}
+
+[aria-label^="Skor kelayakan"] > div {
+  width: auto !important;
+  height: auto !important;
+  padding-top: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+[aria-label^="Skor kelayakan"] strong {
+  font-size: 34px !important;
+  letter-spacing: -0.05em;
+  color: rgb(6 95 70);
+}
+
+[aria-label^="Skor kelayakan"] span {
+  margin-left: 2px;
+  font-size: 12px !important;
+}
+
+.mustahik-stage-scroll {
+  scrollbar-width: none;
+}
+
+.mustahik-stage-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  @keyframes mustahik-sheet-enter {
+    from {
+      opacity: 0;
+      transform: translateX(28px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mustahik-row,
-  .mustahik-toast {
+  .mustahik-toast,
+  .mustahik-profile-enter,
+  .mustahik-decision-sheet,
+  .mustahik-overlay {
     animation: none;
   }
 }

@@ -53,4 +53,26 @@ describe('MustahikWorkspace', () => {
     expect(await screen.findByLabelText('Skor kelayakan 86 dari 100')).toHaveTextContent('86/100');
     expect(screen.getByRole('region', { name: 'Peta lokasi Siti Maryam' })).toBeInTheDocument();
   });
+
+  it('groups secondary profile information into accessible tabs', async () => {
+    render(<MustahikWorkspace />);
+    await screen.findByRole('heading', { name: 'Siti Maryam' });
+
+    expect(screen.getByRole('tab', { name: 'Ringkasan' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('tab', { name: 'Dokumen' }));
+
+    expect(screen.getByRole('region', { name: 'Dokumen Mustahik' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /kartu keluarga.*belum ada/i })).toBeInTheDocument();
+  });
+
+  it('opens and closes the responsive decision drawer', async () => {
+    render(<MustahikWorkspace />);
+    await screen.findByRole('heading', { name: 'Siti Maryam' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buka panel keputusan' }));
+    expect(screen.getByRole('dialog', { name: 'Keputusan Mustahik' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tutup panel keputusan' }));
+    expect(screen.queryByRole('dialog', { name: 'Keputusan Mustahik' })).not.toBeInTheDocument();
+  });
 });
