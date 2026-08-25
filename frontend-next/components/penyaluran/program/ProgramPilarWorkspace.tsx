@@ -664,272 +664,266 @@ export function ProgramPilarWorkspace() {
       {/* ========================================================================= */}
       {/* 5. ROW 3: INISIATIF AKTIF TABLE (LEFT) & REKOMENDASI PRIORITAS (RIGHT)   */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-12 items-stretch">
         {/* Left: Inisiatif Aktif Table (8 cols) */}
-        <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-8 space-y-2">
-          <h2 className="text-[11px] font-bold text-zinc-900">
-            Inisiatif aktif — {activePilarData.name}
-          </h2>
+        <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-8 flex flex-col justify-between space-y-2">
+          <div>
+            <h2 className="text-[11px] font-bold text-zinc-900 mb-2">
+              Inisiatif aktif — {activePilarData.name}
+            </h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[10px]">
-              <thead className="border-b border-zinc-200/80 text-[8.5px] text-zinc-400 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="pb-1.5 font-medium">Program / Layanan</th>
-                  <th className="pb-1.5 font-medium">Penanggung Jawab Operasional</th>
-                  <th className="pb-1.5 font-medium">Status</th>
-                  <th className="pb-1.5 font-medium">Tonggak berikutnya</th>
-                  <th className="pb-1.5 font-medium text-right">Penerima manfaat</th>
-                  <th className="pb-1.5 font-medium text-right">Penyerapan dana</th>
-                  <th className="pb-1.5"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 text-[9.5px]">
-                {/* Row 1 */}
-                <tr className="hover:bg-zinc-50/60 transition-colors group">
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-700">
-                        <Activity className="size-2.5" />
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[9.5px]">
+                <thead className="border-b border-zinc-200/80 text-[8px] text-zinc-500 font-semibold">
+                  <tr>
+                    <th className="pb-1.5 font-semibold">Program / Layanan</th>
+                    <th className="pb-1.5 font-semibold">Penanggung Jawab Operasional</th>
+                    <th className="pb-1.5 font-semibold">Status</th>
+                    <th className="pb-1.5 font-semibold">Tonggak berikutnya</th>
+                    <th className="pb-1.5 font-semibold text-right">Penerima manfaat</th>
+                    <th className="pb-1.5 font-semibold text-right pr-2">Penyerapan dana</th>
+                    <th className="pb-1.5"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-[9px]">
+                  {/* Row 1 */}
+                  <tr className="hover:bg-zinc-50/60 transition-colors group">
+                    <td className="py-2 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <FileText className="size-3 text-emerald-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900 text-[9.5px]">Klinik Mustahik (Layanan Kesehatan Primer)</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Klinik Mustahik (Layanan Kesehatan Primer)</p>
+                    </td>
+                    <td className="py-2 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Klinik Mitra</td>
+                    <td className="py-2 pr-2">
+                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[7.5px] font-bold text-emerald-700">
+                        Berjalan
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2">
+                      <p className="font-mono text-[8.5px] font-bold text-zinc-900">30 Agu 2026</p>
+                      <p className="text-[7.5px] text-zinc-400">Evaluasi kunjungan Q3</p>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">4.982</td>
+                    <td className="py-2 pr-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 3,42 M</span>
+                        <span className="font-mono text-[8px] font-semibold text-zinc-600">82%</span>
+                        <div className="h-1.5 w-12 bg-zinc-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00704A] rounded-full" style={{ width: '82%' }} />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Klinik Mitra</td>
-                  <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
-                      Berjalan
-                    </span>
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <p className="font-mono text-[8.5px] font-bold text-zinc-800">30 Agu 2026</p>
-                    <p className="text-[7.5px] text-zinc-400">Evaluasi kunjungan Q3</p>
-                  </td>
-                  <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">4.982</td>
-                  <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 3,42 M</span>
-                      <span className="font-mono text-[8px] font-bold text-emerald-700">82%</span>
-                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '82%' }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pl-1 text-right">
-                    <ChevronRight className="size-2.5 text-zinc-300 group-hover:text-zinc-600" />
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 pl-1 text-right">
+                      <ChevronRight className="size-3 text-zinc-300 group-hover:text-zinc-600" />
+                    </td>
+                  </tr>
 
-                {/* Row 2 */}
-                <tr className="hover:bg-zinc-50/60 transition-colors group">
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-700">
-                        <Stethoscope className="size-2.5" />
+                  {/* Row 2 */}
+                  <tr className="hover:bg-zinc-50/60 transition-colors group">
+                    <td className="py-2 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <Stethoscope className="size-3 text-emerald-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900 text-[9.5px]">Bantuan Pengobatan Mustahik</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Bantuan Pengobatan Mustahik</p>
+                    </td>
+                    <td className="py-2 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan</td>
+                    <td className="py-2 pr-2">
+                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[7.5px] font-bold text-emerald-700">
+                        Berjalan
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2">
+                      <p className="font-mono text-[8.5px] font-bold text-zinc-900">5 Sep 2026</p>
+                      <p className="text-[7.5px] text-zinc-400">Penyaluran batch berikutnya</p>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">3.765</td>
+                    <td className="py-2 pr-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 2,68 M</span>
+                        <span className="font-mono text-[8px] font-semibold text-zinc-600">84%</span>
+                        <div className="h-1.5 w-12 bg-zinc-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00704A] rounded-full" style={{ width: '84%' }} />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan</td>
-                  <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
-                      Berjalan
-                    </span>
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <p className="font-mono text-[8.5px] font-bold text-zinc-800">5 Sep 2026</p>
-                    <p className="text-[7.5px] text-zinc-400">Penyaluran batch berikutnya</p>
-                  </td>
-                  <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">3.765</td>
-                  <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 2,68 M</span>
-                      <span className="font-mono text-[8px] font-bold text-emerald-700">84%</span>
-                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '84%' }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pl-1 text-right">
-                    <ChevronRight className="size-2.5 text-zinc-300 group-hover:text-zinc-600" />
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 pl-1 text-right">
+                      <ChevronRight className="size-3 text-zinc-300 group-hover:text-zinc-600" />
+                    </td>
+                  </tr>
 
-                {/* Row 3 */}
-                <tr className="hover:bg-zinc-50/60 transition-colors group">
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-700">
-                        <Apple className="size-2.5" />
+                  {/* Row 3 */}
+                  <tr className="hover:bg-zinc-50/60 transition-colors group">
+                    <td className="py-2 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <Apple className="size-3 text-emerald-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900 text-[9.5px]">Gizi Ibu & Anak</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Gizi Ibu & Anak</p>
+                    </td>
+                    <td className="py-2 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & PKK Kota</td>
+                    <td className="py-2 pr-2">
+                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[7.5px] font-bold text-emerald-700">
+                        Berjalan
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2">
+                      <p className="font-mono text-[8.5px] font-bold text-zinc-900">12 Sep 2026</p>
+                      <p className="text-[7.5px] text-zinc-400">Monitoring pertumbuhan</p>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">2.143</td>
+                    <td className="py-2 pr-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 1,56 M</span>
+                        <span className="font-mono text-[8px] font-semibold text-zinc-600">79%</span>
+                        <div className="h-1.5 w-12 bg-zinc-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00704A] rounded-full" style={{ width: '79%' }} />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & PKK Kota</td>
-                  <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
-                      Berjalan
-                    </span>
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <p className="font-mono text-[8.5px] font-bold text-zinc-800">12 Sep 2026</p>
-                    <p className="text-[7.5px] text-zinc-400">Monitoring pertumbuhan</p>
-                  </td>
-                  <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">2.143</td>
-                  <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 1,56 M</span>
-                      <span className="font-mono text-[8px] font-bold text-emerald-700">79%</span>
-                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '79%' }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pl-1 text-right">
-                    <ChevronRight className="size-2.5 text-zinc-300 group-hover:text-zinc-600" />
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 pl-1 text-right">
+                      <ChevronRight className="size-3 text-zinc-300 group-hover:text-zinc-600" />
+                    </td>
+                  </tr>
 
-                {/* Row 4 */}
-                <tr className="hover:bg-zinc-50/60 transition-colors group">
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-700">
-                        <Ambulance className="size-2.5" />
+                  {/* Row 4 */}
+                  <tr className="hover:bg-zinc-50/60 transition-colors group">
+                    <td className="py-2 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <Ambulance className="size-3 text-emerald-600 shrink-0" />
+                        <span className="font-semibold text-zinc-900 text-[9.5px]">Ambulans Gratis Mustahik</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Ambulans Gratis Mustahik</p>
+                    </td>
+                    <td className="py-2 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Lazismu</td>
+                    <td className="py-2 pr-2">
+                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[7.5px] font-bold text-emerald-700">
+                        Berjalan
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2">
+                      <p className="font-mono text-[8.5px] font-bold text-zinc-900">1 Sep 2026</p>
+                      <p className="text-[7.5px] text-zinc-400">Rapat evaluasi layanan</p>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.484</td>
+                    <td className="py-2 pr-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,89 M</span>
+                        <span className="font-mono text-[8px] font-semibold text-zinc-600">91%</span>
+                        <div className="h-1.5 w-12 bg-zinc-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00704A] rounded-full" style={{ width: '91%' }} />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Lazismu</td>
-                  <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[7.5px] font-bold text-emerald-700">
-                      Berjalan
-                    </span>
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <p className="font-mono text-[8.5px] font-bold text-zinc-800">1 Sep 2026</p>
-                    <p className="text-[7.5px] text-zinc-400">Rapat evaluasi layanan</p>
-                  </td>
-                  <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.484</td>
-                  <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,89 M</span>
-                      <span className="font-mono text-[8px] font-bold text-emerald-700">91%</span>
-                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600 rounded-full" style={{ width: '91%' }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pl-1 text-right">
-                    <ChevronRight className="size-2.5 text-zinc-300 group-hover:text-zinc-600" />
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 pl-1 text-right">
+                      <ChevronRight className="size-3 text-zinc-300 group-hover:text-zinc-600" />
+                    </td>
+                  </tr>
 
-                {/* Row 5 */}
-                <tr className="hover:bg-zinc-50/60 transition-colors group">
-                  <td className="py-1.5 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 shrink-0 items-center justify-center rounded bg-amber-50 text-amber-700">
-                        <ShieldAlert className="size-2.5" />
+                  {/* Row 5 */}
+                  <tr className="hover:bg-zinc-50/60 transition-colors group">
+                    <td className="py-2 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldAlert className="size-3 text-amber-500 shrink-0" />
+                        <span className="font-semibold text-zinc-900 text-[9.5px]">Edukasi & Deteksi Dini Kesehatan</span>
                       </div>
-                      <div>
-                        <p className="font-bold text-zinc-900 text-[10px]">Edukasi & Deteksi Dini Kesehatan</p>
+                    </td>
+                    <td className="py-2 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Puskesmas</td>
+                    <td className="py-2 pr-2">
+                      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[7.5px] font-bold text-amber-700">
+                        Perlu perhatian
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2">
+                      <p className="font-mono text-[8.5px] font-bold text-zinc-900">28 Agu 2026</p>
+                      <p className="text-[7.5px] text-zinc-400">Perluas jangkauan kegiatan</p>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.021</td>
+                    <td className="py-2 pr-2 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,66 M</span>
+                        <span className="font-mono text-[8px] font-semibold text-zinc-600">61%</span>
+                        <div className="h-1.5 w-12 bg-zinc-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00704A] rounded-full" style={{ width: '61%' }} />
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pr-2 text-zinc-600 text-[8.5px]">UPZ Kesehatan & Puskesmas</td>
-                  <td className="py-1.5 pr-2">
-                    <span className="inline-flex rounded bg-amber-50 px-1.5 py-0.5 text-[7.5px] font-bold text-amber-700">
-                      Perlu perhatian
-                    </span>
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <p className="font-mono text-[8.5px] font-bold text-zinc-800">28 Agu 2026</p>
-                    <p className="text-[7.5px] text-zinc-400">Perluas jangkauan kegiatan</p>
-                  </td>
-                  <td className="py-1.5 pr-2 text-right font-mono font-bold text-zinc-900 text-[9px]">1.021</td>
-                  <td className="py-1.5 pr-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span className="font-mono font-bold text-zinc-900 text-[9px]">Rp 0,66 M</span>
-                      <span className="font-mono text-[8px] font-bold text-amber-700">61%</span>
-                      <div className="h-1 w-10 bg-zinc-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '61%' }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-1.5 pl-1 text-right">
-                    <ChevronRight className="size-2.5 text-zinc-300 group-hover:text-zinc-600" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                    </td>
+                    <td className="py-2 pl-1 text-right">
+                      <ChevronRight className="size-3 text-zinc-300 group-hover:text-zinc-600" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         {/* Right: Rekomendasi Prioritas (4 cols) */}
         <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-4 flex flex-col justify-between space-y-2">
           <div>
-            <h2 className="text-[11px] font-bold text-zinc-900">Rekomendasi prioritas</h2>
-            <div className="mt-2 space-y-2">
+            <h2 className="text-[11px] font-bold text-zinc-900 mb-2">Rekomendasi prioritas</h2>
+            <div className="space-y-2">
               {/* Item 1 */}
-              <div className="flex items-start justify-between gap-2 p-1">
-                <div className="flex items-start gap-2">
-                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#008B5A] text-[9px] font-bold text-white mt-0.5">
+              <div className="rounded-xl border border-zinc-200/80 bg-white p-2.5 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-5.5 shrink-0 items-center justify-center rounded-full bg-[#008B5A] text-[9.5px] font-black text-white">
                     1
                   </span>
-                  <p className="text-[9px] text-zinc-800 leading-snug font-medium">
+                  <p className="text-[8.5px] text-zinc-800 leading-snug font-medium">
                     Perluas intervensi gizi ibu & anak ke 3 kecamatan prioritas untuk percepat capaian target penerima.
                   </p>
                 </div>
-                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
-                  Lihat detail &gt;
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 py-1 text-[8px] font-bold text-emerald-800 hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <span>Lihat detail</span>
+                  <ArrowRight className="size-2.5" />
                 </button>
               </div>
 
               {/* Item 2 */}
-              <div className="flex items-start justify-between gap-2 p-1">
-                <div className="flex items-start gap-2">
-                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white mt-0.5">
+              <div className="rounded-xl border border-zinc-200/80 bg-white p-2.5 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-5.5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[9.5px] font-black text-white">
                     2
                   </span>
-                  <p className="text-[9px] text-zinc-800 leading-snug font-medium">
+                  <p className="text-[8.5px] text-zinc-800 leading-snug font-medium">
                     Tingkatkan verifikasi & follow-up bantuan pengobatan agar rasio keberhasilan intervensi naik &gt;75%.
                   </p>
                 </div>
-                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
-                  Lihat detail &gt;
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 py-1 text-[8px] font-bold text-emerald-800 hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <span>Lihat detail</span>
+                  <ArrowRight className="size-2.5" />
                 </button>
               </div>
 
               {/* Item 3 */}
-              <div className="flex items-start justify-between gap-2 p-1">
-                <div className="flex items-start gap-2">
-                  <span className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-[9px] font-bold text-white mt-0.5">
+              <div className="rounded-xl border border-zinc-200/80 bg-white p-2.5 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-5.5 shrink-0 items-center justify-center rounded-full bg-purple-600 text-[9.5px] font-black text-white">
                     3
                   </span>
-                  <p className="text-[9px] text-zinc-800 leading-snug font-medium">
+                  <p className="text-[8.5px] text-zinc-800 leading-snug font-medium">
                     Optimalkan kolaborasi fasilitas kesehatan agar layanan klinik lebih merata di wilayah timur kota.
                   </p>
                 </div>
-                <button type="button" className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-[8px] font-bold text-zinc-700 hover:bg-zinc-50 cursor-pointer whitespace-nowrap">
-                  Lihat detail &gt;
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 shrink-0 rounded-lg border border-zinc-200/90 bg-white px-2.5 py-1 text-[8px] font-bold text-emerald-800 hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <span>Lihat detail</span>
+                  <ArrowRight className="size-2.5" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-zinc-100">
+          <div className="pt-2">
             <Link
               href="/penyaluran/laporan"
-              className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 hover:text-emerald-950"
+              className="inline-flex items-center gap-1 text-[8.5px] font-bold text-emerald-800 hover:text-emerald-950"
             >
               <span>Lihat semua rekomendasi</span>
               <ArrowRight className="size-2.5" />
