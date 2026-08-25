@@ -20,11 +20,17 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Root Dependencies
         run: npm ci
 
-      - name: Build Frontend Production Bundle
+      - name: Build Root Frontend Bundle
         run: npm run build
+
+      - name: Install Next.js Dependencies & Build
+        run: |
+          cd frontend-next
+          npm ci
+          npm run build
 
       - name: Deploy to VPS via SCP
         uses: appleboy/scp-action@master
@@ -33,10 +39,10 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: 'dist/*,server/*,package.json,package-lock.json'
+          source: 'dist/*,frontend-next/*,frontend-next/.next/*,server/*,package.json,package-lock.json'
           target: '/home/xruncy/repo'
 
-      - name: Remote Setup, PM2 Backend & Nginx Reload
+      - name: Remote Setup, PM2 Next & Backend & Nginx Reload
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -45,11 +51,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             sudo mkdir -p /var/www/baznas-tangkot-v2
-            sudo cp -r /home/xruncy/repo/dist/* /var/www/baznas-tangkot-v2/
-            sudo chown -R www-data:www-data /var/www/baznas-tangkot-v2
+            sudo cp -r /home/xruncy/repo/dist/* /var/www/baznas-tangkot-v2/ || true
+            sudo chown -R www-data:www-data /var/www/baznas-tangkot-v2 || true
+            
             cd /home/xruncy/repo
             npm install --omit=dev
+            
+            cd /home/xruncy/repo/frontend-next
+            npm install --omit=dev
+            
+            # Restart or Start Next.js App Router on Port 3002
+            pm2 restart baznas-frontend-next || pm2 start "npm run start" --name "baznas-frontend-next" -- -p 3002
+            
+            # Restart Express Backend API on Port 5000 / 3001
+            cd /home/xruncy/repo
             pm2 restart baznas-backend || pm2 start server/index.js --name "baznas-backend"
+            
             pm2 save
             sudo systemctl reload nginx || sudo service nginx reload
-            echo "Auto-Deployment completed successfully!"
+            echo "Auto-Deployment of Next.js & Backend completed successfully!"
