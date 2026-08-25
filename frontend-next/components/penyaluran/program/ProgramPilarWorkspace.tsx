@@ -374,82 +374,82 @@ export function ProgramPilarWorkspace() {
 
         {/* ----------------- RIGHT LARGE CARD: DAMPAK UTAMA (5 COLS) ----------------- */}
         <div className="rounded-xl border border-zinc-200/90 bg-white p-3.5 shadow-2xs lg:col-span-5 flex flex-col justify-start">
-          <h2 className="text-[11px] font-bold text-zinc-900">
+          <h2 className="text-[11px] font-bold text-zinc-900 mb-2">
             Dampak utama — {activePilarData.name}
           </h2>
 
-          <div className="mt-2.5 grid grid-cols-3 gap-2 flex-1">
+          <div className="grid grid-cols-3 gap-2 content-start">
             {/* 1. Pasien dilayani */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <Stethoscope className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Pasien dilayani</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">12.374</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">12.374</p>
               <p className="text-[8.5px] font-semibold text-emerald-700 mt-0.5">
                 ↑ 18,6% <span className="font-normal text-zinc-400">dari periode sebelumnya</span>
               </p>
             </div>
 
             {/* 2. Intervensi berhasil */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <CheckCircle2 className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Intervensi berhasil</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">8.921</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">8.921</p>
               <p className="text-[8.5px] text-zinc-500 font-normal mt-0.5">Tingkat keberhasilan 72%</p>
             </div>
 
             {/* 3. Rata-rata bantuan */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <Wallet className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Rata-rata bantuan</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">Rp 744 rb</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">Rp 744 rb</p>
               <p className="text-[8.5px] text-zinc-500 font-normal mt-0.5">Per penerima manfaat</p>
             </div>
 
             {/* 4. Program aktif */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <FileText className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Program aktif</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">18</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">18</p>
               <p className="text-[8.5px] text-zinc-500 font-normal mt-0.5">6 layanan utama</p>
             </div>
 
             {/* 5. Kecamatan terjangkau */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <MapPin className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Kecamatan terjangkau</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">13 / 13</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">13 / 13</p>
               <p className="text-[8.5px] font-semibold text-emerald-700 mt-0.5">100% wilayah tercakup</p>
             </div>
 
             {/* 6. Mustahik baru */}
-            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2 flex flex-col justify-between">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-2.5 flex flex-col justify-between min-h-[74px]">
               <div className="flex items-center gap-1.5">
                 <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
                   <UserPlus className="size-2.5" />
                 </div>
                 <span className="text-[9px] text-zinc-600 font-medium">Mustahik baru</span>
               </div>
-              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-0.5">3.214</p>
+              <p className="text-xs sm:text-sm font-black text-zinc-950 font-mono mt-1">3.214</p>
               <p className="text-[8.5px] text-zinc-500 font-normal mt-0.5">Jan–Agu 2026</p>
             </div>
           </div>
