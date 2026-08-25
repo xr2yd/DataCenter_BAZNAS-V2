@@ -823,252 +823,391 @@ export default function MustahikPage({ onNavigate }) {
               </Button>
             </div>
           ) : (
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-muted/50 border-b border-border/80">
-                <tr>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Mustahik & Berkas</th>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Program & Asnaf</th>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Wilayah / Lokasi</th>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Status Alur Pelayanan</th>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide text-right">Nominal Bantuan</th>
-                  <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide text-center min-w-[200px]">Aksi Utama</th>
-                  <th className="px-3 py-3.5 font-bold text-muted-foreground tracking-wide text-center w-12">Menu</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
+            <>
+              {/* Mobile Card View (< 768px) */}
+              <div className="md:hidden divide-y divide-border/60">
                 {filteredMustahik.map((m) => {
                   const statusInfo = STATUS_BADGES[m.status] || STATUS_BADGES['Diajukan'];
                   const asnafStyle = ASNAF_COLORS[m.asnaf] || ASNAF_COLORS['Miskin'];
                   const amount = m.approved_amount || m.recommended_amount || 0;
-                  const hasSurvey = m.assessments && m.assessments.length > 0;
 
                   return (
-                    <tr key={m.id} className="hover:bg-muted/30 transition-colors group">
-                      {/* Mustahik Profile Cell */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-start gap-2.5">
-                          <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs mt-0.5">
+                    <div key={m.id} className="p-3.5 sm:p-4 hover:bg-muted/20 transition-colors space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs">
                             {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
                           </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-foreground hover:text-emerald-600 transition-colors cursor-pointer text-[13px]" onClick={() => openDetail(m)}>
-                                {m.name}
-                              </span>
-                              {m.priority === 'Prioritas 1' && (
-                                <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-200 text-[9px] px-1.5 py-0">
-                                  Prioritas 1
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-mono mt-0.5 flex-wrap">
-                              <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
-                                {m.file_no || `MST-${m.id}`}
-                                <button
-                                  onClick={() => copyToClipboard(m.file_no || `MST-${m.id}`, m.id)}
-                                  className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
-                                  title="Salin No. Berkas"
-                                >
-                                  {copiedId === m.id ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
-                                </button>
-                              </span>
-                              <span>•</span>
-                              <span>NIK: {m.nik || '-'}</span>
-                              {m.phone && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-muted-foreground">{m.phone}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Program & Asnaf */}
-                      <td className="px-4 py-3.5">
-                        <div className="space-y-1">
-                          <div className="font-bold text-foreground text-xs flex items-center gap-1.5">
-                            <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
-                            {m.program || 'Kemanusiaan'}
-                          </div>
-                          <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${asnafStyle}`}>
-                            Asnaf: {m.asnaf || 'Miskin'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Wilayah */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-start gap-1 text-[11px] text-foreground">
-                          <MapPin className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <div className="font-semibold">{m.kecamatan || 'Kota Tangerang'}</div>
-                            <div className="text-[10px] text-muted-foreground truncate">{m.kelurahan ? `Kel. ${m.kelurahan}` : m.address || '-'}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Status Pipeline Progress */}
-                      <td className="px-4 py-3.5">
-                        <div className="space-y-1.5 min-w-[140px]">
-                          <div className="flex items-center justify-between">
-                            <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}>
-                              {m.status || 'Diajukan'}
+                          <div>
+                            <span
+                              className="font-bold text-foreground hover:text-emerald-600 transition-colors cursor-pointer text-xs block"
+                              onClick={() => openDetail(m)}
+                            >
+                              {m.name}
                             </span>
-                            <span className="text-[9px] text-muted-foreground font-semibold">
-                              {statusInfo.step > 0 ? `${statusInfo.step}/5` : ''}
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {m.file_no || `MST-${m.id}`} • NIK: {m.nik || '-'}
                             </span>
                           </div>
-                          {/* Mini Progress Bar */}
-                          {statusInfo.step > 0 && (
-                            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={`h-full transition-all duration-500 rounded-full ${
-                                  m.status === 'Penyaluran Selesai' ? 'bg-emerald-500' : 'bg-blue-600'
-                                }`}
-                                style={{ width: `${(statusInfo.step / 5) * 100}%` }}
-                              />
-                            </div>
-                          )}
                         </div>
-                      </td>
+                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold border ${asnafStyle}`}>
+                          {m.asnaf || 'Miskin'}
+                        </span>
+                      </div>
 
-                      {/* Nominal Bantuan */}
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="font-extrabold text-foreground text-xs sm:text-sm text-emerald-700 dark:text-emerald-400">
+                      <div className="flex items-center justify-between text-[11px] pt-1">
+                        <span className="text-muted-foreground">{m.program || 'Kemanusiaan'} • Kec. {m.kecamatan || 'Tangerang'}</span>
+                        <span className="font-extrabold font-mono text-emerald-700 dark:text-emerald-400 text-xs">
                           {formatRupiah(amount)}
+                        </span>
+                      </div>
+
+                      {/* Status Progress */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className={`font-semibold ${statusInfo.text}`}>{m.status || 'Diajukan'}</span>
+                          <span className="text-muted-foreground">{statusInfo.step > 0 ? `Tahap ${statusInfo.step}/5` : ''}</span>
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {m.approved_amount ? 'Dana Disetujui' : 'Rekomendasi'}
-                        </div>
-                      </td>
+                        {statusInfo.step > 0 && (
+                          <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-600 rounded-full"
+                              style={{ width: `${(statusInfo.step / 5) * 100}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Smart Next-Step Primary Action */}
-                      <td className="px-4 py-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {m.status === 'Diajukan' && (
-                            <Button
-                              size="sm"
-                              className="h-7.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
-                              onClick={() => handleAdvanceStatus(m)}
-                            >
-                              <span>Verifikasi Berkas</span>
-                              <ArrowRight className="size-3.5" />
-                            </Button>
-                          )}
-
-                          {m.status === 'Verifikasi Administrasi' && (
-                            <Button
-                              size="sm"
-                              className="h-7.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
-                              onClick={() => openSurvey(m)}
-                            >
-                              <FileText className="size-3.5" />
-                              <span>Input Survey F-BPP/04</span>
-                            </Button>
-                          )}
-
-                          {m.status === 'Survey' && (
-                            <Button
-                              size="sm"
-                              className="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
-                              onClick={() => openMpzis(m)}
-                            >
-                              <ShieldCheck className="size-3.5" />
-                              <span>Sidang MPZIS (F-BPP/06)</span>
-                            </Button>
-                          )}
-
-                          {m.status === 'Persetujuan MPZIS' && (
-                            <Button
-                              size="sm"
-                              className="h-7.5 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
-                              onClick={() => openPpd(m)}
-                            >
-                              <DollarSign className="size-3.5" />
-                              <span>Buat PPD Pencairan</span>
-                            </Button>
-                          )}
-
-                          {(m.status === 'Pengajuan Dana (FPD)' || m.status === 'Pengajuan Dana (PPD)') && (
-                            <Button
-                              size="sm"
-                              className="h-7.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
-                              onClick={() => handleAdvanceStatus(m)}
-                            >
-                              <CheckCircle2 className="size-3.5" />
-                              <span>Tuntaskan Penyaluran</span>
-                            </Button>
-                          )}
-
-                          {m.status === 'Penyaluran Selesai' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7.5 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-300 font-bold gap-1 rounded-xl cursor-pointer px-3 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                              onClick={() => openPrintDocs(m, 'FBPP04')}
-                            >
-                              <Printer className="size-3.5" />
-                              <span>Cetak LPJ Berkas</span>
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Secondary Action Toolbar */}
-                      <td className="px-3 py-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* 360 Detail View */}
+                      {/* Actions */}
+                      <div className="flex items-center justify-between gap-1.5 pt-1">
+                        <div className="flex items-center gap-1">
                           <Button
-                            size="icon-xs"
-                            variant="ghost"
-                            className="size-7 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
-                            title="Buka Profil 360 & Dokumen"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2"
                             onClick={() => openDetail(m)}
                           >
-                            <Eye className="size-3.5" />
+                            <Eye className="size-3 mr-1" /> Profil
                           </Button>
-
-                          {/* WhatsApp */}
                           <Button
-                            size="icon-xs"
+                            size="sm"
                             variant="ghost"
-                            className="size-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/40 cursor-pointer rounded-lg"
-                            title="Kirim Notifikasi WhatsApp"
+                            className="h-7 text-[10px] px-2 text-green-600"
                             onClick={() => openWhatsApp(m)}
                           >
-                            <MessageCircle className="size-3.5" />
-                          </Button>
-
-                          {/* Edit */}
-                          <Button
-                            size="icon-xs"
-                            variant="ghost"
-                            className="size-7 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
-                            title="Edit Data"
-                            onClick={() => handleOpenEdit(m)}
-                          >
-                            <Edit className="size-3.5" />
-                          </Button>
-
-                          {/* Hapus */}
-                          <Button
-                            size="icon-xs"
-                            variant="ghost"
-                            className="size-7 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer rounded-lg"
-                            title="Hapus Permohonan"
-                            onClick={() => handleDelete(m.id)}
-                          >
-                            <Trash2 className="size-3.5" />
+                            <MessageCircle className="size-3 mr-1" /> WA
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+
+                        {/* Primary Step Action Button */}
+                        {m.status === 'Diajukan' && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5"
+                            onClick={() => handleAdvanceStatus(m)}
+                          >
+                            Verifikasi <ArrowRight className="size-3 ml-1" />
+                          </Button>
+                        )}
+                        {m.status === 'Verifikasi Administrasi' && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[10px] bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5"
+                            onClick={() => openSurvey(m)}
+                          >
+                            <FileText className="size-3 mr-1" /> Survey
+                          </Button>
+                        )}
+                        {m.status === 'Survey' && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[10px] bg-purple-600 hover:bg-purple-700 text-white font-bold px-2.5"
+                            onClick={() => openMpzis(m)}
+                          >
+                            <ShieldCheck className="size-3 mr-1" /> Sidang
+                          </Button>
+                        )}
+                        {m.status === 'Persetujuan MPZIS' && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[10px] bg-orange-600 hover:bg-orange-700 text-white font-bold px-2.5"
+                            onClick={() => openPpd(m)}
+                          >
+                            <DollarSign className="size-3 mr-1" /> PPD
+                          </Button>
+                        )}
+                        {(m.status === 'Pengajuan Dana (FPD)' || m.status === 'Pengajuan Dana (PPD)') && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5"
+                            onClick={() => handleAdvanceStatus(m)}
+                          >
+                            <CheckCircle2 className="size-3 mr-1" /> Salur
+                          </Button>
+                        )}
+                        {m.status === 'Penyaluran Selesai' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] text-emerald-700 dark:text-emerald-400 border-emerald-300 px-2.5"
+                            onClick={() => openPrintDocs(m, 'FBPP04')}
+                          >
+                            <Printer className="size-3 mr-1" /> Cetak
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Tablet & Desktop Table View (>= 768px) */}
+              <table className="hidden md:table w-full text-left text-xs border-collapse">
+                <thead className="bg-muted/50 border-b border-border/80">
+                  <tr>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Mustahik & Berkas</th>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Program & Asnaf</th>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Wilayah / Lokasi</th>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide">Status Alur Pelayanan</th>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide text-right">Nominal Bantuan</th>
+                    <th className="px-4 py-3.5 font-bold text-muted-foreground tracking-wide text-center min-w-[180px]">Aksi Utama</th>
+                    <th className="px-3 py-3.5 font-bold text-muted-foreground tracking-wide text-center w-12">Menu</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {filteredMustahik.map((m) => {
+                    const statusInfo = STATUS_BADGES[m.status] || STATUS_BADGES['Diajukan'];
+                    const asnafStyle = ASNAF_COLORS[m.asnaf] || ASNAF_COLORS['Miskin'];
+                    const amount = m.approved_amount || m.recommended_amount || 0;
+
+                    return (
+                      <tr key={m.id} className="hover:bg-muted/30 transition-colors group">
+                        {/* Mustahik Profile Cell */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-start gap-2.5">
+                            <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs mt-0.5">
+                              {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-foreground hover:text-emerald-600 transition-colors cursor-pointer text-[13px]" onClick={() => openDetail(m)}>
+                                  {m.name}
+                                </span>
+                                {m.priority === 'Prioritas 1' && (
+                                  <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-200 text-[9px] px-1.5 py-0">
+                                    Prioritas 1
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-mono mt-0.5 flex-wrap">
+                                <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                  {m.file_no || `MST-${m.id}`}
+                                  <button
+                                    onClick={() => copyToClipboard(m.file_no || `MST-${m.id}`, m.id)}
+                                    className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
+                                    title="Salin No. Berkas"
+                                  >
+                                    {copiedId === m.id ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                                  </button>
+                                </span>
+                                <span>•</span>
+                                <span>NIK: {m.nik || '-'}</span>
+                                {m.phone && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-muted-foreground">{m.phone}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Program & Asnaf */}
+                        <td className="px-4 py-3.5">
+                          <div className="space-y-1">
+                            <div className="font-bold text-foreground text-xs flex items-center gap-1.5">
+                              <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                              {m.program || 'Kemanusiaan'}
+                            </div>
+                            <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${asnafStyle}`}>
+                              Asnaf: {m.asnaf || 'Miskin'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Wilayah */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-start gap-1 text-[11px] text-foreground">
+                            <MapPin className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <div className="font-semibold">{m.kecamatan || 'Kota Tangerang'}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">{m.kelurahan ? `Kel. ${m.kelurahan}` : m.address || '-'}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status Pipeline Progress */}
+                        <td className="px-4 py-3.5">
+                          <div className="space-y-1.5 min-w-[140px]">
+                            <div className="flex items-center justify-between">
+                              <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border}`}>
+                                {m.status || 'Diajukan'}
+                              </span>
+                              <span className="text-[9px] text-muted-foreground font-semibold">
+                                {statusInfo.step > 0 ? `${statusInfo.step}/5` : ''}
+                              </span>
+                            </div>
+                            {/* Mini Progress Bar */}
+                            {statusInfo.step > 0 && (
+                              <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full transition-all duration-500 rounded-full ${
+                                    m.status === 'Penyaluran Selesai' ? 'bg-emerald-500' : 'bg-blue-600'
+                                  }`}
+                                  style={{ width: `${(statusInfo.step / 5) * 100}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Nominal Bantuan */}
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="font-extrabold text-foreground text-xs sm:text-sm text-emerald-700 dark:text-emerald-400">
+                            {formatRupiah(amount)}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {m.approved_amount ? 'Dana Disetujui' : 'Rekomendasi'}
+                          </div>
+                        </td>
+
+                        {/* Smart Next-Step Primary Action */}
+                        <td className="px-4 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {m.status === 'Diajukan' && (
+                              <Button
+                                size="sm"
+                                className="h-7.5 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
+                                onClick={() => handleAdvanceStatus(m)}
+                              >
+                                <span>Verifikasi Berkas</span>
+                                <ArrowRight className="size-3.5" />
+                              </Button>
+                            )}
+
+                            {m.status === 'Verifikasi Administrasi' && (
+                              <Button
+                                size="sm"
+                                className="h-7.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
+                                onClick={() => openSurvey(m)}
+                              >
+                                <FileText className="size-3.5" />
+                                <span>Input Survey F-BPP/04</span>
+                              </Button>
+                            )}
+
+                            {m.status === 'Survey' && (
+                              <Button
+                                size="sm"
+                                className="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
+                                onClick={() => openMpzis(m)}
+                              >
+                                <ShieldCheck className="size-3.5" />
+                                <span>Sidang MPZIS (F-BPP/06)</span>
+                              </Button>
+                            )}
+
+                            {m.status === 'Persetujuan MPZIS' && (
+                              <Button
+                                size="sm"
+                                className="h-7.5 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
+                                onClick={() => openPpd(m)}
+                              >
+                                <DollarSign className="size-3.5" />
+                                <span>Buat PPD Pencairan</span>
+                              </Button>
+                            )}
+
+                            {(m.status === 'Pengajuan Dana (FPD)' || m.status === 'Pengajuan Dana (PPD)') && (
+                              <Button
+                                size="sm"
+                                className="h-7.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 rounded-xl shadow-xs cursor-pointer px-3"
+                                onClick={() => handleAdvanceStatus(m)}
+                              >
+                                <CheckCircle2 className="size-3.5" />
+                                <span>Tuntaskan Penyaluran</span>
+                              </Button>
+                            )}
+
+                            {m.status === 'Penyaluran Selesai' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7.5 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-300 font-bold gap-1 rounded-xl cursor-pointer px-3 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                onClick={() => openPrintDocs(m, 'FBPP04')}
+                              >
+                                <Printer className="size-3.5" />
+                                <span>Cetak LPJ Berkas</span>
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Secondary Action Toolbar */}
+                        <td className="px-3 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {/* 360 Detail View */}
+                            <Button
+                              size="icon-xs"
+                              variant="ghost"
+                              className="size-7 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
+                              title="Buka Profil 360 & Dokumen"
+                              onClick={() => openDetail(m)}
+                            >
+                              <Eye className="size-3.5" />
+                            </Button>
+
+                            {/* WhatsApp */}
+                            <Button
+                              size="icon-xs"
+                              variant="ghost"
+                              className="size-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/40 cursor-pointer rounded-lg"
+                              title="Kirim Notifikasi WhatsApp"
+                              onClick={() => openWhatsApp(m)}
+                            >
+                              <MessageCircle className="size-3.5" />
+                            </Button>
+
+                            {/* Edit */}
+                            <Button
+                              size="icon-xs"
+                              variant="ghost"
+                              className="size-7 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
+                              title="Edit Data"
+                              onClick={() => handleOpenEdit(m)}
+                            >
+                              <Edit className="size-3.5" />
+                            </Button>
+
+                            {/* Hapus */}
+                            <Button
+                              size="icon-xs"
+                              variant="ghost"
+                              className="size-7 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer rounded-lg"
+                              title="Hapus Permohonan"
+                              onClick={() => handleDelete(m.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </Card>
