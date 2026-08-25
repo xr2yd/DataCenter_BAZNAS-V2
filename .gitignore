@@ -39,3 +39,12 @@ uploads/
 .next/
 frontend-next/.next/
 
+# Local design QA artifacts (kept on disk, excluded from Git)
+.audit-penyaluran*.png
+.superpowers/
+compact-control-hero.tar.gz
+decision-studio-hero.tar.gz
+editorial-layout.tar.gz
+frontend-next-*.tar.gz
+hero-polish.tar.gz
+impact-signal-hero.tar.gz
