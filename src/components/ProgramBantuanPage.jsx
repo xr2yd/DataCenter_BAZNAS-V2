@@ -56,7 +56,6 @@ import {
 } from 'lucide-react';
 import { formatRupiah } from '../utils/format';
 
-// 5 Pilar BAZNAS Master Data with rich real-scale parameters
 const PILAR_MASTER = [
   {
     id: 'PRG-CERDAS',
@@ -101,13 +100,6 @@ const PILAR_MASTER = [
       { month: 'Nov', realisasi: 0, target: 1100 },
       { month: 'Des', realisasi: 0, target: 1100 },
     ],
-    funnel: [
-      { stage: 'Proposal Masuk', count: 52 },
-      { stage: 'Verifikasi Berkas', count: 44 },
-      { stage: 'Disetujui MPZIS', count: 36 },
-      { stage: 'Pencairan PPD', count: 28 },
-      { stage: 'Bantuan Tersalurkan', count: 24 },
-    ],
     asnafPie: [
       { name: 'Miskin', value: 4250, pct: '43%', color: '#d97706' },
       { name: 'Fakir', value: 3120, pct: '32%', color: '#e11d48' },
@@ -121,13 +113,6 @@ const PILAR_MASTER = [
       { name: 'Cipondoh', count: 1540, pct: '16%' },
       { name: 'Batuceper', count: 1380, pct: '14%' },
       { name: 'Periuk', count: 1150, pct: '12%' },
-    ],
-    milestones: [
-      { date: 'Jan 2026', title: 'Kick-off Beasiswa SKSS Tahap 1' },
-      { date: 'Mar 2026', title: 'Penebusan Ijazah 420 Siswa SMK' },
-      { date: 'Mei 2026', title: 'Pelatihan Digital Santri Pesantren' },
-      { date: 'Jul 2026', title: 'Pemberian Insentif 1.200 Guru Ngaji' },
-      { date: 'Agu 2026', title: 'Monev Semester 1 & Penyerapan RKAT' },
     ],
     subPrograms: [
       { code: 'TC-01', name: 'Beasiswa Satu Keluarga Satu Sarjana (SKSS)', desc: 'Beasiswa penuh kuliah S1/D3 bagi putra-putri keluarga prasejahtera.', budget: 3_500_000_000, realized: 2_950_000_000, mustahik: 1200, status: 'Aktif' },
@@ -179,13 +164,6 @@ const PILAR_MASTER = [
       { month: 'Nov', realisasi: 0, target: 850 },
       { month: 'Des', realisasi: 0, target: 850 },
     ],
-    funnel: [
-      { stage: 'Proposal Masuk', count: 48 },
-      { stage: 'Verifikasi Berkas', count: 39 },
-      { stage: 'Disetujui MPZIS', count: 30 },
-      { stage: 'Pencairan PPD', count: 24 },
-      { stage: 'Bantuan Tersalurkan', count: 20 },
-    ],
     asnafPie: [
       { name: 'Miskin', value: 4980, pct: '60%', color: '#d97706' },
       { name: 'Fakir', value: 2150, pct: '26%', color: '#e11d48' },
@@ -198,13 +176,6 @@ const PILAR_MASTER = [
       { name: 'Cipondoh', count: 1420, pct: '17%' },
       { name: 'Ciledug', count: 1280, pct: '15%' },
       { name: 'Larangan', count: 1120, pct: '13%' },
-    ],
-    milestones: [
-      { date: 'Jan 2026', title: 'Peluncuran Modal Usaha Z-Auto' },
-      { date: 'Mar 2026', title: 'Penyerahan 150 Gerobak Berkah' },
-      { date: 'Mei 2026', title: 'Pelatihan Sertifikasi Halal 300 UMKM' },
-      { date: 'Jul 2026', title: 'Bazar Pemberdayaan Mustahik Kota' },
-      { date: 'Agu 2026', title: 'Graduasi 45 Mustahik Mandiri' },
     ],
     subPrograms: [
       { code: 'TM-01', name: 'Bantuan Modal Usaha Bergulir Z-Mart', desc: 'Suntikan modal tanpa bunga bagi warung kelontong mustahik.', budget: 3_200_000_000, realized: 2_450_000_000, mustahik: 3400, status: 'Aktif' },
@@ -231,11 +202,11 @@ const PILAR_MASTER = [
     mainServices: '6 Layanan Utama',
     impactStatement: 'Derajat kesehatan kaum duafa meningkat, beban biaya operasi & rawat inap tuntas teratasi, kualitas hidup lebih sejahtera.',
     metrics: {
-      primaryLabel: 'Pasien / Mustahik Dilayani',
+      primaryLabel: 'Pasien Mustahik Dilayani',
       primaryValue: '12.374',
       primaryGrowth: '+18,6%',
       successRate: '72%',
-      successCount: '8.921 Pasien',
+      successCount: '8.921 Jiwa',
       avgAid: 'Rp 744 rb',
       activeProg: '18 Program',
       servicesCount: '6 Layanan Utama',
@@ -256,13 +227,6 @@ const PILAR_MASTER = [
       { month: 'Nov', realisasi: 0, target: 900 },
       { month: 'Des', realisasi: 0, target: 900 },
     ],
-    funnel: [
-      { stage: 'Proposal Masuk', count: 42 },
-      { stage: 'Verifikasi Medis', count: 36 },
-      { stage: 'Disetujui MPZIS', count: 28 },
-      { stage: 'Pencairan PPD', count: 22 },
-      { stage: 'Bantuan Tersalurkan', count: 18 },
-    ],
     asnafPie: [
       { name: 'Fakir', value: 4128, pct: '33%', color: '#e11d48' },
       { name: 'Miskin', value: 4346, pct: '35%', color: '#d97706' },
@@ -277,13 +241,6 @@ const PILAR_MASTER = [
       { name: 'Cipondoh', count: 1673, pct: '14%' },
       { name: 'Batuceper', count: 1435, pct: '12%' },
       { name: 'Periuk', count: 1221, pct: '10%' },
-    ],
-    milestones: [
-      { date: 'Jan 2026', title: 'Kick-off program kesehatan' },
-      { date: 'Mar 2026', title: 'Peluncuran layanan mobile klinik' },
-      { date: 'Mei 2026', title: 'Penambahan mitra fasilitas kesehatan' },
-      { date: 'Jul 2026', title: 'Program gizi ibu & anak diperluas' },
-      { date: 'Agu 2026', title: 'Review capaian & optimasi program' },
     ],
     subPrograms: [
       { code: 'TS-01', name: 'Bantuan Rawat Inap & Operasi Kritis RSU', desc: 'Bantuan biaya tindakan medis, ICU, dan farmasi di RSUD & RS Mitra.', budget: 4_200_000_000, realized: 3_850_000_000, mustahik: 4200, status: 'Aktif' },
@@ -335,13 +292,6 @@ const PILAR_MASTER = [
       { month: 'Nov', realisasi: 0, target: 700 },
       { month: 'Des', realisasi: 0, target: 700 },
     ],
-    funnel: [
-      { stage: 'Proposal Masuk', count: 38 },
-      { stage: 'Verifikasi Berkas', count: 32 },
-      { stage: 'Disetujui MPZIS', count: 26 },
-      { stage: 'Pencairan PPD', count: 20 },
-      { stage: 'Bantuan Tersalurkan', count: 16 },
-    ],
     asnafPie: [
       { name: 'Fakir', value: 3250, pct: '50%', color: '#e11d48' },
       { name: 'Miskin', value: 2450, pct: '38%', color: '#d97706' },
@@ -354,13 +304,6 @@ const PILAR_MASTER = [
       { name: 'Karawaci', count: 1210, pct: '19%' },
       { name: 'Ciledug', count: 1100, pct: '17%' },
       { name: 'Neglasari', count: 921, pct: '14%' },
-    ],
-    milestones: [
-      { date: 'Jan 2026', title: 'Posko Tanggap Bencana Banjir' },
-      { date: 'Mar 2026', title: 'Serah Terima 45 Unit Bedah Rumah RTLH' },
-      { date: 'Mei 2026', title: 'Penyaluran Paket Sembako Ramadan' },
-      { date: 'Jul 2026', title: 'Santunan Akbar 1.000 Anak Yatim' },
-      { date: 'Agu 2026', title: 'Distribusi Air Bersih Kemarau' },
     ],
     subPrograms: [
       { code: 'TP-01', name: 'Bedah Rumah Tidak Layak Huni (RTLH)', desc: 'Renovasi total atap, lantai, dinding dan sanitasi hunian duafa.', budget: 3_500_000_000, realized: 2_450_000_000, mustahik: 185, status: 'Aktif' },
@@ -412,13 +355,6 @@ const PILAR_MASTER = [
       { month: 'Nov', realisasi: 0, target: 500 },
       { month: 'Des', realisasi: 0, target: 500 },
     ],
-    funnel: [
-      { stage: 'Proposal Masuk', count: 32 },
-      { stage: 'Verifikasi Berkas', count: 28 },
-      { stage: 'Disetujui MPZIS', count: 24 },
-      { stage: 'Pencairan PPD', count: 18 },
-      { stage: 'Bantuan Tersalurkan', count: 15 },
-    ],
     asnafPie: [
       { name: 'Fisabilillah', value: 3150, pct: '58%', color: '#059669' },
       { name: 'Mualaf', value: 1250, pct: '23%', color: '#0d9488' },
@@ -431,13 +367,6 @@ const PILAR_MASTER = [
       { name: 'Tangerang', count: 1090, pct: '20%' },
       { name: 'Karawaci', count: 980, pct: '18%' },
       { name: 'Benda', count: 933, pct: '17%' },
-    ],
-    milestones: [
-      { date: 'Jan 2026', title: 'Renovasi 24 Musholla Pelosok' },
-      { date: 'Mar 2026', title: 'Safari Ramadan & Da’i Perkotaan' },
-      { date: 'Mei 2026', title: 'Pembinaan Mualaf Center BAZNAS' },
-      { date: 'Jul 2026', title: 'Pelatihan Imam & Marbot Masjid' },
-      { date: 'Agu 2026', title: 'Wisuda Santri Tahfidz Dhuafa' },
     ],
     subPrograms: [
       { code: 'TT-01', name: 'Renovasi Tempat Wudhu & Toilet Musholla', desc: 'Perbaikan sarana sanitasi air bersih tempat ibadah perkampungan.', budget: 2_400_000_000, realized: 2_150_000_000, mustahik: 1200, status: 'Aktif' },
@@ -455,44 +384,9 @@ export default function ProgramBantuanPage({ onNavigate }) {
     [selectedPilarId]
   );
 
-  // Search in sub-programs
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Simulation & Allocation Modals
   const [showSimModal, setShowSimModal] = useState(false);
-  const [showAllocateModal, setShowAllocateModal] = useState(false);
-  const [allocateTargetSub, setAllocateTargetSub] = useState(null);
-  const [allocateForm, setAllocateForm] = useState({ mustahikName: '', nik: '', amount: '3500000', asnaf: 'Miskin' });
 
-  // Custom Toast
-  const [toast, setToast] = useState({ show: false, message: '' });
-  const showToast = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 4000);
-  };
-
-  const handleOpenAllocate = (sub) => {
-    setAllocateTargetSub(sub);
-    setAllocateForm({
-      mustahikName: '',
-      nik: '',
-      amount: '3500000',
-      asnaf: 'Miskin',
-    });
-    setShowAllocateModal(true);
-  };
-
-  const handleSaveAllocate = (e) => {
-    e.preventDefault();
-    if (!allocateForm.mustahikName || !allocateForm.nik) {
-      alert('Nama dan NIK wajib diisi!');
-      return;
-    }
-    showToast(`Mustahik "${allocateForm.mustahikName}" berhasil dialokasikan ke sub-program ${allocateTargetSub.name}!`);
-    setShowAllocateModal(false);
-  };
-
-  // Filtered sub-programs
   const filteredSubPrograms = useMemo(() => {
     if (!searchTerm.trim()) return activePilar.subPrograms;
     const q = searchTerm.toLowerCase();
@@ -505,28 +399,9 @@ export default function ProgramBantuanPage({ onNavigate }) {
   }, [activePilar, searchTerm]);
 
   return (
-    <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-6 sm:space-y-8">
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3.5 bg-card border border-border shadow-2xl rounded-2xl p-4 sm:p-5 animate-fade-in pr-12 min-w-[340px] max-w-md">
-          <div className="size-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="size-6" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-bold text-foreground">Alokasi Berhasil Disimpan</p>
-            <p className="text-xs text-muted-foreground">{toast.message}</p>
-          </div>
-          <button
-            onClick={() => setToast({ show: false, message: '' })}
-            className="absolute top-3.5 right-3.5 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
-
+    <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5 sm:space-y-6">
       {/* 1. TOP PILAR SELECTOR HUD CARDS (5 Cards with Sparklines) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 lg:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {PILAR_MASTER.map((pilar) => {
           const isSelected = selectedPilarId === pilar.id;
           const sparkData = pilar.sparkline.map((val, i) => ({ i, val }));
@@ -538,15 +413,15 @@ export default function ProgramBantuanPage({ onNavigate }) {
               onClick={() => setSelectedPilarId(pilar.id)}
               className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
                 isSelected
-                  ? 'bg-card border-emerald-600 shadow-lg ring-2 ring-emerald-500/20'
-                  : 'bg-card/75 border-border/80 hover:bg-card hover:border-border hover:shadow-md'
+                  ? 'bg-card border-emerald-600 shadow-md ring-2 ring-emerald-500/25 bg-emerald-50/20'
+                  : 'bg-card border-border hover:border-zinc-300 hover:shadow-xs'
               }`}
             >
-              {isSelected && <div className="absolute top-0 left-0 right-0 h-1.5" style={{ backgroundColor: pilar.brandColor }} />}
+              {isSelected && <div className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: pilar.brandColor }} />}
 
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-base sm:text-lg lg:text-xl font-black text-emerald-600 font-mono">
+                  <span className="text-base sm:text-lg font-black text-emerald-600 font-mono">
                     {pilar.pct}%
                   </span>
                   <span className="text-xs text-muted-foreground font-semibold">capaian</span>
@@ -559,30 +434,30 @@ export default function ProgramBantuanPage({ onNavigate }) {
                 </div>
               </div>
 
-              <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-1">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">
                 {pilar.beneficiaries.toLocaleString('id-ID')} penerima manfaat
               </p>
 
               {/* Sparkline Graphic */}
-              <div className="h-12 sm:h-14 w-full my-2">
+              <div className="h-10 w-full my-1.5">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={sparkData}>
                     <Line
                       type="monotone"
                       dataKey="val"
                       stroke={pilar.brandColor}
-                      strokeWidth={2.5}
+                      strokeWidth={2.2}
                       dot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="mt-1 pt-2.5 border-t border-border/70 flex items-center justify-between">
-                <span className="text-sm sm:text-base font-extrabold text-foreground truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+              <div className="mt-1 pt-2 border-t border-border/70 flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-extrabold text-foreground truncate group-hover:text-emerald-700">
                   {pilar.name}
                 </span>
-                <Badge variant="outline" className={`text-[11px] font-bold py-0.5 px-2 ${pilar.bgBadge}`}>
+                <Badge variant="outline" className={`text-[10px] font-bold py-0.5 px-2 ${pilar.bgBadge}`}>
                   Pilar {pilar.pilarNum}
                 </Badge>
               </div>
@@ -591,116 +466,125 @@ export default function ProgramBantuanPage({ onNavigate }) {
         })}
       </div>
 
-      {/* 2. VALUE CHAIN SECTION: "Dari anggaran ke dampak — [Nama Pilar]" */}
+      {/* 2. VALUE CHAIN SECTION: FULL WIDTH BALANCED 5-STEP SEQUENCE */}
       <Card className="shadow-xs border-border rounded-2xl overflow-hidden">
-        <CardHeader className="p-4 sm:p-6 pb-3 border-b border-border/70 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <CardHeader className="p-5 pb-3 border-b border-border/70 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <CardTitle className="text-base sm:text-lg lg:text-xl font-black text-foreground flex items-center gap-2">
+            <CardTitle className="text-base sm:text-lg font-black text-foreground flex items-center gap-2">
               <span>Dari Anggaran ke Dampak Sosial — <span style={{ color: activePilar.brandColor }}>{activePilar.name}</span></span>
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
               Rantai transformasi dana zakat menjadi kemaslahatan nyata bagi kaum mustahik Kota Tangerang
             </CardDescription>
           </div>
-          <Badge className={`text-xs sm:text-sm font-bold px-3 py-1 self-start sm:self-auto ${activePilar.bgBadge}`}>
-            Target: {activePilar.category}
+          <Badge className={`text-xs font-bold px-3 py-1 self-start sm:self-auto ${activePilar.bgBadge}`}>
+            Fokus: {activePilar.category}
           </Badge>
         </CardHeader>
 
-        <CardContent className="p-4 sm:p-6 lg:p-7">
-          {/* 5-Step Value Chain Responsive Sequence */}
+        <CardContent className="p-5 sm:p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 items-stretch">
             {/* Step 1: Anggaran */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/70 flex flex-col justify-between text-center space-y-2 hover:bg-muted/60 transition-colors">
-              <div className="size-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto">
-                <DollarSign className="size-5" />
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">1. Anggaran RKAT</span>
+                <div className="size-8 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
+                  <DollarSign className="size-4" />
+                </div>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">1. Anggaran RKAT</p>
-                <p className="text-base sm:text-lg lg:text-xl font-black font-mono text-foreground mt-1">{formatRupiah(activePilar.realized, true)}</p>
-                <p className="text-xs text-emerald-600 font-bold mt-0.5">{activePilar.pct}% dari target tahunan</p>
+                <p className="text-lg sm:text-xl font-black font-mono text-foreground">{formatRupiah(activePilar.realized, true)}</p>
+                <p className="text-xs text-emerald-600 font-bold mt-0.5">{activePilar.pct}% dari pagu tahunan</p>
               </div>
             </div>
 
-            {/* Step 2: Program & Intervensi */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/70 flex flex-col justify-between text-center space-y-2 hover:bg-muted/60 transition-colors">
-              <div className="size-10 rounded-xl bg-blue-500/15 text-blue-600 flex items-center justify-center mx-auto">
-                <Layers className="size-5" />
+            {/* Step 2: Intervensi */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">2. Intervensi</span>
+                <div className="size-8 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center">
+                  <Layers className="size-4" />
+                </div>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">2. Program & Intervensi</p>
-                <p className="text-base sm:text-lg lg:text-xl font-black text-foreground mt-1">{activePilar.programsCount} Sub-Program</p>
+                <p className="text-lg sm:text-xl font-black text-foreground">{activePilar.programsCount} Sub-Program</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{activePilar.mainServices}</p>
               </div>
             </div>
 
             {/* Step 3: Aktivitas */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/70 flex flex-col justify-between text-center space-y-2 hover:bg-muted/60 transition-colors">
-              <div className="size-10 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center mx-auto">
-                <Users className="size-5" />
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">3. Aktivitas Layanan</span>
+                <div className="size-8 rounded-lg bg-purple-500/15 text-purple-600 flex items-center justify-center">
+                  <Users className="size-4" />
+                </div>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">3. Aktivitas Layanan</p>
-                <p className="text-base sm:text-lg lg:text-xl font-black text-foreground mt-1">{activePilar.activities.toLocaleString('id-ID')} Kegiatan</p>
+                <p className="text-lg sm:text-xl font-black text-foreground">{activePilar.activities.toLocaleString('id-ID')} Kegiatan</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Periode Jan–Agu 2026</p>
               </div>
             </div>
 
             {/* Step 4: Output */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/70 flex flex-col justify-between text-center space-y-2 hover:bg-muted/60 transition-colors">
-              <div className="size-10 rounded-xl bg-teal-500/15 text-teal-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="size-5" />
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">4. Output Penerima</span>
+                <div className="size-8 rounded-lg bg-teal-500/15 text-teal-600 flex items-center justify-center">
+                  <CheckCircle2 className="size-4" />
+                </div>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider">4. Output Penerima</p>
-                <p className="text-base sm:text-lg lg:text-xl font-black text-foreground mt-1">{activePilar.beneficiaries.toLocaleString('id-ID')} Jiwa</p>
+                <p className="text-lg sm:text-xl font-black text-foreground">{activePilar.beneficiaries.toLocaleString('id-ID')} Jiwa</p>
                 <p className="text-xs text-emerald-600 font-bold mt-0.5">{activePilar.pct}% dari kuota target</p>
               </div>
             </div>
 
             {/* Step 5: Dampak */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between text-center space-y-2 sm:col-span-2 lg:col-span-1">
-              <div className="size-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-sm">
-                <HeartHandshake className="size-5" />
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between space-y-2 sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs uppercase font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">5. Dampak Nyata</span>
+                <div className="size-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                  <HeartHandshake className="size-4" />
+                </div>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">5. Dampak Sosial</p>
-                <p className="text-xs sm:text-sm text-foreground font-medium leading-relaxed mt-1">{activePilar.impactStatement}</p>
+                <p className="text-xs text-foreground font-semibold leading-snug">{activePilar.impactStatement}</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 3. CHARTS ROW: TREN BULANAN (Left 7-8 cols) & DAMPAK UTAMA (Right 4-5 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-        {/* Monthly Trend & Projection */}
-        <Card className="lg:col-span-7 xl:col-span-8 shadow-xs border-border rounded-2xl flex flex-col justify-between">
-          <CardHeader className="p-4 sm:p-6 pb-3 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 3. BALANCED 7:5 ROW: CHARTS (LEFT) & 6 KPIS (RIGHT WITH ZERO EMPTY SPACE) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        {/* Monthly Trend & Projection (7 cols) */}
+        <Card className="lg:col-span-7 shadow-xs border-border rounded-2xl flex flex-col justify-between space-y-5">
+          <CardHeader className="p-5 pb-2 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-base sm:text-lg font-bold text-foreground">
-                Tren Penyaluran Bulanan — {activePilar.name}
+              <CardTitle className="text-base font-bold text-foreground">
+                Tren Penyaluran Bulanan
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Perbandingan nominal realisasi penyaluran vs target per bulan (dalam Rp Juta)
+              <CardDescription className="text-xs text-muted-foreground">
+                Realisasi penyaluran vs target bulanan (Rp Juta)
               </CardDescription>
             </div>
-            <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded-xs bg-emerald-600" /> Realisasi Salur</span>
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded-xs bg-blue-500/50" /> Target RKAT</span>
+            <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-emerald-600" /> Realisasi</span>
+              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-blue-500/50" /> Target</span>
             </div>
           </CardHeader>
 
-          <CardContent className="p-4 sm:p-6 space-y-5 flex-1 flex flex-col justify-between">
-            <div className="h-72 sm:h-80 lg:h-96 w-full">
+          <CardContent className="p-5 pt-0 space-y-4 flex-1 flex flex-col justify-between">
+            <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activePilar.monthlyData} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
+                <BarChart data={activePilar.monthlyData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.7} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--muted-foreground)', fontWeight: 600 }} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 600 }} />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontWeight: 600 }} />
                   <Tooltip
                     formatter={(v) => [`Rp ${v} Juta`, '']}
-                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.75rem', fontSize: '13px', fontWeight: 'bold' }}
+                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.75rem', fontSize: '12px', fontWeight: 'bold' }}
                   />
                   <Bar dataKey="realisasi" fill="#059669" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="target" fill="#3b82f6" opacity={0.35} radius={[4, 4, 0, 0]} />
@@ -708,112 +592,113 @@ export default function ProgramBantuanPage({ onNavigate }) {
               </ResponsiveContainer>
             </div>
 
-            {/* Proyeksi 2026 Strip */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-muted/40 border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Proyeksi Strip */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Proyeksi Penyerapan 2026:</span>
-                <div className="flex items-baseline gap-2.5 mt-0.5">
-                  <span className="text-xl sm:text-2xl lg:text-3xl font-black font-mono text-foreground">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider">Proyeksi Serapan 2026:</span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-xl font-black font-mono text-foreground">
                     {formatRupiah(activePilar.budget, true)}
                   </span>
-                  <Badge variant="outline" className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20">
-                    102% dari target RKAT
+                  <Badge variant="outline" className="text-xs font-bold text-emerald-700 bg-emerald-500/10 border-emerald-500/20">
+                    102% target
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-5 text-xs sm:text-sm text-muted-foreground">
-                <span>Target Pagu: <strong className="text-foreground">{formatRupiah(activePilar.budget, true)}</strong></span>
-                <span>Sisa Kuota: <strong className="text-amber-600 font-mono">{formatRupiah(activePilar.budget - activePilar.realized, true)}</strong></span>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span>Pagu: <strong className="text-foreground">{formatRupiah(activePilar.budget, true)}</strong></span>
+                <span>Sisa: <strong className="text-amber-600 font-mono">{formatRupiah(activePilar.budget - activePilar.realized, true)}</strong></span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Dampak Utama Matrix */}
-        <Card className="lg:col-span-5 xl:col-span-4 shadow-xs border-border rounded-2xl flex flex-col justify-between">
-          <CardHeader className="p-4 sm:p-6 pb-3 border-b border-border/70">
-            <CardTitle className="text-base sm:text-lg font-bold text-foreground">
+        {/* Dampak Utama 6 KPI Matrix (5 cols, 2x3 Grid with NO vertical empty gap) */}
+        <Card className="lg:col-span-5 shadow-xs border-border rounded-2xl flex flex-col justify-between space-y-4">
+          <CardHeader className="p-5 pb-2 border-b border-border/70">
+            <CardTitle className="text-base font-bold text-foreground">
               Dampak Utama — {activePilar.name}
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            <CardDescription className="text-xs text-muted-foreground">
               Capaian performa intervensi program bagi mustahik
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
-            <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">{activePilar.metrics.primaryLabel}</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.primaryValue}</p>
-                <p className="text-xs text-emerald-600 font-bold">{activePilar.metrics.primaryGrowth} vs semester lalu</p>
+          <CardContent className="p-5 pt-0 flex-1 flex flex-col justify-between">
+            <div className="grid grid-cols-2 gap-3 flex-1">
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">{activePilar.metrics.primaryLabel}</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.primaryValue}</p>
+                  <p className="text-xs text-emerald-600 font-bold">{activePilar.metrics.primaryGrowth} vs lalu</p>
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">Intervensi Berhasil</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.successCount}</p>
-                <p className="text-xs text-emerald-600 font-bold">Tingkat sukses {activePilar.metrics.successRate}</p>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">Intervensi Sukses</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.successCount}</p>
+                  <p className="text-xs text-emerald-600 font-bold">Tingkat {activePilar.metrics.successRate}</p>
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">Rata-rata Bantuan</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.avgAid}</p>
-                <p className="text-xs text-muted-foreground">Per penerima manfaat</p>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">Rata-rata Bantuan</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.avgAid}</p>
+                  <p className="text-xs text-muted-foreground">Per mustahik</p>
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">Program Aktif</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.activeProg}</p>
-                <p className="text-xs text-muted-foreground">{activePilar.metrics.servicesCount}</p>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">Program Aktif</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.activeProg}</p>
+                  <p className="text-xs text-muted-foreground">{activePilar.metrics.servicesCount}</p>
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">Kecamatan Terjangkau</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.districtsCovered}</p>
-                <p className="text-xs text-emerald-600 font-bold">100% wilayah tercakup</p>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">Kecamatan</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.districtsCovered}</p>
+                  <p className="text-xs text-emerald-600 font-bold">100% tercakup</p>
+                </div>
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-muted/40 border border-border/70 space-y-1">
-                <p className="text-xs font-bold text-muted-foreground">Mustahik Baru</p>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground font-mono">{activePilar.metrics.newMustahik}</p>
-                <p className="text-xs text-muted-foreground">Jan–Agu 2026</p>
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 flex flex-col justify-between">
+                <p className="text-xs font-semibold text-muted-foreground truncate">Mustahik Baru</p>
+                <div>
+                  <p className="text-xl font-black text-foreground font-mono">{activePilar.metrics.newMustahik}</p>
+                  <p className="text-xs text-muted-foreground">Jan–Agu 2026</p>
+                </div>
               </div>
-            </div>
-
-            <div className="pt-3 border-t border-border/70 flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 text-xs sm:text-sm font-bold rounded-xl cursor-pointer flex-1 gap-2 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40"
-                onClick={() => setShowSimModal(true)}
-              >
-                <Calculator className="size-4 text-emerald-600" /> Buka Kalkulator Simulasi RKAT
-              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 4. DEEP ANALYTICS MATRIX GRID (3 Columns for perfect readability) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
-        {/* Card 1: Funnel Outcome Program */}
+      {/* 4. 3-CARD ANALYTICS ROW */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Funnel */}
         <Card className="shadow-xs border-border rounded-2xl">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
+          <CardHeader className="p-5 pb-3 border-b border-border/70">
             <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
               <Layers className="size-4 text-emerald-600" /> Funnel Outcome Program
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Alur konversi proposal ke penyaluran tuntas</CardDescription>
+            <CardDescription className="text-xs text-muted-foreground">Alur konversi proposal ke penyaluran</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-3">
-            {activePilar.funnel.map((item) => (
-              <div key={item.stage} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="font-semibold text-muted-foreground">{item.stage}</span>
-                  <span className="font-black text-foreground font-mono">{item.count} Proposal</span>
+          <CardContent className="p-5 space-y-2.5">
+            {activePilar.subPrograms.map((item, idx) => (
+              <div key={item.code} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-muted-foreground truncate">{item.name}</span>
+                  <span className="font-black text-foreground font-mono">{item.mustahik} Jiwa</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-emerald-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.max(20, (item.count / 52) * 100)}%` }}
+                    className="bg-emerald-600 h-2 rounded-full"
+                    style={{ width: `${Math.max(20, (item.realized / item.budget) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -821,19 +706,19 @@ export default function ProgramBantuanPage({ onNavigate }) {
           </CardContent>
         </Card>
 
-        {/* Card 2: Komposisi Asnaf */}
+        {/* Card 2: Asnaf Pie */}
         <Card className="shadow-xs border-border rounded-2xl">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
+          <CardHeader className="p-5 pb-3 border-b border-border/70">
             <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <Award className="size-4 text-emerald-600" /> Komposisi Asnaf Penerima Manfaat
+              <Award className="size-4 text-emerald-600" /> Komposisi 8 Asnaf
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Distribusi 8 golongan asnaf syar'i</CardDescription>
+            <CardDescription className="text-xs text-muted-foreground">Distribusi hak mustahik</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-3">
-            <div className="h-40 sm:h-44 w-full relative flex items-center justify-center">
+          <CardContent className="p-5 space-y-2">
+            <div className="h-32 w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={activePilar.asnafPie} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value">
+                  <Pie data={activePilar.asnafPie} cx="50%" cy="50%" innerRadius={35} outerRadius={55} dataKey="value">
                     {activePilar.asnafPie.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -841,13 +726,13 @@ export default function ProgramBantuanPage({ onNavigate }) {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-1.5 text-xs sm:text-sm">
+            <div className="space-y-1 text-xs">
               {activePilar.asnafPie.slice(0, 4).map((item) => (
-                <div key={item.name} className="flex items-center justify-between p-1.5 rounded-lg bg-muted/30">
-                  <span className="flex items-center gap-2 font-medium text-foreground">
-                    <span className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} /> Asnaf {item.name}
+                <div key={item.name} className="flex items-center justify-between p-1 rounded bg-muted/30">
+                  <span className="flex items-center gap-1.5 font-medium text-foreground">
+                    <span className="size-2 rounded-full" style={{ backgroundColor: item.color }} /> Asnaf {item.name}
                   </span>
-                  <span className="font-black font-mono text-foreground">{item.value.toLocaleString('id-ID')} ({item.pct})</span>
+                  <span className="font-mono font-bold text-foreground">{item.pct}</span>
                 </div>
               ))}
             </div>
@@ -856,322 +741,78 @@ export default function ProgramBantuanPage({ onNavigate }) {
 
         {/* Card 3: Top Kecamatan */}
         <Card className="shadow-xs border-border rounded-2xl">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
+          <CardHeader className="p-5 pb-3 border-b border-border/70">
             <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <MapPin className="size-4 text-emerald-600" /> Top Kecamatan Penerima Manfaat
+              <MapPin className="size-4 text-emerald-600" /> Top Kecamatan Penerima
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Peringkat 5 wilayah sebaran tertinggi</CardDescription>
+            <CardDescription className="text-xs text-muted-foreground">Peringkat sebaran tertinggi</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-2">
+          <CardContent className="p-5 space-y-2">
             {activePilar.topKecamatan.map((kec, i) => (
-              <div key={kec.name} className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs sm:text-sm">
+              <div key={kec.name} className="flex items-center justify-between p-2 rounded-xl bg-muted/40 border border-border/60 text-xs">
                 <span className="text-foreground font-semibold">{i + 1}. Kec. {kec.name}</span>
                 <span className="font-black font-mono text-foreground">{kec.count.toLocaleString('id-ID')} Jiwa ({kec.pct})</span>
               </div>
             ))}
           </CardContent>
         </Card>
-
-        {/* Card 4: Target vs Realisasi */}
-        <Card className="shadow-xs border-border rounded-2xl">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
-            <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <Target className="size-4 text-emerald-600" /> Target vs Realisasi Kuota
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Evaluasi pencapaian kuota RKAT 2026</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="font-semibold text-muted-foreground">Serapan Penyaluran</span>
-                <span className="font-black text-emerald-600 font-mono">{activePilar.pct}%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: `${activePilar.pct}%` }} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="font-semibold text-muted-foreground">Penerima Manfaat</span>
-                <span className="font-black text-blue-600 font-mono">82%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '82%' }} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="font-semibold text-muted-foreground">Program Aktif</span>
-                <span className="font-black text-purple-600 font-mono">92%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                <div className="bg-purple-600 h-2.5 rounded-full" style={{ width: '92%' }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 5: Efisiensi Anggaran */}
-        <Card className="shadow-xs border-border rounded-2xl flex flex-col justify-between">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
-            <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <ShieldCheck className="size-4 text-emerald-600" /> Rasio Efisiensi Anggaran
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Kepatuhan alokasi hak amil vs mustahik</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-4 flex-1 flex flex-col justify-between">
-            <div className="space-y-1.5">
-              <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-emerald-600 font-mono">92,4%</p>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">Dana murni langsung diterima mustahik</p>
-            </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-2">
-              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
-              Biaya Operasional Amil: 7,6% (Maksimal Syar'i: 12,5%)
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 6: Timeline Tonggak Penting */}
-        <Card className="shadow-xs border-border rounded-2xl">
-          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/70">
-            <CardTitle className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-              <Clock className="size-4 text-emerald-600" /> Timeline Tonggak Penting
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">Milestone program tahun berjalan</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
-            {activePilar.milestones.slice(0, 4).map((m) => (
-              <div key={m.title} className="flex items-start gap-2.5">
-                <span className="size-2 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
-                <div>
-                  <span className="font-black text-foreground block font-mono">{m.date}</span>
-                  <span className="text-muted-foreground text-xs sm:text-sm block">{m.title}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
 
-      {/* 5. SUB-PROGRAM PORTFOLIO ACCORDION / TABLE */}
+      {/* 5. SUB-PROGRAM TABLE */}
       <Card className="shadow-xs border-border rounded-2xl overflow-hidden">
-        <CardHeader className="p-5 sm:p-6 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
+        <CardHeader className="p-5 border-b border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
           <div>
-            <CardTitle className="text-base sm:text-lg lg:text-xl font-black text-foreground">
+            <CardTitle className="text-base font-black text-foreground">
               Portofolio Sub-Program — {activePilar.name} ({activePilar.subPrograms.length})
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Rincian alokasi anggaran, serapan kuota, dan tombol tambah alokasi penerima manfaat
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
+              Rincian alokasi anggaran, serapan kuota, dan status pelaksanaan
             </CardDescription>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari sub-program..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pl-9 text-xs sm:text-sm rounded-xl"
-              />
-            </div>
-            <Button
-              size="sm"
-              className="h-9 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer px-4 gap-2"
-              onClick={() => onNavigate && onNavigate('mustahik')}
-            >
-              <Users className="size-4" /> Buka Master Data Mustahik
-            </Button>
-          </div>
         </CardHeader>
-
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm text-left">
+            <table className="w-full text-xs text-left">
               <thead className="bg-muted/40 border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="px-5 py-4">Kode & Nama Sub-Program</th>
-                  <th className="px-5 py-4">Pagu RKAT</th>
-                  <th className="px-5 py-4">Realisasi Salur</th>
-                  <th className="px-5 py-4">Mustahik Terbantu</th>
-                  <th className="px-5 py-4 text-center">Status</th>
-                  <th className="px-5 py-4 text-right">Aksi Alokasi</th>
+                  <th className="px-5 py-3">Kode & Nama Program</th>
+                  <th className="px-5 py-3">Pagu RKAT</th>
+                  <th className="px-5 py-3">Realisasi Salur</th>
+                  <th className="px-5 py-3">Mustahik</th>
+                  <th className="px-5 py-3 text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/70">
-                {filteredSubPrograms.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground text-sm">
-                      Tidak ada sub-program yang cocok dengan kata kunci "{searchTerm}".
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSubPrograms.map((sub) => {
-                    const subPct = Math.round((sub.realized / sub.budget) * 100);
-                    return (
-                      <tr key={sub.code} className="hover:bg-muted/20 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-xs px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-                              {sub.code}
-                            </span>
-                            <div>
-                              <span className="font-extrabold text-foreground block text-sm">{sub.name}</span>
-                              <span className="text-xs text-muted-foreground block mt-0.5">{sub.desc}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 font-mono font-medium text-muted-foreground text-sm">{formatRupiah(sub.budget, true)}</td>
-                        <td className="px-5 py-4 font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm">
-                          {formatRupiah(sub.realized, true)} ({subPct}%)
-                        </td>
-                        <td className="px-5 py-4 text-foreground font-semibold text-sm">{sub.mustahik.toLocaleString('id-ID')} Jiwa</td>
-                        <td className="px-5 py-4 text-center">
-                          <Badge variant="outline" className="text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20 font-bold px-2.5 py-0.5">
-                            {sub.status}
-                          </Badge>
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          <Button
-                            size="sm"
-                            className="h-8.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl cursor-pointer px-3 gap-1.5"
-                            onClick={() => handleOpenAllocate(sub)}
-                          >
-                            <Plus className="size-3.5" /> Alokasikan
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                {filteredSubPrograms.map((sub) => {
+                  const subPct = Math.round((sub.realized / sub.budget) * 100);
+                  return (
+                    <tr key={sub.code} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-emerald-700 text-xs px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                            {sub.code}
+                          </span>
+                          <span className="font-bold text-foreground">{sub.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 font-mono text-muted-foreground">{formatRupiah(sub.budget, true)}</td>
+                      <td className="px-5 py-3.5 font-mono font-bold text-emerald-700">
+                        {formatRupiah(sub.realized, true)} ({subPct}%)
+                      </td>
+                      <td className="px-5 py-3.5 text-foreground font-semibold">{sub.mustahik.toLocaleString('id-ID')} Jiwa</td>
+                      <td className="px-5 py-3.5 text-center">
+                        <Badge variant="outline" className="text-xs text-emerald-700 bg-emerald-500/10 font-bold">
+                          {sub.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
-
-      {/* 6. MODAL: SIMULASI ANGGARAN RKAT */}
-      {showSimModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-card border border-border shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-border flex items-center justify-between bg-muted/30">
-              <div className="flex items-center gap-2.5">
-                <Calculator className="size-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-foreground">Kalkulator Simulasi Serapan RKAT</h3>
-              </div>
-              <button onClick={() => setShowSimModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4 text-sm">
-              <p className="text-muted-foreground">
-                Proyeksi sisa anggaran program <strong className="text-foreground">{activePilar.name}</strong> hingga akhir tahun anggaran 2026.
-              </p>
-              <div className="space-y-3 p-4 rounded-2xl bg-muted/40 border border-border/70">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pagu Tahunan:</span>
-                  <span className="font-mono font-black text-foreground">{formatRupiah(activePilar.budget)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tersalurkan s.d Agustus:</span>
-                  <span className="font-mono font-black text-emerald-600">{formatRupiah(activePilar.realized)}</span>
-                </div>
-                <div className="flex justify-between border-t border-border/70 pt-3 font-bold">
-                  <span className="text-foreground">Sisa Anggaran Siap Salur:</span>
-                  <span className="font-mono text-amber-600 font-black">{formatRupiah(activePilar.budget - activePilar.realized)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 border-t border-border bg-muted/20 flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="h-9 text-xs sm:text-sm rounded-xl" onClick={() => setShowSimModal(false)}>
-                Tutup
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 7. MODAL: ALOKASIKAN MUSTAHIK BARU */}
-      {showAllocateModal && allocateTargetSub && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-card border border-border shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-border flex items-center justify-between bg-muted/30">
-              <div className="flex items-center gap-2.5">
-                <Plus className="size-5 text-emerald-600" />
-                <div>
-                  <h3 className="text-base font-bold text-foreground">Alokasikan Mustahik</h3>
-                  <p className="text-xs text-muted-foreground font-mono">{allocateTargetSub.code} • {allocateTargetSub.name}</p>
-                </div>
-              </div>
-              <button onClick={() => setShowAllocateModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveAllocate} className="p-6 space-y-4 text-xs sm:text-sm">
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Nama Penerima Manfaat *</label>
-                <Input
-                  required
-                  placeholder="Contoh: Bpk. Sulaeman"
-                  value={allocateForm.mustahikName}
-                  onChange={(e) => setAllocateForm({ ...allocateForm, mustahikName: e.target.value })}
-                  className="h-9 text-xs sm:text-sm rounded-xl"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Nomor Induk Kependudukan (NIK) *</label>
-                <Input
-                  required
-                  maxLength={16}
-                  placeholder="367101..."
-                  value={allocateForm.nik}
-                  onChange={(e) => setAllocateForm({ ...allocateForm, nik: e.target.value })}
-                  className="h-9 text-xs sm:text-sm font-mono rounded-xl"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Golongan Asnaf</label>
-                  <select
-                    value={allocateForm.asnaf}
-                    onChange={(e) => setAllocateForm({ ...allocateForm, asnaf: e.target.value })}
-                    className="w-full h-9 text-xs sm:text-sm rounded-xl border border-border bg-background px-3 text-foreground"
-                  >
-                    <option value="Fakir">Fakir</option>
-                    <option value="Miskin">Miskin</option>
-                    <option value="Fisabilillah">Fisabilillah</option>
-                    <option value="Mualaf">Mualaf</option>
-                    <option value="Gharimin">Gharimin</option>
-                    <option value="Ibnu Sabil">Ibnu Sabil</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Nominal Bantuan (Rp)</label>
-                  <Input
-                    type="number"
-                    value={allocateForm.amount}
-                    onChange={(e) => setAllocateForm({ ...allocateForm, amount: e.target.value })}
-                    className="h-9 text-xs sm:text-sm font-mono font-bold rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border flex justify-end gap-2.5">
-                <Button type="button" variant="outline" size="sm" className="h-9 text-xs sm:text-sm rounded-xl" onClick={() => setShowAllocateModal(false)}>
-                  Batal
-                </Button>
-                <Button type="submit" size="sm" className="h-9 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4">
-                  Simpan & Alokasikan
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
