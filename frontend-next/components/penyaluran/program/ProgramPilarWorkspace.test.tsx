@@ -7,35 +7,35 @@ describe('ProgramPilarWorkspace Mockup Fidelity', () => {
     render(<ProgramPilarWorkspace />);
 
     // Header title
-    expect(screen.getByText('Lima pilar, satu dampak untuk Kota Tangerang.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Lima Pilar, Satu Dampak untuk Kota Tangerang' })).toBeInTheDocument();
 
     // Top 5 Pillars
-    expect(screen.getByText('Tangerang Cerdas')).toBeInTheDocument();
-    expect(screen.getByText('Tangerang Makmur')).toBeInTheDocument();
-    expect(screen.getByText('Tangerang Sehat')).toBeInTheDocument();
-    expect(screen.getByText('Tangerang Beriman')).toBeInTheDocument();
-    expect(screen.getByText('Tangerang Peduli')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tangerang Cerdas/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tangerang Makmur/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tangerang Sehat/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tangerang Takwa/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tangerang Peduli/ })).toBeInTheDocument();
 
     // Value chain & Impact metrics
-    expect(screen.getByText('Dari anggaran ke dampak — Tangerang Sehat')).toBeInTheDocument();
-    expect(screen.getByText('Dampak utama — Tangerang Sehat')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Dari Anggaran ke Dampak Sosial — Tangerang Sehat' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Dampak Utama — Tangerang Sehat' })).toBeInTheDocument();
 
     // Check 6 metric items
-    expect(screen.getByText('Pasien dilayani')).toBeInTheDocument();
-    expect(screen.getByText('Intervensi berhasil')).toBeInTheDocument();
-    expect(screen.getByText('Rata-rata bantuan')).toBeInTheDocument();
+    expect(screen.getByText('Pasien Mustahik Dilayani')).toBeInTheDocument();
+    expect(screen.getByText('Intervensi Sukses')).toBeInTheDocument();
+    expect(screen.getByText('Rata-rata Bantuan')).toBeInTheDocument();
   });
 
   it('switches active pillar when clicking another pillar card', () => {
     render(<ProgramPilarWorkspace />);
 
-    const cerdasButton = screen.getByText('Tangerang Cerdas').closest('button');
+    const cerdasButton = screen.getByRole('button', { name: /Tangerang Cerdas/ });
     expect(cerdasButton).toBeInTheDocument();
 
     if (cerdasButton) {
       fireEvent.click(cerdasButton);
-      expect(screen.getByText('Dari anggaran ke dampak — Tangerang Cerdas')).toBeInTheDocument();
-      expect(screen.getByText('Dampak utama — Tangerang Cerdas')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Dari Anggaran ke Dampak Sosial — Tangerang Cerdas' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Dampak Utama — Tangerang Cerdas' })).toBeInTheDocument();
     }
   });
 });
