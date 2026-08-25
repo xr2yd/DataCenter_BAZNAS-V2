@@ -475,9 +475,9 @@ export function ProgramPilarWorkspace() {
             <button
               key={pilar.id}
               onClick={() => setSelectedPilar(pilar.id)}
-              className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer ${
+              className={`relative flex flex-col justify-between rounded-2xl border bg-white p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none ${
                 isSelected
-                  ? 'border-[#008B5A] ring-2 ring-[#008B5A]/25 shadow-md bg-emerald-50/20'
+                  ? 'border-[#008B5A] shadow-md bg-emerald-50/20'
                   : 'border-zinc-200/90 hover:border-zinc-300 hover:shadow-xs'
               }`}
             >

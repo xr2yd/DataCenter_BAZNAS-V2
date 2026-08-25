@@ -411,9 +411,9 @@ export default function ProgramBantuanPage({ onNavigate }) {
             <button
               key={pilar.id}
               onClick={() => setSelectedPilarId(pilar.id)}
-              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col justify-between group ${
+              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 cursor-pointer relative overflow-hidden flex flex-col justify-between group outline-none focus:outline-none focus-visible:outline-none select-none ${
                 isSelected
-                  ? 'bg-card border-emerald-600 shadow-md ring-2 ring-emerald-500/25 bg-emerald-50/20'
+                  ? 'bg-card border-emerald-600 shadow-md bg-emerald-50/20'
                   : 'bg-card border-border hover:border-zinc-300 hover:shadow-xs'
               }`}
             >

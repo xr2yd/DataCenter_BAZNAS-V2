@@ -459,3 +459,22 @@ body {
               padding 350ms cubic-bezier(0.4, 0, 0.2, 1),
               transform 350ms cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
+
+/* Global focus and outline reset */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+a:focus,
+a:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+}
+
