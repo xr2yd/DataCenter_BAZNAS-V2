@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MustahikWorkspace } from './MustahikWorkspace';
+import { resolveMustahikCenter, TANGERANG_CENTER } from './MustahikLocationMap';
 
 vi.mock('@/lib/api/client', () => ({
   api: {
@@ -17,7 +18,7 @@ describe('MustahikWorkspace', () => {
     expect(await screen.findByRole('heading', { name: 'Data Mustahik' })).toBeInTheDocument();
     expect(screen.getByText('Antrean verifikasi')).toBeInTheDocument();
     expect(screen.getByText('Profil & kelayakan')).toBeInTheDocument();
-    expect(screen.getByText('Panel keputusan')).toBeInTheDocument();
+    expect(screen.getByText('Keputusan siap ditinjau')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /pilih ahmad fauzi/i }));
 
@@ -47,10 +48,11 @@ describe('MustahikWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Hapus pencarian' })).toBeInTheDocument();
   });
 
-  it('shows the score as one centered value and a real location map', async () => {
+  it('shows the score as a clear inline metric without a separate score card', async () => {
     render(<MustahikWorkspace />);
 
     expect(await screen.findByLabelText('Skor kelayakan 86 dari 100')).toHaveTextContent('86/100');
+    expect(screen.getByText('Skor kelayakan')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Peta lokasi Siti Maryam' })).toBeInTheDocument();
   });
 
@@ -74,5 +76,20 @@ describe('MustahikWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Tutup panel keputusan' }));
     expect(screen.queryByRole('dialog', { name: 'Keputusan Mustahik' })).not.toBeInTheDocument();
+  });
+
+  it('uses Tangerang as a safe fallback when a subdistrict has no coordinate', () => {
+    expect(resolveMustahikCenter('Kecamatan Tidak Ada')).toEqual(TANGERANG_CENTER);
+  });
+
+  it('keeps the workspace focused by moving desktop decisions into the drawer', async () => {
+    render(<MustahikWorkspace />);
+
+    expect(await screen.findByRole('heading', { name: 'Siti Maryam' })).toBeInTheDocument();
+    expect(screen.getAllByRole('complementary')).toHaveLength(1);
+    expect(screen.getByText('Keputusan siap ditinjau')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Buka panel keputusan' }));
+    expect(screen.getByRole('dialog', { name: 'Keputusan Mustahik' })).toBeInTheDocument();
   });
 });

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from 'react-leaflet';
+import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 
 type MustahikLocationMapProps = {
@@ -18,23 +17,18 @@ const SUBDISTRICT_COORDINATES: Record<string, LatLngExpression> = {
   Larangan: [-6.2394, 106.7177],
 };
 
-const TANGERANG_CENTER: LatLngExpression = [-6.1783, 106.6319];
+export const TANGERANG_CENTER: LatLngExpression = [-6.1783, 106.6319];
 
-function MapViewport({ center }: { center: LatLngExpression }) {
-  const map = useMap();
-
-  useEffect(() => {
-    map.flyTo(center, 14, { animate: true, duration: 0.65 });
-  }, [center, map]);
-
-  return null;
+export function resolveMustahikCenter(subdistrict: string): LatLngExpression {
+  return SUBDISTRICT_COORDINATES[subdistrict] ?? TANGERANG_CENTER;
 }
 
 export default function MustahikLocationMap({ address, village, subdistrict }: MustahikLocationMapProps) {
-  const center = SUBDISTRICT_COORDINATES[subdistrict] ?? TANGERANG_CENTER;
+  const center = resolveMustahikCenter(subdistrict);
 
   return (
     <MapContainer
+      key={`${subdistrict}-${village}-${address}`}
       center={center}
       zoom={14}
       scrollWheelZoom={false}
@@ -46,7 +40,6 @@ export default function MustahikLocationMap({ address, village, subdistrict }: M
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <MapViewport center={center} />
       <CircleMarker center={center} radius={8} pathOptions={{ color: '#ffffff', fillColor: '#059669', fillOpacity: 1, weight: 3 }}>
         <Popup>
           <strong>{village}, {subdistrict}</strong><br />
