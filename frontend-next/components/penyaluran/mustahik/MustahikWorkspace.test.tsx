@@ -48,10 +48,11 @@ describe('MustahikWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Hapus pencarian' })).toBeInTheDocument();
   });
 
-  it('shows the score as one centered value and a real location map', async () => {
+  it('shows the score as a clear inline metric without a separate score card', async () => {
     render(<MustahikWorkspace />);
 
     expect(await screen.findByLabelText('Skor kelayakan 86 dari 100')).toHaveTextContent('86/100');
+    expect(screen.getByText('Skor kelayakan')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Peta lokasi Siti Maryam' })).toBeInTheDocument();
   });
 
