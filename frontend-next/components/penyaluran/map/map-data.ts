@@ -1,5 +1,14 @@
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
 
+export type MapMetric = 'funds' | 'beneficiaries' | 'asnafNeed';
+
+export interface KecamatanInsight {
+  topProgram: string;
+  dominantAsnaf: string;
+  priorityNote: string;
+  trendPercent: number;
+}
+
 export const DEMO_KECAMATAN_DATA: Record<string, Partial<PenyaluranByKecamatan>> = {
   Batuceper: { totalMustahik: 840, totalDisalurkan: 1250000000, desil1Count: 310, urgencyLevel: 'Tinggi', topProgram: 'Tangerang Peduli' },
   Benda: { totalMustahik: 620, totalDisalurkan: 890000000, desil1Count: 240, urgencyLevel: 'Sedang', topProgram: 'Tangerang Cerdas' },
@@ -15,6 +24,61 @@ export const DEMO_KECAMATAN_DATA: Record<string, Partial<PenyaluranByKecamatan>>
   Pinang: { totalMustahik: 1050, totalDisalurkan: 1620000000, desil1Count: 390, urgencyLevel: 'Sedang', topProgram: 'Tangerang Makmur' },
   Tangerang: { totalMustahik: 1240, totalDisalurkan: 1950000000, desil1Count: 450, urgencyLevel: 'Tinggi', topProgram: 'Tangerang Peduli' },
 };
+
+export const KECAMATAN_INSIGHTS: Record<string, KecamatanInsight> = {
+  Batuceper: { topProgram: 'Tangerang Peduli', dominantAsnaf: 'Miskin', priorityNote: 'Percepat verifikasi bantuan sosial untuk keluarga rentan.', trendPercent: 8.4 },
+  Benda: { topProgram: 'Tangerang Cerdas', dominantAsnaf: 'Fisabilillah', priorityNote: 'Lengkapi tindak lanjut pendidikan bagi penerima prioritas.', trendPercent: 6.2 },
+  Cibodas: { topProgram: 'Tangerang Sehat', dominantAsnaf: 'Miskin', priorityNote: 'Pastikan pendampingan kesehatan lansia berjalan sesuai jadwal.', trendPercent: 11.8 },
+  Ciledug: { topProgram: 'Tangerang Makmur', dominantAsnaf: 'Miskin', priorityNote: 'Validasi antrean modal usaha keluarga produktif.', trendPercent: 12.6 },
+  Cipondoh: { topProgram: 'Tangerang Peduli', dominantAsnaf: 'Fakir', priorityNote: 'Prioritaskan pencairan bantuan kebutuhan dasar.', trendPercent: 14.2 },
+  Jatiuwung: { topProgram: 'Tangerang Makmur', dominantAsnaf: 'Miskin', priorityNote: 'Jadwalkan survei lanjutan untuk pelaku usaha mikro.', trendPercent: 7.5 },
+  Karangtengah: { topProgram: 'Tangerang Cerdas', dominantAsnaf: 'Fisabilillah', priorityNote: 'Pantau kelengkapan dokumen program pendidikan.', trendPercent: 9.1 },
+  Karawaci: { topProgram: 'Tangerang Sehat', dominantAsnaf: 'Miskin', priorityNote: 'Perkuat bantuan kesehatan bagi lansia miskin.', trendPercent: 14.2 },
+  Larangan: { topProgram: 'Tangerang Peduli', dominantAsnaf: 'Fakir', priorityNote: 'Tinjau kembali cakupan bantuan kebutuhan dasar.', trendPercent: 6.8 },
+  Neglasari: { topProgram: 'Tangerang Peduli', dominantAsnaf: 'Miskin', priorityNote: 'Validasi prioritas keluarga dengan kebutuhan tertinggi.', trendPercent: 10.3 },
+  Periuk: { topProgram: 'Tangerang Cerdas', dominantAsnaf: 'Fisabilillah', priorityNote: 'Konfirmasi penerima bantuan pendidikan yang belum aktif.', trendPercent: 7.9 },
+  Pinang: { topProgram: 'Tangerang Makmur', dominantAsnaf: 'Miskin', priorityNote: 'Percepat pendampingan ekonomi untuk keluarga produktif.', trendPercent: 9.7 },
+  Tangerang: { topProgram: 'Tangerang Peduli', dominantAsnaf: 'Miskin', priorityNote: 'Selaraskan penyaluran dengan antrean bantuan prioritas.', trendPercent: 13.4 },
+};
+
+export const PROGRAM_ALLOCATION = [
+  { name: 'Tangerang Sehat', amount: 492_000_000 },
+  { name: 'Tangerang Peduli', amount: 394_000_000 },
+  { name: 'Tangerang Makmur', amount: 291_000_000 },
+  { name: 'Tangerang Cerdas', amount: 214_000_000 },
+  { name: 'Tangerang Takwa', amount: 149_000_000 },
+];
+
+export const ASNAF_DISTRIBUTION = [
+  { name: 'Miskin', count: 490, percentage: 38 },
+  { name: 'Fakir', count: 310, percentage: 24 },
+  { name: 'Fisabilillah', count: 245, percentage: 19 },
+  { name: 'Ibnu Sabil', count: 142, percentage: 11 },
+];
+
+const DEFAULT_KECAMATAN_INSIGHT: KecamatanInsight = {
+  topProgram: 'Tangerang Peduli',
+  dominantAsnaf: 'Miskin',
+  priorityNote: 'Tinjau kembali kebutuhan penerima di wilayah ini.',
+  trendPercent: 0,
+};
+
+export function getKecamatanMapValue(
+  name: string,
+  metric: MapMetric,
+  liveData?: PenyaluranByKecamatan[],
+): number {
+  const data = liveData?.find((item) => item.name.toLowerCase() === name.toLowerCase())
+    ?? DEMO_KECAMATAN_DATA[name];
+
+  if (metric === 'funds') return data?.totalDisalurkan ?? 0;
+  if (metric === 'beneficiaries') return data?.totalMustahik ?? 0;
+  return data?.desil1Count ?? 0;
+}
+
+export function getKecamatanInsight(name: string): KecamatanInsight {
+  return KECAMATAN_INSIGHTS[name] ?? DEFAULT_KECAMATAN_INSIGHT;
+}
 
 export function getChoroplethColor(count: number): string {
   if (count > 1200) return '#00663d'; // Deep Emerald
