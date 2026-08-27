@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKecamatanInsight, getKecamatanMapValue } from './map-data';
+import { getKecamatanInsight, getKecamatanMapValue, getMapMetricPresentation } from './map-data';
 
 describe('peta metric helpers', () => {
   it('uses API realization for the funds metric', () => {
@@ -24,6 +24,13 @@ describe('peta metric helpers', () => {
     expect(getKecamatanInsight('Karawaci')).toMatchObject({
       topProgram: 'Tangerang Sehat',
       dominantAsnaf: 'Miskin',
+    });
+  });
+
+  it('provides a readable legend label for asnaf need', () => {
+    expect(getMapMetricPresentation('asnafNeed')).toMatchObject({
+      label: 'Kebutuhan asnaf',
+      unit: 'KK prioritas',
     });
   });
 });

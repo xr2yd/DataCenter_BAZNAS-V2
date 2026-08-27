@@ -9,6 +9,11 @@ export interface KecamatanInsight {
   trendPercent: number;
 }
 
+export interface MapMetricPresentation {
+  label: string;
+  unit: string;
+}
+
 export const DEMO_KECAMATAN_DATA: Record<string, Partial<PenyaluranByKecamatan>> = {
   Batuceper: { totalMustahik: 840, totalDisalurkan: 1250000000, desil1Count: 310, urgencyLevel: 'Tinggi', topProgram: 'Tangerang Peduli' },
   Benda: { totalMustahik: 620, totalDisalurkan: 890000000, desil1Count: 240, urgencyLevel: 'Sedang', topProgram: 'Tangerang Cerdas' },
@@ -63,6 +68,12 @@ const DEFAULT_KECAMATAN_INSIGHT: KecamatanInsight = {
   trendPercent: 0,
 };
 
+const METRIC_PRESENTATIONS: Record<MapMetric, MapMetricPresentation> = {
+  funds: { label: 'Realisasi dana', unit: 'Rupiah' },
+  beneficiaries: { label: 'Jumlah mustahik', unit: 'jiwa' },
+  asnafNeed: { label: 'Kebutuhan asnaf', unit: 'KK prioritas' },
+};
+
 export function getKecamatanMapValue(
   name: string,
   metric: MapMetric,
@@ -78,6 +89,10 @@ export function getKecamatanMapValue(
 
 export function getKecamatanInsight(name: string): KecamatanInsight {
   return KECAMATAN_INSIGHTS[name] ?? DEFAULT_KECAMATAN_INSIGHT;
+}
+
+export function getMapMetricPresentation(metric: MapMetric): MapMetricPresentation {
+  return METRIC_PRESENTATIONS[metric];
 }
 
 export function getChoroplethColor(count: number): string {

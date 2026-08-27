@@ -4,18 +4,25 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
 import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
-import { DEMO_KECAMATAN_DATA, getChoroplethColor } from './map-data';
+import {
+  getChoroplethColor,
+  getKecamatanMapValue,
+  getMapMetricPresentation,
+  type MapMetric,
+} from './map-data';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
 import type { MapPeriodData } from '../dashboard/dashboard-data';
 
 const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
 
 export default function RealKecamatanMap({
+  metric = 'funds',
   selectedKecamatan,
   onSelectKecamatan,
   liveData,
   periodData,
 }: {
+  metric?: MapMetric;
   selectedKecamatan?: string | null;
   onSelectKecamatan?: (name: string) => void;
   liveData?: PenyaluranByKecamatan[];
@@ -35,41 +42,36 @@ export default function RealKecamatanMap({
     );
   }
 
-  // Find data by name
-  const getDataForKecamatan = (name: string): { totalMustahik: number; totalDisalurkan: number; topProgram: string } => {
-    const fromApi = liveData?.find((d) => d.name.toLowerCase() === name.toLowerCase());
-    if (fromApi) {
-      return {
-        totalMustahik: fromApi.totalMustahik,
-        totalDisalurkan: fromApi.totalDisalurkan,
-        topProgram: fromApi.topProgram ?? 'Tangerang Peduli',
-      };
+  const metricPresentation = getMapMetricPresentation(metric);
+
+  const getMetricValue = (name: string) => {
+    const periodValue = periodData?.[name];
+    if (periodValue) {
+      if (metric === 'funds') return periodValue.amount;
+      if (metric === 'beneficiaries') return periodValue.beneficiaries;
     }
-    const fromPeriod = periodData?.[name];
-    if (fromPeriod) {
-      return {
-        totalMustahik: fromPeriod.beneficiaries,
-        totalDisalurkan: fromPeriod.amount,
-        topProgram: fromPeriod.program,
-      };
-    }
-    const fallback = DEMO_KECAMATAN_DATA[name];
-    return {
-      totalMustahik: fallback?.totalMustahik ?? 800,
-      totalDisalurkan: fallback?.totalDisalurkan ?? 1_000_000_000,
-      topProgram: fallback?.topProgram ?? 'Tangerang Peduli',
-    };
+    return getKecamatanMapValue(name, metric, liveData);
+  };
+
+  const toColorScaleValue = (value: number) => {
+    if (metric === 'funds') return value / 1_000_000;
+    if (metric === 'asnafNeed') return value * 2;
+    return value;
+  };
+
+  const formatMetricValue = (value: number) => {
+    if (metric === 'funds') return `Rp ${(value / 1_000_000_000).toFixed(2).replace('.', ',')} M`;
+    return `${value.toLocaleString('id-ID')} ${metricPresentation.unit}`;
   };
 
   const styleFeature = (feature?: Feature<Geometry, { name: string }>) => {
     if (!feature || !feature.properties) return {};
     const name = feature.properties.name;
     const isSelected = selectedKecamatan?.toLowerCase() === name.toLowerCase();
-    const data = getDataForKecamatan(name);
-    const mustahikCount = data.totalMustahik || 0;
+    const metricValue = getMetricValue(name);
 
     return {
-      fillColor: getChoroplethColor(mustahikCount),
+      fillColor: getChoroplethColor(toColorScaleValue(metricValue)),
       weight: isSelected ? 2.5 : 1,
       opacity: 1,
       color: isSelected ? '#09090b' : '#ffffff',
@@ -79,7 +81,7 @@ export default function RealKecamatanMap({
 
   const onEachFeature = (feature: Feature<Geometry, { name: string }>, layer: any) => {
     const name = feature.properties.name;
-    const data = getDataForKecamatan(name);
+    const metricValue = getMetricValue(name);
 
     layer.on({
       click: () => {
@@ -102,7 +104,7 @@ export default function RealKecamatanMap({
     layer.bindTooltip(
       `<div class="p-1 text-xs">
         <strong class="text-zinc-900">${name}</strong>
-        <div class="text-[10px] text-zinc-600">${data.totalMustahik?.toLocaleString('id-ID')} Mustahik Terbantu</div>
+        <div class="text-[10px] text-zinc-600">${metricPresentation.label}: ${formatMetricValue(metricValue)}</div>
       </div>`,
       { sticky: true, className: 'leaflet-custom-tooltip' }
     );
@@ -130,7 +132,7 @@ export default function RealKecamatanMap({
 
       {/* Legend Badge */}
       <div className="absolute bottom-4 left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm backdrop-blur-xs">
-        <p className="mb-1.5 font-bold text-zinc-900">Intensitas penyaluran</p>
+        <p className="mb-1.5 font-bold text-zinc-900">Intensitas {metricPresentation.label.toLowerCase()}</p>
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-1">
             <span className="size-2 rounded-xs" style={{ backgroundColor: '#a7f3d0' }} />
