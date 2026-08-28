@@ -14,6 +14,8 @@ export interface MapMetricPresentation {
   unit: string;
 }
 
+export type PeriodMetricData = Record<string, { amount: number; beneficiaries: number }>;
+
 export const DEMO_KECAMATAN_DATA: Record<string, Partial<PenyaluranByKecamatan>> = {
   Batuceper: { totalMustahik: 840, totalDisalurkan: 1250000000, desil1Count: 310, urgencyLevel: 'Tinggi', topProgram: 'Tangerang Peduli' },
   Benda: { totalMustahik: 620, totalDisalurkan: 890000000, desil1Count: 240, urgencyLevel: 'Sedang', topProgram: 'Tangerang Cerdas' },
@@ -85,6 +87,28 @@ export function getKecamatanMapValue(
   if (metric === 'funds') return data?.totalDisalurkan ?? 0;
   if (metric === 'beneficiaries') return data?.totalMustahik ?? 0;
   return data?.desil1Count ?? 0;
+}
+
+/**
+ * Resolves the value shown on the map with a deliberate precedence order:
+ * live API response, period dashboard snapshot, then local demo fallback.
+ */
+export function getMapMetricValue(
+  name: string,
+  metric: MapMetric,
+  liveData?: PenyaluranByKecamatan[],
+  periodData?: PeriodMetricData,
+): number {
+  const liveValue = liveData?.find((item) => item.name.toLowerCase() === name.toLowerCase());
+  if (liveValue) return getKecamatanMapValue(name, metric, [liveValue]);
+
+  const periodValue = periodData?.[name];
+  if (periodValue) {
+    if (metric === 'funds') return periodValue.amount;
+    if (metric === 'beneficiaries') return periodValue.beneficiaries;
+  }
+
+  return getKecamatanMapValue(name, metric);
 }
 
 export function getKecamatanInsight(name: string): KecamatanInsight {

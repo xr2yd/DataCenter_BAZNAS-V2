@@ -1,6 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PetaSebaranWorkspace } from './PetaSebaranWorkspace';
+
+const getPenyaluranByKecamatan = vi.hoisted(() => vi.fn());
 
 vi.mock('next/dynamic', () => ({
   default: () => function RealKecamatanMapMock({ onSelectKecamatan }: { onSelectKecamatan: (name: string) => void }) {
@@ -10,11 +12,16 @@ vi.mock('next/dynamic', () => ({
 
 vi.mock('@/lib/api/client', () => ({
   api: {
-    getPenyaluranByKecamatan: () => Promise.reject(new Error('Data API belum tersedia')),
+    getPenyaluranByKecamatan,
   },
 }));
 
 describe('PetaSebaranWorkspace', () => {
+  beforeEach(() => {
+    getPenyaluranByKecamatan.mockReset();
+    getPenyaluranByKecamatan.mockRejectedValue(new Error('Data API belum tersedia'));
+  });
+
   it('updates selected detail after selecting a map area', async () => {
     render(<PetaSebaranWorkspace />);
 
@@ -30,5 +37,19 @@ describe('PetaSebaranWorkspace', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Jumlah mustahik' }));
 
     expect(screen.getAllByText('Mustahik terbantu')).not.toHaveLength(0);
+  });
+
+  it('uses the current API top program in the selected area detail', async () => {
+    getPenyaluranByKecamatan.mockResolvedValue({
+      data: [{
+        id: 'cipondoh', name: 'Cipondoh', totalDisalurkan: 2_900_000_000,
+        totalMustahik: 1_500, desil1Count: 600, topProgram: 'Program API Terkini',
+      }],
+    });
+
+    render(<PetaSebaranWorkspace />);
+
+    const detail = await screen.findByLabelText('Detail wilayah terpilih');
+    expect(within(detail).getByText('Program API Terkini')).toBeInTheDocument();
   });
 });

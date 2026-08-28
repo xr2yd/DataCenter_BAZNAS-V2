@@ -6,7 +6,7 @@ import type { FeatureCollection, Feature, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
 import {
   getChoroplethColor,
-  getKecamatanMapValue,
+  getMapMetricValue,
   getMapMetricPresentation,
   type MapMetric,
 } from './map-data';
@@ -44,14 +44,16 @@ export default function RealKecamatanMap({
 
   const metricPresentation = getMapMetricPresentation(metric);
 
-  const getMetricValue = (name: string) => {
-    const periodValue = periodData?.[name];
-    if (periodValue) {
-      if (metric === 'funds') return periodValue.amount;
-      if (metric === 'beneficiaries') return periodValue.beneficiaries;
-    }
-    return getKecamatanMapValue(name, metric, liveData);
-  };
+  const getMetricValue = (name: string) => getMapMetricValue(name, metric, liveData, periodData);
+
+  // GeoJSON binds Leaflet tooltips imperatively. Recreate it when the input
+  // data changes so tooltip copy stays aligned with the visible choropleth.
+  const geoJsonKey = [
+    metric,
+    selectedKecamatan?.toLowerCase() ?? 'none',
+    liveData?.map((item) => `${item.name}:${item.totalDisalurkan}:${item.totalMustahik}:${item.desil1Count}`).join('|') ?? 'demo',
+    periodData ? Object.entries(periodData).map(([name, value]) => `${name}:${value.amount}:${value.beneficiaries}`).join('|') : 'no-period',
+  ].join('::');
 
   const toColorScaleValue = (value: number) => {
     if (metric === 'funds') return value / 1_000_000;
@@ -124,6 +126,7 @@ export default function RealKecamatanMap({
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
         <GeoJSON
+          key={geoJsonKey}
           data={geojsonData}
           style={styleFeature as any}
           onEachFeature={onEachFeature}
