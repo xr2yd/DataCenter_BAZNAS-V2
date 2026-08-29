@@ -15,15 +15,17 @@ import type {
 } from './types';
 
 // In browser, if NEXT_PUBLIC_API_BASE_URL is set, use it; otherwise use same origin (relative /api)
-// In server SSR, fallback to process.env.NEXT_PUBLIC_API_BASE_URL or http://localhost:3001
+// In browser, ALWAYS use relative path '' so Nginx proxies /api to port 3001
+// On server SSR, use internal port 3001
 const getApiBase = () => {
   if (typeof window !== 'undefined') {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL !== undefined && process.env.NEXT_PUBLIC_API_BASE_URL !== '') {
+    // If running in browser on localhost with a custom API port, allow NEXT_PUBLIC_API_BASE_URL only if local
+    if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && process.env.NEXT_PUBLIC_API_BASE_URL) {
       return process.env.NEXT_PUBLIC_API_BASE_URL;
     }
     return '';
   }
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+  return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001';
 };
 
 export class ApiError extends Error {

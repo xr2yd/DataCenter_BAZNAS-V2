@@ -19,13 +19,13 @@ type MobileView = 'queue' | 'profile';
 type MustahikView = Mustahik & { completeness: number; score: number; sla: 'Aman' | 'Mendekati' | 'Lewat'; missingDocument?: string; updatedLabel: string };
 
 const DEFAULT_STAGES: Array<{ id: StageId; label: string; count: number; statuses?: string[] }> = [
-  { id: 'all', label: 'Semua', count: 218 },
-  { id: 'diajukan', label: 'Diajukan', count: 18, statuses: ['Diajukan'] },
-  { id: 'verifikasi', label: 'Verifikasi', count: 24, statuses: ['Verifikasi Administrasi'] },
-  { id: 'survey', label: 'Survey', count: 8, statuses: ['Survey'] },
-  { id: 'mpzis', label: 'MPZIS', count: 12, statuses: ['Persetujuan MPZIS'] },
-  { id: 'ppd', label: 'PPD', count: 5, statuses: ['Pengajuan Dana (FPD)', 'Pengajuan Dana (PPD)'] },
-  { id: 'selesai', label: 'Selesai', count: 146, statuses: ['Penyaluran Selesai'] },
+  { id: 'all', label: 'Semua', count: 0 },
+  { id: 'diajukan', label: 'Diajukan', count: 0, statuses: ['Diajukan'] },
+  { id: 'verifikasi', label: 'Verifikasi', count: 0, statuses: ['Verifikasi Administrasi', 'Verifikasi'] },
+  { id: 'survey', label: 'Survey', count: 0, statuses: ['Survey'] },
+  { id: 'mpzis', label: 'MPZIS', count: 0, statuses: ['Persetujuan MPZIS'] },
+  { id: 'ppd', label: 'PPD', count: 0, statuses: ['Pengajuan Dana (FPD)', 'Pengajuan Dana (PPD)'] },
+  { id: 'selesai', label: 'Selesai', count: 0, statuses: ['Penyaluran Selesai'] },
 ];
 
 const DOCUMENTS = ['KTP', 'Kartu Keluarga (KK)', 'SKTM', 'Foto rumah', 'Slip gaji / usaha', 'Dokumen pendukung'];
@@ -100,21 +100,31 @@ function StageRail({
 
 function Queue({
   items,
+  allItems,
   totalCount,
   selected,
   query,
+  quickFilter,
   onQuery,
   onSelect,
   onFilterQuick,
 }: {
   items: MustahikView[];
+  allItems: MustahikView[];
   totalCount: number;
   selected?: MustahikView;
   query: string;
+  quickFilter: 'all' | 'Perlu tindakan' | 'Lewat' | 'Dokumen';
   onQuery: (value: string) => void;
   onSelect: (item: MustahikView) => void;
   onFilterQuick: (slaFilter: 'all' | 'Perlu tindakan' | 'Lewat' | 'Dokumen') => void;
 }) {
+  const perluTindakanCount = allItems.filter(
+    (i) => i.status === 'Diajukan' || i.status === 'Verifikasi Administrasi' || i.status === 'Verifikasi'
+  ).length;
+  const lewatCount = allItems.filter((i) => i.sla === 'Lewat').length;
+  const dokumenCount = allItems.filter((i) => Boolean(i.missingDocument)).length;
+
   return (
     <aside className="flex min-h-0 flex-col bg-white md:border-r md:border-slate-200">
       <div className="border-b border-slate-200 p-4">
@@ -127,7 +137,11 @@ function Queue({
             type="button"
             aria-label="Filter antrean"
             onClick={() => onFilterQuick('all')}
-            className="grid size-10 place-items-center rounded-xl border border-slate-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"
+            className={`grid size-10 place-items-center rounded-xl border transition ${
+              quickFilter !== 'all'
+                ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
+            }`}
           >
             <Filter className="size-4" />
           </button>
@@ -154,27 +168,39 @@ function Queue({
         <div className="mt-3 grid grid-cols-3 gap-1.5">
           <button
             type="button"
-            onClick={() => onFilterQuick('Perlu tindakan')}
-            className="min-h-14 rounded-xl border border-slate-200 px-1 py-2 text-xs font-bold leading-tight text-slate-600 hover:border-emerald-300 hover:bg-emerald-50/50"
+            onClick={() => onFilterQuick(quickFilter === 'Perlu tindakan' ? 'all' : 'Perlu tindakan')}
+            className={`min-h-14 rounded-xl border px-1 py-2 text-xs font-bold leading-tight transition ${
+              quickFilter === 'Perlu tindakan'
+                ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-400/30'
+                : 'border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50/50'
+            }`}
           >
             Perlu tindakan
-            <span className="mt-1 block text-sm text-slate-950">18</span>
+            <span className="mt-1 block text-sm font-extrabold text-slate-950">{perluTindakanCount}</span>
           </button>
           <button
             type="button"
-            onClick={() => onFilterQuick('Lewat')}
-            className="min-h-14 rounded-xl border border-slate-200 px-1 py-2 text-xs font-bold leading-tight text-slate-600 hover:border-rose-300 hover:bg-rose-50/50"
+            onClick={() => onFilterQuick(quickFilter === 'Lewat' ? 'all' : 'Lewat')}
+            className={`min-h-14 rounded-xl border px-1 py-2 text-xs font-bold leading-tight transition ${
+              quickFilter === 'Lewat'
+                ? 'border-rose-600 bg-rose-50 text-rose-800 ring-2 ring-rose-400/30'
+                : 'border-slate-200 text-slate-600 hover:border-rose-300 hover:bg-rose-50/50'
+            }`}
           >
             Lewat SLA
-            <span className="mt-1 block text-sm text-rose-700">4</span>
+            <span className="mt-1 block text-sm font-extrabold text-rose-700">{lewatCount}</span>
           </button>
           <button
             type="button"
-            onClick={() => onFilterQuick('Dokumen')}
-            className="min-h-14 rounded-xl border border-slate-200 px-1 py-2 text-xs font-bold leading-tight text-slate-600 hover:border-amber-300 hover:bg-amber-50/50"
+            onClick={() => onFilterQuick(quickFilter === 'Dokumen' ? 'all' : 'Dokumen')}
+            className={`min-h-14 rounded-xl border px-1 py-2 text-xs font-bold leading-tight transition ${
+              quickFilter === 'Dokumen'
+                ? 'border-amber-600 bg-amber-50 text-amber-800 ring-2 ring-amber-400/30'
+                : 'border-slate-200 text-slate-600 hover:border-amber-300 hover:bg-amber-50/50'
+            }`}
           >
             Dokumen kurang
-            <span className="mt-1 block text-sm text-amber-700">7</span>
+            <span className="mt-1 block text-sm font-extrabold text-amber-700">{dokumenCount}</span>
           </button>
         </div>
       </div>
@@ -612,6 +638,7 @@ export function MustahikWorkspace() {
   const [stages, setStages] = useState(DEFAULT_STAGES);
   const [stage, setStage] = useState<StageId>('all');
   const [query, setQuery] = useState('');
+  const [quickFilter, setQuickFilter] = useState<'all' | 'Perlu tindakan' | 'Lewat' | 'Dokumen'>('all');
   const [selectedId, setSelectedId] = useState<MustahikView['id'] | null>(null);
   const [tab, setTab] = useState<ProfileTab>('summary');
   const [mobileView, setMobileView] = useState<MobileView>('queue');
@@ -620,6 +647,7 @@ export function MustahikWorkspace() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [note, setNote] = useState('Hasil verifikasi menunjukkan kondisi ekonomi keluarga sesuai kriteria mustahik.');
   const [notice, setNotice] = useState<string | null>(null);
   const decisionTriggerRef = useRef<HTMLElement | null>(null);
@@ -641,30 +669,43 @@ export function MustahikWorkspace() {
   const [importText, setImportText] = useState('');
 
   const loadData = () => {
-    api.getMustahikList().then((response) => {
-      if (response.data?.length) {
-        const adapted = adaptApiData(response.data);
-        setItems(adapted);
-        if (!selectedId || !adapted.some(a => a.id === selectedId)) {
-          setSelectedId(adapted[0]!.id);
-        }
-      }
-    }).catch(() => {});
+    setIsLoading(true);
+    api.getMustahikList()
+      .then((response) => {
+        const rawList = Array.isArray(response.data) ? response.data : Array.isArray(response) ? response : [];
+        if (rawList.length) {
+          const adapted = adaptApiData(rawList);
+          setItems(adapted);
+          if (!selectedId || !adapted.some((a) => a.id === selectedId)) {
+            setSelectedId(adapted[0]!.id);
+          }
 
-    api.getMustahikStageCounts().then((res) => {
-      if (res.data) {
-        const c = res.data;
-        setStages([
-          { id: 'all', label: 'Semua', count: c.all },
-          { id: 'diajukan', label: 'Diajukan', count: c.diajukan, statuses: ['Diajukan'] },
-          { id: 'verifikasi', label: 'Verifikasi', count: c.verifikasi, statuses: ['Verifikasi Administrasi', 'Verifikasi'] },
-          { id: 'survey', label: 'Survey', count: c.survey, statuses: ['Survey'] },
-          { id: 'mpzis', label: 'MPZIS', count: c.mpzis, statuses: ['Persetujuan MPZIS'] },
-          { id: 'ppd', label: 'PPD', count: c.ppd, statuses: ['Pengajuan Dana (FPD)', 'Pengajuan Dana (PPD)'] },
-          { id: 'selesai', label: 'Selesai', count: c.selesai, statuses: ['Penyaluran Selesai'] },
-        ]);
-      }
-    }).catch(() => {});
+          // Dynamically compute stages counts from loaded records
+          const countAll = adapted.length;
+          const countDiajukan = adapted.filter((a) => a.status === 'Diajukan').length;
+          const countVerifikasi = adapted.filter((a) => a.status === 'Verifikasi Administrasi' || a.status === 'Verifikasi').length;
+          const countSurvey = adapted.filter((a) => a.status === 'Survey').length;
+          const countMpzis = adapted.filter((a) => a.status === 'Persetujuan MPZIS').length;
+          const countPpd = adapted.filter((a) => a.status === 'Pengajuan Dana (FPD)' || a.status === 'Pengajuan Dana (PPD)').length;
+          const countSelesai = adapted.filter((a) => a.status === 'Penyaluran Selesai').length;
+
+          setStages([
+            { id: 'all', label: 'Semua', count: countAll },
+            { id: 'diajukan', label: 'Diajukan', count: countDiajukan, statuses: ['Diajukan'] },
+            { id: 'verifikasi', label: 'Verifikasi', count: countVerifikasi, statuses: ['Verifikasi Administrasi', 'Verifikasi'] },
+            { id: 'survey', label: 'Survey', count: countSurvey, statuses: ['Survey'] },
+            { id: 'mpzis', label: 'MPZIS', count: countMpzis, statuses: ['Persetujuan MPZIS'] },
+            { id: 'ppd', label: 'PPD', count: countPpd, statuses: ['Pengajuan Dana (FPD)', 'Pengajuan Dana (PPD)'] },
+            { id: 'selesai', label: 'Selesai', count: countSelesai, statuses: ['Penyaluran Selesai'] },
+          ]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load mustahik data:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -691,12 +732,28 @@ export function MustahikWorkspace() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const active = stages.find((item) => item.id === stage);
-    return items.filter((item) =>
-      (!needle || [item.name, item.nik, item.file_no, item.subdistrict, item.kecamatan].filter(Boolean).some((value) => String(value).toLowerCase().includes(needle))) &&
-      (!active?.statuses || active.statuses.includes(item.status))
-    );
-  }, [items, query, stage, stages]);
+    const activeStage = stages.find((item) => item.id === stage);
+    return items.filter((item) => {
+      const matchSearch =
+        !needle ||
+        [item.name, item.nik, item.file_no, item.subdistrict, item.kecamatan, item.program, item.asnaf]
+          .filter(Boolean)
+          .some((val) => String(val).toLowerCase().includes(needle));
+
+      const matchStage = !activeStage?.statuses || activeStage.statuses.includes(item.status);
+
+      let matchQuick = true;
+      if (quickFilter === 'Perlu tindakan') {
+        matchQuick = item.status === 'Diajukan' || item.status === 'Verifikasi Administrasi' || item.status === 'Verifikasi';
+      } else if (quickFilter === 'Lewat') {
+        matchQuick = item.sla === 'Lewat';
+      } else if (quickFilter === 'Dokumen') {
+        matchQuick = Boolean(item.missingDocument);
+      }
+
+      return matchSearch && matchStage && matchQuick;
+    });
+  }, [items, query, stage, stages, quickFilter]);
 
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
 
@@ -880,17 +937,14 @@ export function MustahikWorkspace() {
           <div className={`${mobileView === 'queue' ? 'block' : 'hidden'} md:block`}>
             <Queue
               items={filtered}
+              allItems={items}
               totalCount={items.length}
               selected={selected || items[0]}
               query={query}
+              quickFilter={quickFilter}
               onQuery={setQuery}
               onSelect={choosePerson}
-              onFilterQuick={(filterType) => {
-                if (filterType === 'all') setQuery('');
-                else if (filterType === 'Perlu tindakan') chooseStage('diajukan');
-                else if (filterType === 'Lewat') chooseStage('survey');
-                else if (filterType === 'Dokumen') chooseStage('verifikasi');
-              }}
+              onFilterQuick={setQuickFilter}
             />
           </div>
           <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} min-w-0 md:block`}>
