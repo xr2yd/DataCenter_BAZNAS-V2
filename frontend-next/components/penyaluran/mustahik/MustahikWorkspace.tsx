@@ -126,7 +126,7 @@ function Queue({
   const dokumenCount = allItems.filter((i) => Boolean(i.missingDocument)).length;
 
   return (
-    <aside className="flex h-full w-full min-h-0 flex-col bg-white">
+    <aside className="flex h-full min-h-0 flex-col bg-white">
       <div className="shrink-0 border-b border-slate-200 p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -934,7 +934,7 @@ export function MustahikWorkspace() {
 
       <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col md:flex-row">
-          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col md:h-[780px] lg:h-[840px] border-r border-slate-200 bg-white`}>
+          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col md:h-[780px] lg:h-[840px] min-h-0 border-r border-slate-200 bg-white`}>
             <Queue
               items={filtered}
               allItems={items}
