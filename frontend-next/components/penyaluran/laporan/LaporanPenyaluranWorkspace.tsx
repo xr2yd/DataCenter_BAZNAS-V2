@@ -9,7 +9,6 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
-  FileDown,
   FileSpreadsheet,
   FileText,
   FolderArchive,
@@ -53,6 +52,15 @@ const READINESS_CLASSES = {
   'Menunggu data': 'bg-slate-100 text-slate-500',
 } as const;
 
+function normalizeCategory(c: string): ReportCategory {
+  const s = String(c || '').toLowerCase();
+  if (s.includes('program') || s.includes('pilar')) return 'Per Program';
+  if (s.includes('asnaf')) return 'Per Asnaf';
+  if (s.includes('kecamatan') || s.includes('wilayah')) return 'Per Kecamatan';
+  if (s.includes('audit') || s.includes('lpj') || s.includes('keuangan')) return 'Audit & LPJ';
+  return 'Ringkasan';
+}
+
 function DistributionList({ items }: { items: Array<{ label: string; value: string; percentage: number; tone: string }> }) {
   return (
     <div className="space-y-4">
@@ -92,19 +100,17 @@ export function LaporanPenyaluranWorkspace() {
   // Create form state
   const [newReport, setNewReport] = useState({
     title: '',
-    category: 'Ringkasan',
+    category: 'Ringkasan' as ReportCategory,
     scope: '13 Kecamatan Kota Tangerang',
     period: 'Agustus 2026',
     description: '',
   });
 
   const loadReports = () => {
-    api.getLaporanList({
-      category: activeCategory,
-      search,
-      period,
-    }).then((res) => {
-      if (res && res.reports && res.reports.length > 0) {
+    const params: Record<string, string> = {};
+    if (search.trim()) params.search = search.trim();
+    api.getLaporanList(params).then((res) => {
+      if (res && Array.isArray(res.reports) && res.reports.length > 0) {
         setReports(res.reports);
         if (res.kpis) setKpis(res.kpis);
         if (res.programAllocation) setProgAlloc(res.programAllocation);
@@ -115,7 +121,7 @@ export function LaporanPenyaluranWorkspace() {
 
   useEffect(() => {
     loadReports();
-  }, [activeCategory, search, period]);
+  }, [search]);
 
   useEffect(() => {
     if (!feedback) {
@@ -129,12 +135,35 @@ export function LaporanPenyaluranWorkspace() {
     };
   }, [feedback]);
 
+  // Live category counts from loaded reports
+  const categoryCounts = useMemo(() => {
+    const counts: Record<ReportCategory, number> = {
+      'Ringkasan': 0,
+      'Per Program': 0,
+      'Per Asnaf': 0,
+      'Per Kecamatan': 0,
+      'Audit & LPJ': 0,
+    };
+    reports.forEach((r) => {
+      const norm = normalizeCategory(r.category);
+      if (counts[norm] !== undefined) {
+        counts[norm]++;
+      }
+    });
+    return counts;
+  }, [reports]);
+
   const filteredReports = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('id-ID');
-    return reports.filter((report) =>
-      (Boolean(query) || report.category === activeCategory) &&
-      (!query || [report.title, report.description, report.scope, report.period, report.category].join(' ').toLocaleLowerCase('id-ID').includes(query))
-    );
+    return reports.filter((report) => {
+      const normCat = normalizeCategory(report.category);
+      const matchesCat = normCat === activeCategory;
+      const matchesSearch = !query || [report.title, report.description, report.scope, report.period, report.category]
+        .join(' ')
+        .toLocaleLowerCase('id-ID')
+        .includes(query);
+      return (Boolean(query) || matchesCat) && matchesSearch;
+    });
   }, [reports, activeCategory, search]);
 
   const selectCategory = (category: ReportCategory) => {
@@ -162,15 +191,32 @@ export function LaporanPenyaluranWorkspace() {
     }
     setIsSubmitting(true);
     try {
+      const targetCat = normalizeCategory(newReport.category);
+      const newId = `lap-${Date.now()}`;
       await api.generateLaporan({
-        id: `lap-${Date.now()}`,
+        id: newId,
         title: newReport.title,
-        category: newReport.category,
+        category: targetCat,
         scope: newReport.scope,
         period: newReport.period,
         description: newReport.description || 'Laporan ringkasan penyaluran otomatis data center.',
         status: 'Siap diekspor',
       });
+
+      const createdReportItem: ReportItem = {
+        id: newId,
+        title: newReport.title,
+        category: targetCat,
+        scope: newReport.scope,
+        period: newReport.period,
+        description: newReport.description || 'Laporan ringkasan penyaluran otomatis data center.',
+        status: 'Siap diekspor',
+        file_url: `/api/penyaluran/laporan/export/${newId}`,
+        updated_at: 'Baru saja',
+      };
+
+      setReports((prev) => [createdReportItem, ...prev]);
+      setActiveCategory(targetCat);
       setFeedback(`Laporan "${newReport.title}" berhasil dibuat dan siap diunduh!`);
       setCreateModalOpen(false);
       setNewReport({
@@ -221,7 +267,7 @@ export function LaporanPenyaluranWorkspace() {
             <button
               type="button"
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 motion-reduce:transform-none"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 motion-reduce:transform-none cursor-pointer"
             >
               <Plus className="size-4" />
               Buat laporan
@@ -278,20 +324,21 @@ export function LaporanPenyaluranWorkspace() {
             <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               {REPORT_CATEGORIES.map((category) => {
                 const active = activeCategory === category.name;
+                const count = categoryCounts[category.name] ?? 0;
                 return (
                   <button
                     key={category.name}
                     type="button"
                     aria-pressed={active}
                     onClick={() => selectCategory(category.name)}
-                    className={`min-w-[180px] rounded-xl p-3 text-left transition lg:min-w-0 ${
+                    className={`min-w-[180px] rounded-xl p-3 text-left transition lg:min-w-0 cursor-pointer ${
                       active ? 'bg-emerald-700 text-white shadow-md shadow-emerald-900/15' : 'bg-transparent text-zinc-700 hover:bg-white hover:shadow-sm'
                     }`}
                   >
                     <span className="flex items-center justify-between gap-2 text-sm font-bold">
                       <span>{category.name}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${active ? 'bg-white/15 text-white' : 'bg-zinc-200/70 text-zinc-500'}`}>
-                        {category.reportCount}
+                        {count}
                       </span>
                     </span>
                     <span className={`mt-1 block text-xs leading-5 ${active ? 'text-emerald-100' : 'text-zinc-500'}`}>
@@ -368,7 +415,7 @@ export function LaporanPenyaluranWorkspace() {
                 <Search className="mx-auto size-6 text-zinc-400" />
                 <h3 className="mt-3 font-bold text-zinc-900">Laporan tidak ditemukan</h3>
                 <p className="mt-1 text-sm text-zinc-500">Coba kata kunci lain atau hapus pencarian.</p>
-                <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-emerald-700 hover:text-emerald-800">
+                <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer">
                   Hapus pencarian
                 </button>
               </div>
@@ -438,7 +485,7 @@ export function LaporanPenyaluranWorkspace() {
           <div className="modal-pop relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-lg font-black text-slate-900">Buat Laporan Penyaluran Baru</h2>
-              <button type="button" onClick={() => setCreateModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
+              <button type="button" onClick={() => setCreateModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 cursor-pointer">
                 <X className="size-5" />
               </button>
             </div>
@@ -458,13 +505,14 @@ export function LaporanPenyaluranWorkspace() {
                   <label className="text-xs font-bold text-slate-600">Kategori</label>
                   <select
                     value={newReport.category}
-                    onChange={(e) => setNewReport({ ...newReport, category: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    onChange={(e) => setNewReport({ ...newReport, category: e.target.value as ReportCategory })}
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500 cursor-pointer"
                   >
-                    <option value="Ringkasan">Ringkasan</option>
-                    <option value="Penyaluran Program">Penyaluran Program</option>
-                    <option value="Sebaran Wilayah">Sebaran Wilayah</option>
-                    <option value="Kepatuhan & Audit">Kepatuhan & Audit</option>
+                    <option value="Ringkasan">Ringkasan (Eksekutif)</option>
+                    <option value="Per Program">Per Program (5 Pilar BAZNAS)</option>
+                    <option value="Per Asnaf">Per Asnaf (8 Golongan ZIS)</option>
+                    <option value="Per Kecamatan">Per Kecamatan (13 Wilayah)</option>
+                    <option value="Audit & LPJ">Audit & LPJ (Kepatuhan & Kas)</option>
                   </select>
                 </div>
                 <div>
@@ -500,14 +548,14 @@ export function LaporanPenyaluranWorkspace() {
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
                   <span>Buat Laporan</span>
@@ -533,7 +581,7 @@ export function LaporanPenyaluranWorkspace() {
               type="button"
               aria-label="Tutup notifikasi"
               onClick={() => setFeedback('')}
-              className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none"
+              className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transition-none cursor-pointer"
             >
               <X className="size-4" />
             </button>

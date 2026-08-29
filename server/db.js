@@ -842,6 +842,12 @@ async function seedDataIfEmpty(db) {
         );
       }
       console.log('Reports catalog successfully seeded.');
+    } else {
+      // Migrate any legacy categories to standardized names
+      await db.run("UPDATE reports SET category = 'Per Program' WHERE category = 'Program & Pilar' OR category = 'program'");
+      await db.run("UPDATE reports SET category = 'Per Kecamatan' WHERE category = 'Kecamatan' OR category = 'wilayah'");
+      await db.run("UPDATE reports SET category = 'Per Asnaf' WHERE category = 'Asnaf'");
+      await db.run("UPDATE reports SET category = 'Audit & LPJ' WHERE category = 'Keuangan' OR category = 'audit'");
     }
   } catch (err) {
     console.warn('Seeding notice (non-fatal):', err.message);

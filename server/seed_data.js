@@ -285,7 +285,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-program-cerdas',
-    category: 'Program & Pilar',
+    category: 'Per Program',
     period: 'Agustus 2026',
     title: 'Laporan Realisasi Program Tangerang Cerdas',
     description: 'Rincian penyaluran beasiswa, seragam yatim, dan tebus ijazah santri/siswa dhuafa.',
@@ -297,7 +297,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-program-makmur',
-    category: 'Program & Pilar',
+    category: 'Per Program',
     period: 'Agustus 2026',
     title: 'Laporan Realisasi Program Tangerang Makmur',
     description: 'Progres pendistribusian modal usaha Z-Mart, Z-Auto, dan Gerobak Berkah mustahik.',
@@ -309,7 +309,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-program-sehat',
-    category: 'Program & Pilar',
+    category: 'Per Program',
     period: 'Agustus 2026',
     title: 'Laporan Realisasi Program Tangerang Sehat',
     description: 'Cakupan layanan ambulans gratis, bantuan biaya operasi, dan paket nutrisi stunting.',
@@ -321,7 +321,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-program-peduli',
-    category: 'Program & Pilar',
+    category: 'Per Program',
     period: 'Agustus 2026',
     title: 'Laporan Realisasi Program Tangerang Peduli',
     description: 'Rekapitulasi bantuan RTLH, respon kebencanaan, dan santunan lansia dhuafa.',
@@ -333,7 +333,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-program-takwa',
-    category: 'Program & Pilar',
+    category: 'Per Program',
     period: 'Agustus 2026',
     title: 'Laporan Realisasi Program Tangerang Takwa',
     description: 'Insentif guru ngaji tradisional, pembinaan muallaf, dan renovasi sarana ibadah.',
@@ -345,7 +345,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-kecamatan-sebaran',
-    category: 'Kecamatan',
+    category: 'Per Kecamatan',
     period: 'Agustus 2026',
     title: 'Distribusi Geospasial 13 Kecamatan',
     description: 'Analisis rasio penerimaan manfaat per kecamatan terhadap tingkat kemiskinan wilayah.',
@@ -357,7 +357,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-asnaf-komposisi',
-    category: 'Asnaf',
+    category: 'Per Asnaf',
     period: 'Agustus 2026',
     title: 'Laporan Proporsi Penyaluran 8 Asnaf',
     description: 'Kepatuhan syariah proporsi distribusi asnaf Fakir, Miskin, Fisabilillah, Gharim, Ibnu Sabil, Muallaf, Riqab, Amil.',
@@ -369,7 +369,7 @@ export const INITIAL_REPORTS = [
   },
   {
     id: 'lap-202608-keuangan-ppd',
-    category: 'Keuangan',
+    category: 'Audit & LPJ',
     period: 'Agustus 2026',
     title: 'Buku Kas Pengeluaran Dana Penyaluran (PPD/FPD)',
     description: 'Rekonsiliasi transaksi pencairan bank, nomor formulir F-PKP/03, dan bukti transfer mustahik.',
