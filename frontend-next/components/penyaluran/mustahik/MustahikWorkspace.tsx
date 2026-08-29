@@ -204,7 +204,7 @@ function Queue({
           </button>
         </div>
       </div>
-      <div className="h-[730px] space-y-2 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {items.length === 0 ? (
           <div className="grid min-h-64 place-items-center text-center">
             <div>
@@ -932,9 +932,9 @@ export function MustahikWorkspace() {
 
       <StageRail value={stage} onChange={chooseStage} stages={stages} />
 
-      <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col md:flex-row items-stretch">
-          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col self-stretch border-r border-slate-200 bg-white`}>
+      <section className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+        <div className="relative min-h-[600px]">
+          <div className={`${mobileView === 'queue' ? 'flex flex-col' : 'hidden'} md:flex md:flex-col md:absolute md:inset-y-0 md:left-0 md:w-[310px] lg:w-[330px] border-r border-slate-200 bg-white z-10`}>
             <Queue
               items={filtered}
               allItems={items}
@@ -947,7 +947,7 @@ export function MustahikWorkspace() {
               onFilterQuick={setQuickFilter}
             />
           </div>
-          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} md:block flex-1 min-w-0 bg-slate-50/50`}>
+          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} md:block md:pl-[310px] lg:pl-[330px] min-w-0 bg-slate-50/50`}>
             {selected ? (
               <Profile
                 selected={selected}
