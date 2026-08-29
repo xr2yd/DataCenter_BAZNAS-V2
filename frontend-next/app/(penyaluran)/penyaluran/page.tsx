@@ -1,5 +1,7 @@
 import { ConceptThreeDashboard } from '@/components/penyaluran/dashboard/ConceptThreeDashboard';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Beranda Penyaluran',
 };
