@@ -933,8 +933,8 @@ export function MustahikWorkspace() {
       <StageRail value={stage} onChange={chooseStage} stages={stages} />
 
       <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col md:flex-row">
-          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col md:h-[calc(100vh-260px)] lg:h-[calc(100vh-260px)] min-h-[500px] border-r border-slate-200 bg-white`}>
+        <div className="flex flex-col md:flex-row items-stretch">
+          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col self-stretch border-r border-slate-200 bg-white`}>
             <Queue
               items={filtered}
               allItems={items}
