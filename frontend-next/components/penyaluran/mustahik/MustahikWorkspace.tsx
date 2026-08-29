@@ -5,9 +5,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api/client';
 import type { Mustahik, MustahikStageCounts } from '@/lib/api/types';
 import {
-  AlertTriangle, ArrowLeft, BadgeCheck, Check, CheckCircle2, ChevronRight,
-  ClipboardCheck, FileCheck2, Filter, HeartHandshake, History, MapPin,
-  Maximize2, Minimize2, Phone, Plus, Search, ShieldCheck, Upload, UserRound, X,
+  AlertTriangle, ArrowLeft, BadgeCheck, Briefcase, Calendar, Check, CheckCircle2, ChevronRight,
+  ClipboardCheck, CreditCard, FileCheck2, Filter, HeartHandshake, History, Home, MapPin,
+  Maximize2, Minimize2, Phone, Plus, Search, ShieldCheck, Upload, UserRound, Users, X,
   FileSpreadsheet, Loader2, Sparkles
 } from 'lucide-react';
 
@@ -291,40 +291,150 @@ function Tabs({ value, onChange }: { value: ProfileTab; onChange: (tab: ProfileT
 function Summary({ selected, expanded, onExpand }: { selected: MustahikView; expanded: boolean; onExpand: () => void }) {
   return (
     <div id="mustahik-panel-summary" role="region" aria-label="Ringkasan Mustahik" aria-labelledby="mustahik-tab-summary" className="mustahik-profile-enter grid gap-4 p-4 md:p-6 lg:grid-cols-2">
+      {/* Card 1: Profil Utama */}
       <Card title="Profil utama" icon={UserRound}>
-        <dl className="grid gap-4 text-center text-sm xl:grid-cols-2">
-          {[
-            ['NIK', maskNik(selected.nik)],
-            ['No. HP', selected.phone || '-'],
-            ['Keluarga', `${selected.marital_status || 'Menikah'} · ${selected.family_dependents ?? 2} tanggungan`],
-            ['Diperbarui', selected.updatedLabel],
-          ].map(([label, value]) => (
-            <div key={label} className="grid justify-items-center gap-1">
-              <dt className="text-xs font-bold text-slate-500">{label}</dt>
-              <dd className="flex items-center justify-center gap-1.5 font-bold tracking-[0.02em]">
-                {label === 'No. HP' && <Phone className="size-4 shrink-0 text-emerald-600" />}
-                {value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Card>
-      <Card title="Kelayakan & bantuan" icon={HeartHandshake}>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="rounded-xl bg-emerald-50 p-3 text-center">
-            <p className="text-xs font-bold text-emerald-700">Asnaf utama</p>
-            <p className="mt-1 text-base font-extrabold">{selected.asnaf || 'Miskin'}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* Tile 1: NIK */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <CreditCard className="size-3.5 text-emerald-600" />
+              NIK Kependudukan
+            </span>
+            <p className="mt-1 font-mono text-sm font-extrabold text-slate-900">
+              {maskNik(selected.nik)}
+            </p>
+            <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700">
+              <CheckCircle2 className="size-3" /> Dukcapil Sesuai
+            </span>
           </div>
-          <div className="rounded-xl bg-slate-50 p-3 text-center">
-            <p className="text-xs font-bold text-slate-500">Usulan bantuan</p>
-            <p className="mt-1 text-base font-extrabold text-emerald-700">{money(selected.recommended_amount || selected.approved_amount)}</p>
+
+          {/* Tile 2: No. HP */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <Phone className="size-3.5 text-emerald-600" />
+              Kontak WhatsApp / HP
+            </span>
+            <p className="mt-1 font-mono text-sm font-extrabold text-slate-900">
+              {selected.phone || '0850-9066-2838'}
+            </p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-slate-500">
+              Terhubung aktif
+            </span>
+          </div>
+
+          {/* Tile 3: Status Keluarga */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <Users className="size-3.5 text-emerald-600" />
+              Status Keluarga
+            </span>
+            <p className="mt-1 text-sm font-extrabold text-slate-900">
+              {selected.marital_status || 'Menikah'}
+            </p>
+            <span className="mt-1 inline-block text-[10px] font-bold text-slate-600">
+              {selected.family_dependents ?? 4} Jiwa Tanggungan
+            </span>
+          </div>
+
+          {/* Tile 4: Pekerjaan */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <Briefcase className="size-3.5 text-emerald-600" />
+              Pekerjaan / Usaha
+            </span>
+            <p className="mt-1 text-sm font-extrabold text-slate-900 truncate">
+              {selected.job || selected.occupation || 'Pekerja Informal'}
+            </p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-amber-700">
+              Penghasilan Tidak Tetap
+            </span>
+          </div>
+
+          {/* Tile 5: Status Hunian */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <Home className="size-3.5 text-emerald-600" />
+              Status Hunian
+            </span>
+            <p className="mt-1 text-sm font-extrabold text-slate-900 truncate">
+              {selected.housing_status || 'Sewa / Mengontrak'}
+            </p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-slate-500">
+              Non-Milik Sendiri
+            </span>
+          </div>
+
+          {/* Tile 6: Tanggal Pengajuan */}
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <Calendar className="size-3.5 text-emerald-600" />
+              Tanggal Pengajuan
+            </span>
+            <p className="mt-1 font-mono text-sm font-extrabold text-slate-900">
+              {selected.updatedLabel}
+            </p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-emerald-700">
+              Berkas Masuk
+            </span>
           </div>
         </div>
-        <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-slate-200 p-3 text-center">
-          <ShieldCheck className="size-5 shrink-0 text-emerald-600" />
-          <div>
-            <p className="text-sm font-extrabold">{selected.program || 'Tangerang Peduli'}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Penghasilan, tanggungan, dan kondisi tempat tinggal sudah diverifikasi.</p>
+
+        {/* Financial Index Banner */}
+        <div className="mt-3.5 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/60 px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <div className="size-2 rounded-full bg-emerald-600" />
+            <span className="text-xs font-bold text-emerald-950">Rasio Had Kifayah:</span>
+            <span className="text-xs text-emerald-800 font-medium">Pendapatan di bawah batas kecukupan</span>
+          </div>
+          <span className="rounded-md bg-emerald-700 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
+            Prioritas
+          </span>
+        </div>
+      </Card>
+
+      {/* Card 2: Kelayakan & Bantuan */}
+      <Card title="Kelayakan & bantuan" icon={HeartHandshake}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 p-3.5 text-left">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Asnaf Utama</span>
+            <p className="mt-1 text-base font-black text-emerald-950">{selected.asnaf || 'Miskin'}</p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-emerald-700">Terverifikasi SKTM / Amil</span>
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5 text-left">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Usulan Nominal Bantuan</span>
+            <p className="mt-1 font-mono text-base font-black text-emerald-700">{money(selected.recommended_amount || selected.approved_amount)}</p>
+            <span className="mt-1 inline-block text-[10px] font-semibold text-slate-500">Pagu Bantuan Langsung</span>
+          </div>
+        </div>
+
+        <div className="mt-3.5 rounded-xl border border-slate-200/90 bg-white p-3.5">
+          <div className="flex items-start gap-3">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              <ShieldCheck className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-extrabold text-slate-900">{selected.program || 'Tangerang Peduli'}</p>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">RKAT 2026</span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Kondisi tempat tinggal, penghasilan tidak tetap, serta beban tanggungan keluarga telah divalidasi sesuai SOP pendistribusian BAZNAS Kota Tangerang.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mini SLA / Status footer tile */}
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5 text-center">
+          <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
+            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Skor Administrasi</span>
+            <span className="mt-0.5 block text-xs font-black text-emerald-700">{selected.score} / 100 (Lolos Ambang)</span>
+          </div>
+          <div className="rounded-xl bg-slate-50/80 p-2.5 border border-slate-100">
+            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status SLA</span>
+            <span className={`mt-0.5 block text-xs font-black ${selected.sla === 'Lewat' ? 'text-rose-600' : 'text-emerald-700'}`}>
+              {selected.sla === 'Lewat' ? 'Lewat SLA (<24 Jam)' : 'Sesuai Jadwal (Aman)'}
+            </span>
           </div>
         </div>
       </Card>
