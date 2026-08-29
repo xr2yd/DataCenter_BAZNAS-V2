@@ -450,6 +450,7 @@ function Decision({
   onSubmitDecision,
   prefix,
   isSubmitting,
+  onClose,
 }: {
   selected: MustahikView;
   note: string;
@@ -457,83 +458,137 @@ function Decision({
   onSubmitDecision: (action: 'approve' | 'reject') => void;
   prefix: string;
   isSubmitting: boolean;
+  onClose: () => void;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-        <section className="rounded-2xl border border-emerald-100 bg-emerald-50/65 p-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 sm:p-6">
+        {/* Card 1: Score & Qualification Status */}
+        <section className="rounded-2xl border border-emerald-200/90 bg-emerald-50/60 p-4 sm:p-5">
           <div className="flex items-center gap-4">
-            <div aria-label={`Skor kelayakan ${selected.score} dari 100`} className="grid size-[82px] shrink-0 place-items-center rounded-full bg-emerald-600 p-2">
-              <div className="flex size-full items-baseline justify-center gap-0.5 rounded-full bg-white pt-[22px]">
-                <strong className="text-[29px] font-extrabold leading-none">{selected.score}</strong>
-                <span className="text-[10px] font-bold text-slate-400">/100</span>
-              </div>
+            <div
+              aria-label={`Skor kelayakan ${selected.score} dari 100`}
+              className="flex h-16 w-20 shrink-0 flex-col items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-xs"
+            >
+              <strong className="text-2xl font-black leading-none">{selected.score}</strong>
+              <span className="mt-0.5 text-[10px] font-bold text-emerald-200 uppercase tracking-wider">/ 100</span>
             </div>
-            <div>
-              <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-extrabold text-emerald-700">LAYAK</span>
-              <p className="mt-2 text-base font-extrabold">Layak dilanjutkan</p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Skor memenuhi ambang verifikasi program.</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide text-white">
+                  <CheckCircle2 className="size-3.5" />
+                  LAYAK DILANJUTKAN
+                </span>
+                <span className="text-xs font-bold text-emerald-800">
+                  Ambang Kelulusan: 70+
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs font-medium text-emerald-950/80 leading-relaxed">
+                {selected.missingDocument
+                  ? `Catatan: ${selected.missingDocument} perlu dilengkapi.`
+                  : 'Skor dan berkas telah memenuhi standar verifikasi administrasi BAZNAS.'}
+              </p>
             </div>
           </div>
         </section>
-        <section className="rounded-2xl border border-slate-200 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-extrabold">Hasil verifikasi</p>
-            <span className="text-xs font-bold text-emerald-700">3 / 3 sesuai</span>
+
+        {/* Card 2: Program & Asnaf Snapshot */}
+        <section className="grid grid-cols-3 gap-2.5 rounded-2xl border border-slate-200/90 bg-slate-50/60 p-3.5 text-center">
+          <div className="rounded-xl bg-white p-2.5 border border-slate-100 shadow-2xs">
+            <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Asnaf</span>
+            <span className="mt-1 block text-xs font-black text-slate-900 truncate">{selected.asnaf || 'Miskin'}</span>
           </div>
-          <div className="mt-3 space-y-3">
-            {['Identitas sesuai Dukcapil', 'Alamat terkonfirmasi', 'Kondisi ekonomi sesuai'].map((label) => (
-              <div key={label} className="flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-2 font-semibold text-slate-600">
-                  <CheckCircle2 className="size-4 text-emerald-600" />
-                  {label}
-                </span>
-                <strong className="text-emerald-700">Sesuai</strong>
+          <div className="rounded-xl bg-white p-2.5 border border-slate-100 shadow-2xs">
+            <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Program</span>
+            <span className="mt-1 block text-xs font-black text-emerald-700 truncate">{selected.program || 'Tangerang Peduli'}</span>
+          </div>
+          <div className="rounded-xl bg-white p-2.5 border border-slate-100 shadow-2xs">
+            <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Usulan Dana</span>
+            <span className="mt-1 block text-xs font-black text-slate-900 truncate">{money(selected.recommended_amount || selected.approved_amount)}</span>
+          </div>
+        </section>
+
+        {/* Card 3: Checklist Hasil Validasi */}
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Hasil Verifikasi Data</p>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">3 dari 3 Sesuai</span>
+          </div>
+          <div className="mt-3 space-y-2.5">
+            {[
+              ['Identitas Kependudukan (Dukcapil)', 'NIK valid & terdaftar'],
+              ['Alamat Domisili Kota Tangerang', `Kec. ${selected.subdistrict || selected.kecamatan}`],
+              ['Kriteria Asnaf & Kondisi Ekonomi', 'Sesuai ambang batas kemiskinan'],
+            ].map(([label, sub]) => (
+              <div key={label} className="flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                  <div>
+                    <span className="font-bold text-slate-800">{label}</span>
+                    <span className="block text-[11px] text-slate-400">{sub}</span>
+                  </div>
+                </div>
+                <strong className="shrink-0 text-emerald-700 font-extrabold bg-emerald-50/80 px-2 py-0.5 rounded-md">Valid</strong>
               </div>
             ))}
           </div>
         </section>
+
         {selected.missingDocument && (
           <section className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <AlertTriangle className="size-4 shrink-0 text-amber-600" />
               <div>
-                <p className="text-sm font-extrabold text-amber-900">Dokumen perlu dilengkapi</p>
-                <p className="mt-1 text-xs leading-5 text-amber-800">{selected.missingDocument} belum diunggah sebelum keputusan final.</p>
+                <p className="text-xs font-extrabold text-amber-900">Dokumen Perlu Dilengkapi</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-amber-800">{selected.missingDocument} belum diunggah sebelum keputusan final.</p>
               </div>
             </div>
           </section>
         )}
-        <section className="rounded-2xl border border-slate-200 p-4">
-          <label htmlFor={`${prefix}-note`} className="text-sm font-extrabold">Catatan asesor</label>
+
+        {/* Card 4: Catatan Asesor */}
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-4">
+          <label htmlFor={`${prefix}-note`} className="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Catatan Amil / Asesor</label>
           <textarea
             id={`${prefix}-note`}
             value={note}
             maxLength={500}
             onChange={(event) => onNote(event.target.value)}
-            className="mt-2 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-5 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+            placeholder="Tambahkan catatan khusus untuk tim survey lapangan..."
+            className="mt-2 min-h-20 w-full resize-none rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs leading-relaxed outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
           />
-          <p className="mt-1 text-right text-xs text-slate-400">{note.length}/500</p>
+          <p className="mt-1 text-right text-[11px] text-slate-400 font-medium">{note.length}/500 karakter</p>
         </section>
       </div>
-      <div className="grid grid-cols-[100px_1fr] gap-2 border-t border-slate-200 bg-white p-4">
+
+      {/* Action Footer */}
+      <div className="flex items-center justify-between gap-3 border-t border-slate-200/90 bg-slate-50/50 p-4 sm:px-6">
         <button
           type="button"
-          disabled={isSubmitting}
-          onClick={() => onSubmitDecision('reject')}
-          className="h-11 rounded-xl border border-rose-200 text-xs font-extrabold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+          onClick={onClose}
+          className="h-11 rounded-xl border border-slate-200 px-4 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
         >
-          Tolak
+          Batal
         </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => onSubmitDecision('approve')}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-extrabold text-white hover:bg-emerald-800 disabled:opacity-50"
-        >
-          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
-          <span>Setujui &amp; lanjutkan</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => onSubmitDecision('reject')}
+            className="h-11 rounded-xl border border-rose-200 bg-white px-4 text-xs font-extrabold text-rose-700 hover:bg-rose-50 transition disabled:opacity-50 cursor-pointer"
+          >
+            Tolak
+          </button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => onSubmitDecision('approve')}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#00704A] px-5 text-xs sm:text-sm font-extrabold text-white shadow-sm hover:bg-[#005a3b] transition disabled:opacity-50 cursor-pointer"
+          >
+            {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+            <span>Setujui &amp; Lanjutkan</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -967,17 +1022,34 @@ export function MustahikWorkspace() {
         </div>
       </section>
 
-      {/* Decision Drawer */}
+      {/* Decision Modal (Centered Pop-Up) */}
       {decisionOpen && selected && (
-        <div className="fixed inset-0 z-[80]">
-          <button type="button" tabIndex={-1} aria-label="Tutup dialog keputusan melalui latar" onClick={() => setDecisionOpen(false)} className="mustahik-overlay absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]" />
-          <section role="dialog" aria-modal="true" aria-label="Keputusan Mustahik" className="mustahik-decision-sheet absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[26px] bg-white shadow-2xl md:inset-y-0 md:left-auto md:w-[420px] md:max-h-none md:rounded-none">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="fixed inset-0 z-[85] flex items-center justify-center p-3 sm:p-5">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setDecisionOpen(false)}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="Keputusan Mustahik"
+            className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
               <div>
-                <p className="text-base font-extrabold">Panel keputusan verifikasi</p>
-                <p className="mt-0.5 text-xs text-slate-500">{selected.name} · {selected.file_no}</p>
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900">
+                  Tinjau Keputusan Verifikasi
+                </h3>
+                <p className="mt-0.5 text-xs font-semibold text-slate-500">
+                  {selected.name} · <span className="font-mono text-emerald-700">NIK {maskNik(selected.nik)}</span> · {selected.file_no}
+                </p>
               </div>
-              <button type="button" aria-label="Tutup panel keputusan" onClick={() => setDecisionOpen(false)} className="grid size-11 place-items-center rounded-xl border border-slate-200 text-slate-500">
+              <button
+                type="button"
+                aria-label="Tutup panel keputusan"
+                onClick={() => setDecisionOpen(false)}
+                className="grid size-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
+              >
                 <X className="size-4" />
               </button>
             </div>
@@ -986,8 +1058,9 @@ export function MustahikWorkspace() {
               note={note}
               onNote={setNote}
               onSubmitDecision={handleDecisionSubmit}
-              prefix="drawer"
+              prefix="modal"
               isSubmitting={isSubmitting}
+              onClose={() => setDecisionOpen(false)}
             />
           </section>
         </div>
