@@ -126,7 +126,7 @@ function Queue({
   const dokumenCount = allItems.filter((i) => Boolean(i.missingDocument)).length;
 
   return (
-    <aside className="flex h-full min-h-0 flex-col bg-white md:border-r md:border-slate-200">
+    <aside className="flex h-full w-full min-h-0 flex-col bg-white">
       <div className="shrink-0 border-b border-slate-200 p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -932,9 +932,9 @@ export function MustahikWorkspace() {
 
       <StageRail value={stage} onChange={chooseStage} stages={stages} />
 
-      <section className="overflow-clip rounded-[22px] border border-slate-200 bg-slate-50/55 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-        <div className="grid min-h-[680px] md:grid-cols-[290px_minmax(0,1fr)] lg:grid-cols-[310px_minmax(0,1fr)] items-stretch">
-          <div className={`${mobileView === 'queue' ? 'flex flex-col' : 'hidden'} md:flex md:flex-col h-full min-h-0`}>
+      <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col md:flex-row md:h-[780px] lg:h-[840px] xl:h-[860px]">
+          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col h-full border-r border-slate-200 bg-white`}>
             <Queue
               items={filtered}
               allItems={items}
@@ -947,7 +947,7 @@ export function MustahikWorkspace() {
               onFilterQuick={setQuickFilter}
             />
           </div>
-          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} min-w-0 md:block`}>
+          <div className={`${mobileView === 'profile' ? 'flex' : 'hidden'} md:flex flex-1 flex-col h-full overflow-y-auto min-w-0 bg-slate-50/50`}>
             {selected ? (
               <Profile
                 selected={selected}
