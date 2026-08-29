@@ -126,8 +126,8 @@ function Queue({
   const dokumenCount = allItems.filter((i) => Boolean(i.missingDocument)).length;
 
   return (
-    <aside className="flex min-h-0 flex-col bg-white md:border-r md:border-slate-200">
-      <div className="border-b border-slate-200 p-4">
+    <aside className="flex h-full min-h-0 flex-col bg-white md:border-r md:border-slate-200">
+      <div className="shrink-0 border-b border-slate-200 p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-base font-extrabold">Antrean verifikasi</p>
@@ -204,7 +204,7 @@ function Queue({
           </button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 md:max-h-[720px] xl:max-h-[690px]">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {items.length === 0 ? (
           <div className="grid min-h-64 place-items-center text-center">
             <div>
@@ -933,8 +933,8 @@ export function MustahikWorkspace() {
       <StageRail value={stage} onChange={chooseStage} stages={stages} />
 
       <section className="overflow-clip rounded-[22px] border border-slate-200 bg-slate-50/55 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-        <div className="grid min-h-[640px] md:grid-cols-[280px_minmax(0,1fr)]">
-          <div className={`${mobileView === 'queue' ? 'block' : 'hidden'} md:block`}>
+        <div className="grid min-h-[680px] md:grid-cols-[290px_minmax(0,1fr)] lg:grid-cols-[310px_minmax(0,1fr)] items-stretch">
+          <div className={`${mobileView === 'queue' ? 'flex flex-col' : 'hidden'} md:flex md:flex-col h-full min-h-0`}>
             <Queue
               items={filtered}
               allItems={items}
