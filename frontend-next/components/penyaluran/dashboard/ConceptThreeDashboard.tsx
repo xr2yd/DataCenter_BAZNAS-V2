@@ -10,7 +10,7 @@ import { TrendPanel } from './TrendPanel';
 import { AsnafBreakdown } from './AsnafBreakdown';
 import { ProgramImpactGrid } from './ProgramImpactGrid';
 import { DecisionStudioHero } from './DecisionStudioHero';
-import { getDashboardData, type DashboardPeriod } from './dashboard-data';
+import { getDashboardData, adaptBackendOverviewToDashboardData, type DashboardPeriod, type DashboardData } from './dashboard-data';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { api } from '@/lib/api/client';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
@@ -33,7 +33,17 @@ export function ConceptThreeDashboard() {
   const [period, setPeriod] = useState<DashboardPeriod>('30d');
   const [selectedKecamatan, setSelectedKecamatan] = useState<string | null>(null);
   const [kecamatanData, setKecamatanData] = useState<PenyaluranByKecamatan[]>([]);
-  const data = getDashboardData(period);
+  const [liveOverview, setLiveOverview] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    api.getPenyaluranOverview(period)
+      .then((res) => {
+        if (res.data) {
+          setLiveOverview(adaptBackendOverviewToDashboardData(res.data, period));
+        }
+      })
+      .catch(() => {});
+  }, [period]);
 
   useEffect(() => {
     api.getPenyaluranByKecamatan()
@@ -44,6 +54,8 @@ export function ConceptThreeDashboard() {
         // Fallback to local demo data
       });
   }, []);
+
+  const data = liveOverview || getDashboardData(period);
 
   const selectedData = selectedKecamatan
     ? kecamatanData.find(

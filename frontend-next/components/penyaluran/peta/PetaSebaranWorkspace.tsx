@@ -52,6 +52,15 @@ export function PetaSebaranWorkspace() {
   const activeMetricValue = getKecamatanMapValue(selectedKecamatan, metric, kecamatanList);
   const maxProgramAllocation = Math.max(...PROGRAM_ALLOCATION.map((program) => program.amount));
 
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const handleExportMap = () => {
+    const exportUrl = api.getExportUrl('peta-sebaran-13-kecamatan', 'csv');
+    window.open(exportUrl, '_blank');
+    setNotice('Data sebaran 13 kecamatan berhasil diekspor.');
+    setTimeout(() => setNotice(null), 3000);
+  };
+
   return (
     <div className="mx-auto max-w-[1440px] space-y-4 pb-8 text-slate-950">
       <header className="grid gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-[0_10px_24px_rgba(15,23,42,0.03)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6">
@@ -62,9 +71,23 @@ export function PetaSebaranWorkspace() {
         </div>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <span className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"><span className="relative flex size-2.5"><span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" /><span className="relative inline-flex size-2.5 rounded-full bg-emerald-600" /></span>Data tersinkron · 25 Agustus 2026</span>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 sm:px-4"><Download className="size-4" />Ekspor peta</button>
+          <button
+            type="button"
+            onClick={handleExportMap}
+            className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 sm:px-4 cursor-pointer"
+          >
+            <Download className="size-4" />
+            Ekspor peta
+          </button>
         </div>
       </header>
+
+      {notice && (
+        <div role="status" className="fixed bottom-5 right-5 z-[100] flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-2xl">
+          <Download className="size-4 text-emerald-400" />
+          {notice}
+        </div>
+      )}
 
       <section aria-labelledby="peta-utama-title" className="space-y-3">
         <div className="flex flex-col gap-3 px-1 lg:flex-row lg:items-end lg:justify-between">

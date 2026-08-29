@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { api } from '@/lib/api/client';
+import type { PilarProgramData } from '@/lib/api/types';
 import {
   Users,
   Store,
@@ -19,6 +21,10 @@ import {
   Target,
   Award,
   Layers,
+  Plus,
+  Search,
+  X,
+  Loader2,
 } from 'lucide-react';
 
 interface PilarCardData {
@@ -417,11 +423,109 @@ const PILAR_CARDS: PilarCardData[] = [
 ];
 
 export function ProgramPilarWorkspace() {
+  const [pilarCards, setPilarCards] = useState<PilarCardData[]>(PILAR_CARDS);
   const [selectedPilar, setSelectedPilar] = useState('sehat');
-  const activePilarData = PILAR_CARDS.find((p) => p.id === selectedPilar) || PILAR_CARDS[2]!;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Semua');
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Add initiative form state
+  const [newInit, setNewInit] = useState({
+    code: '',
+    name: '',
+    pic: 'Divisi Penyaluran',
+    status: 'Aktif',
+    nextMilestone: '30 Sep 2026',
+    mustahik_target: '500',
+    budget_amount: '1000000000',
+    realized_amount: '350000000',
+  });
+
+  const toast = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const loadLivePrograms = () => {
+    api.getPilarPrograms().then((res) => {
+      if (res.data && res.data.length > 0) {
+        setPilarCards((prev) =>
+          prev.map((card) => {
+            const matched = res.data?.find((d) => d.id === card.id);
+            if (!matched) return card;
+            return {
+              ...card,
+              amount: matched.amount || card.amount,
+              rawAmount: matched.rawAmount || card.rawAmount,
+              rawBudget: matched.rawBudget || card.rawBudget,
+              percentage: matched.percentage || card.percentage,
+              beneficiaries: matched.beneficiaries || card.beneficiaries,
+              subPrograms: matched.subPrograms && matched.subPrograms.length > 0 ? (matched.subPrograms as any) : card.subPrograms,
+            };
+          })
+        );
+      }
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    loadLivePrograms();
+  }, []);
+
+  const activePilarData = pilarCards.find((p) => p.id === selectedPilar) || pilarCards[2]!;
   const remainingBudget = Math.max(activePilarData.rawBudget - activePilarData.rawAmount, 0);
   const projectedAmount = activePilarData.rawAmount * 1.22;
   const projectedPercent = Math.round((projectedAmount / activePilarData.rawBudget) * 100);
+
+  const filteredSubPrograms = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return activePilarData.subPrograms.filter((sub) => {
+      const matchSearch = !q || sub.name.toLowerCase().includes(q) || sub.code.toLowerCase().includes(q) || sub.pic.toLowerCase().includes(q);
+      const matchStatus = statusFilter === 'Semua' || sub.status.toLowerCase() === statusFilter.toLowerCase();
+      return matchSearch && matchStatus;
+    });
+  }, [activePilarData.subPrograms, searchQuery, statusFilter]);
+
+  const handleCreateInitiative = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInit.name) {
+      toast('Nama inisiatif wajib diisi');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await api.createPilarInitiative({
+        pilarId: selectedPilar,
+        code: newInit.code || `${activePilarData.id.toUpperCase().slice(0, 2)}-0${activePilarData.subPrograms.length + 1}`,
+        name: newInit.name,
+        pic: newInit.pic,
+        status: newInit.status,
+        nextMilestone: newInit.nextMilestone,
+        mustahikTarget: parseInt(newInit.mustahik_target, 10) || 500,
+        budgetAmount: parseFloat(newInit.budget_amount) || 1000000000,
+        realizedAmount: parseFloat(newInit.realized_amount) || 0,
+      });
+      toast(`Inisiatif ${newInit.name} berhasil ditambahkan ke ${activePilarData.name}!`);
+      setAddModalOpen(false);
+      setNewInit({
+        code: '',
+        name: '',
+        pic: 'Divisi Penyaluran',
+        status: 'Aktif',
+        nextMilestone: '30 Sep 2026',
+        mustahik_target: '500',
+        budget_amount: '1000000000',
+        realized_amount: '350000000',
+      });
+      loadLivePrograms();
+    } catch (err: any) {
+      toast(`Gagal menambahkan inisiatif: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-[1920px] 2xl:mx-auto space-y-5 sm:space-y-6 pb-12 text-slate-800 antialiased">
@@ -468,7 +572,7 @@ export function ProgramPilarWorkspace() {
         aria-label="Pilih Program 5 Pilar"
         className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5"
       >
-        {PILAR_CARDS.map((pilar, index) => {
+        {pilarCards.map((pilar, index) => {
           const isSelected = selectedPilar === pilar.id;
           const Icon = pilar.icon;
 
@@ -486,15 +590,15 @@ export function ProgramPilarWorkspace() {
                 if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
 
                 event.preventDefault();
-                const lastIndex = PILAR_CARDS.length - 1;
+                const lastIndex = pilarCards.length - 1;
                 const nextIndex = event.key === 'Home'
                   ? 0
                   : event.key === 'End'
                     ? lastIndex
                     : event.key === 'ArrowRight'
-                      ? (index + 1) % PILAR_CARDS.length
-                      : (index - 1 + PILAR_CARDS.length) % PILAR_CARDS.length;
-                const nextPilar = PILAR_CARDS[nextIndex];
+                      ? (index + 1) % pilarCards.length
+                      : (index - 1 + pilarCards.length) % pilarCards.length;
+                const nextPilar = pilarCards[nextIndex];
 
                 if (!nextPilar) return;
                 setSelectedPilar(nextPilar.id);
@@ -880,115 +984,301 @@ export function ProgramPilarWorkspace() {
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 6. SUB-PROGRAM PORTFOLIO TABLE (FULL WIDTH)                               */}
-      {/* ========================================================================= */}
-      <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 pb-3">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-zinc-950">
-              Portofolio Inisiatif & Sub-Program — {activePilarData.name} ({activePilarData.subPrograms.length})
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-500 font-medium">
-              Rincian serapan pagu, progres kuota mustahik, dan jadwal tonggak monev
-            </p>
+          {/* ========================================================================= */}
+          {/* 6. SUB-PROGRAM PORTFOLIO TABLE (FULL WIDTH)                               */}
+          {/* ========================================================================= */}
+          <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-100 pb-3">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-zinc-950">
+                  Portofolio Inisiatif & Sub-Program — {activePilarData.name} ({activePilarData.subPrograms.length})
+                </h2>
+                <p className="text-xs sm:text-sm text-zinc-500 font-medium">
+                  Rincian serapan pagu, progres kuota mustahik, dan jadwal tonggak monev
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAddModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs sm:text-sm font-bold text-white shadow-xs hover:bg-emerald-800 transition-colors"
+                >
+                  <Plus className="size-4" />
+                  <span>Tambah Inisiatif</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search & Filter Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari kode, inisiatif, atau PIC..."
+                  className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-zinc-200 bg-zinc-50/50 outline-none focus:border-emerald-500 focus:bg-white"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                {['Semua', 'Aktif', 'Berjalan', 'Perencanaan'].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
+                      statusFilter === st
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-zinc-50 text-zinc-600 border border-zinc-200/60 hover:bg-zinc-100'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              role="list"
+              aria-label="Portofolio sub-program untuk layar kecil"
+              className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden"
+            >
+              {filteredSubPrograms.map((sub) => (
+                <article
+                  role="listitem"
+                  key={`compact-${sub.code}`}
+                  className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-md border border-emerald-200/70 bg-emerald-50 px-2 py-1 font-mono text-xs font-bold text-emerald-700">
+                      {sub.code}
+                    </span>
+                    <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                      {sub.status}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-3 text-sm font-black leading-5 text-zinc-950">{sub.name}</h3>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-200 pt-4 text-xs">
+                    <div className="col-span-2">
+                      <dt className="font-semibold text-zinc-500">Penanggung jawab</dt>
+                      <dd className="mt-1 font-bold text-zinc-800">{sub.pic}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-zinc-500">Monev berikutnya</dt>
+                      <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.nextMilestone}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-zinc-500">Mustahik</dt>
+                      <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.mustahik} Jiwa</dd>
+                    </div>
+                    <div className="col-span-2 flex items-end justify-between gap-3 rounded-xl bg-white p-3 ring-1 ring-inset ring-zinc-200">
+                      <div>
+                        <dt className="font-semibold text-zinc-500">Realisasi pagu</dt>
+                        <dd className="mt-1 font-mono text-sm font-black text-zinc-950">{sub.realized}</dd>
+                      </div>
+                      <span className="font-mono text-xs font-bold text-emerald-700">{sub.pct}% terserap</span>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto lg:block">
+              <table className="min-w-[960px] w-full text-left text-sm">
+                <thead className="border-b border-zinc-200 text-xs text-zinc-500 font-bold uppercase tracking-wider bg-zinc-50/50">
+                  <tr>
+                    <th className="py-3 px-4">Kode &amp; Nama Program</th>
+                    <th className="py-3 px-4">PIC Operasional</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Tonggak Monev</th>
+                    <th className="py-3 px-4 text-right">Mustahik</th>
+                    <th className="py-3 px-4 text-right">Realisasi Pagu</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {filteredSubPrograms.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-xs text-zinc-500">
+                        Tidak ada inisiatif yang sesuai dengan filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSubPrograms.map((sub) => (
+                      <tr key={sub.code} className="hover:bg-zinc-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                              {sub.code}
+                            </span>
+                            <span className="font-bold text-zinc-900">{sub.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-zinc-600 font-medium">{sub.pic}</td>
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                            {sub.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-mono text-xs font-bold text-zinc-900">{sub.nextMilestone}</p>
+                          <p className="text-[11px] text-zinc-400">Evaluasi lapangan</p>
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-zinc-900">{sub.mustahik} Jiwa</td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="font-mono font-bold text-zinc-950">{sub.realized}</span>
+                            <span className="font-mono text-xs font-semibold text-emerald-700">({sub.pct}%)</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div
-          role="list"
-          aria-label="Portofolio sub-program untuk layar kecil"
-          className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden"
-        >
-          {activePilarData.subPrograms.map((sub) => (
-            <article
-              role="listitem"
-              key={`compact-${sub.code}`}
-              className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="rounded-md border border-emerald-200/70 bg-emerald-50 px-2 py-1 font-mono text-xs font-bold text-emerald-700">
-                  {sub.code}
-                </span>
-                <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
-                  {sub.status}
-                </span>
+        {/* Add Initiative Modal */}
+        {addModalOpen && (
+          <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-xs" onClick={() => setAddModalOpen(false)} />
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">Tambah Inisiatif Sub-Program</h2>
+                  <p className="text-xs text-slate-500">Pilar: {activePilarData.name}</p>
+                </div>
+                <button type="button" onClick={() => setAddModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
+                  <X className="size-5" />
+                </button>
               </div>
-
-              <h3 className="mt-3 text-sm font-black leading-5 text-zinc-950">{sub.name}</h3>
-
-              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-200 pt-4 text-xs">
-                <div className="col-span-2">
-                  <dt className="font-semibold text-zinc-500">Penanggung jawab</dt>
-                  <dd className="mt-1 font-bold text-zinc-800">{sub.pic}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-zinc-500">Monev berikutnya</dt>
-                  <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.nextMilestone}</dd>
-                </div>
-                <div>
-                  <dt className="font-semibold text-zinc-500">Mustahik</dt>
-                  <dd className="mt-1 font-mono font-bold text-zinc-900">{sub.mustahik} Jiwa</dd>
-                </div>
-                <div className="col-span-2 flex items-end justify-between gap-3 rounded-xl bg-white p-3 ring-1 ring-inset ring-zinc-200">
+              <form onSubmit={handleCreateInitiative} className="mt-4 space-y-3.5">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <dt className="font-semibold text-zinc-500">Realisasi pagu</dt>
-                    <dd className="mt-1 font-mono text-sm font-black text-zinc-950">{sub.realized}</dd>
+                    <label className="text-xs font-bold text-slate-600">Kode Program (opsional)</label>
+                    <input
+                      value={newInit.code}
+                      onChange={(e) => setNewInit({ ...newInit, code: e.target.value })}
+                      placeholder={`e.g. ${activePilarData.id.toUpperCase().slice(0, 2)}-05`}
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
                   </div>
-                  <span className="font-mono text-xs font-bold text-emerald-700">{sub.pct}% terserap</span>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">Status Inisiatif</label>
+                    <select
+                      value={newInit.status}
+                      onChange={(e) => setNewInit({ ...newInit, status: e.target.value })}
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    >
+                      <option value="Aktif">Aktif</option>
+                      <option value="Berjalan">Berjalan</option>
+                      <option value="Perencanaan">Perencanaan</option>
+                    </select>
+                  </div>
                 </div>
-              </dl>
-            </article>
-          ))}
-        </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600">Nama Inisiatif Program *</label>
+                  <input
+                    required
+                    value={newInit.name}
+                    onChange={(e) => setNewInit({ ...newInit, name: e.target.value })}
+                    placeholder="e.g. Program Pemberdayaan Ternak Lele Dhuafa"
+                    className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">PIC Operasional</label>
+                    <input
+                      value={newInit.pic}
+                      onChange={(e) => setNewInit({ ...newInit, pic: e.target.value })}
+                      placeholder="Divisi Penyaluran"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">Jadwal Monev</label>
+                    <input
+                      value={newInit.nextMilestone}
+                      onChange={(e) => setNewInit({ ...newInit, nextMilestone: e.target.value })}
+                      placeholder="30 Sep 2026"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">Target Mustahik</label>
+                    <input
+                      type="number"
+                      value={newInit.mustahik_target}
+                      onChange={(e) => setNewInit({ ...newInit, mustahik_target: e.target.value })}
+                      placeholder="500"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">Pagu Anggaran (Rp)</label>
+                    <input
+                      type="number"
+                      value={newInit.budget_amount}
+                      onChange={(e) => setNewInit({ ...newInit, budget_amount: e.target.value })}
+                      placeholder="1000000000"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600">Realisasi (Rp)</label>
+                    <input
+                      type="number"
+                      value={newInit.realized_amount}
+                      onChange={(e) => setNewInit({ ...newInit, realized_amount: e.target.value })}
+                      placeholder="350000000"
+                      className="mt-1 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setAddModalOpen(false)}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50"
+                  >
+                    {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : null}
+                    <span>Simpan Inisiatif</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
-        <div className="hidden overflow-x-auto lg:block">
-          <table className="min-w-[960px] w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-xs text-zinc-500 font-bold uppercase tracking-wider bg-zinc-50/50">
-              <tr>
-                <th className="py-3 px-4">Kode & Nama Program</th>
-                <th className="py-3 px-4">PIC Operasional</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Tonggak Monev</th>
-                <th className="py-3 px-4 text-right">Mustahik</th>
-                <th className="py-3 px-4 text-right">Realisasi Pagu</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {activePilarData.subPrograms.map((sub) => (
-                <tr key={sub.code} className="hover:bg-zinc-50/60 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                        {sub.code}
-                      </span>
-                      <span className="font-bold text-zinc-900">{sub.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4 text-zinc-600 font-medium">{sub.pic}</td>
-                  <td className="py-3.5 px-4">
-                    <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                      {sub.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <p className="font-mono text-xs font-bold text-zinc-900">{sub.nextMilestone}</p>
-                    <p className="text-[11px] text-zinc-400">Evaluasi lapangan</p>
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-zinc-900">{sub.mustahik} Jiwa</td>
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="font-mono font-bold text-zinc-950">{sub.realized}</span>
-                      <span className="font-mono text-xs font-semibold text-emerald-700">({sub.pct}%)</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </div>
+        {notice && (
+          <div role="status" className="fixed bottom-5 right-5 z-[100] flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-2xl">
+            <CheckCircle2 className="size-4 text-emerald-400" />
+            {notice}
+          </div>
+        )}
     </div>
   );
 }

@@ -204,3 +204,93 @@ const DASHBOARD_BY_PERIOD: Record<DashboardPeriod, DashboardData> = {
 export function getDashboardData(period: DashboardPeriod): DashboardData {
   return DASHBOARD_BY_PERIOD[period];
 }
+
+export function adaptBackendOverviewToDashboardData(overview: any, period: DashboardPeriod = '30d'): DashboardData {
+  const fallback = getDashboardData(period);
+  if (!overview || !overview.metrics) return fallback;
+
+  const m = overview.metrics;
+  const totalDisbursed = m.totalPenyaluran || fallback.summary.totalDisbursed;
+  const beneficiaries = m.totalMustahik || fallback.summary.beneficiaries;
+
+  const asnafList: AsnafAllocation[] = Array.isArray(overview.asnafBreakdown) && overview.asnafBreakdown.length > 0
+    ? overview.asnafBreakdown.map((a: any) => ({
+        id: a.name.toLowerCase().replace(/\s+/g, '-'),
+        name: a.name,
+        percentage: a.percentage || 0,
+        amount: a.amount || Math.round(totalDisbursed * ((a.percentage || 10) / 100)),
+        beneficiaries: a.count || Math.round(beneficiaries * ((a.percentage || 10) / 100)),
+        color: a.color || '#10b981',
+      }))
+    : fallback.asnaf;
+
+  const programsList: ProgramImpact[] = Array.isArray(overview.programImpact) && overview.programImpact.length > 0
+    ? overview.programImpact.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        amount: p.realizedAmount || Math.round(totalDisbursed * 0.25),
+        percentage: p.percentage || 75,
+        beneficiaries: p.beneficiariesCount || Math.round(beneficiaries * 0.2),
+        progress: p.percentage || 75,
+        change: 12.5,
+        accent: p.color || '#059669',
+      }))
+    : fallback.programs;
+
+  const actions: DashboardAction[] = overview.actionRail?.slaCounts
+    ? [
+        {
+          title: 'Verifikasi pengajuan prioritas',
+          count: overview.actionRail.slaCounts.perluTindakan || 18,
+          description: 'Berkas menunggu validasi dan keputusan',
+          href: '/penyaluran/mustahik?tab=diajukan',
+          tone: 'rose',
+        },
+        {
+          title: 'Survey lapangan terjadwal',
+          count: overview.actionRail.slaCounts.lewatSla || 8,
+          description: 'Kunjungan perlu dikonfirmasi hari ini',
+          href: '/penyaluran/mustahik?tab=survey',
+          tone: 'amber',
+        },
+        {
+          title: 'Pencairan PPD siap proses',
+          count: overview.actionRail.slaCounts.dokumenKurang || 5,
+          description: 'Dokumen pencairan telah lengkap',
+          href: '/penyaluran/mustahik?tab=ppd',
+          tone: 'emerald',
+        },
+      ]
+    : fallback.actions;
+
+  const activities: DashboardActivity[] = Array.isArray(overview.actionRail?.recentActivities) && overview.actionRail.recentActivities.length > 0
+    ? overview.actionRail.recentActivities.slice(0, 4).map((act: any) => ({
+        title: act.title || 'Aktivitas Penyaluran',
+        detail: act.description || `Aktor: ${act.actor_name}`,
+        time: 'Baru saja',
+        tone: act.action_type === 'DISBURSED' ? 'emerald' : act.action_type === 'REJECTED' ? 'amber' : 'violet',
+      }))
+    : fallback.activities;
+
+  return {
+    periodLabel: period === '7d' ? '7 Hari' : period === '1y' ? '1 Tahun' : '30 Hari',
+    comparisonLabel: period === '7d' ? '7 hari sebelumnya' : period === '1y' ? 'tahun sebelumnya' : '30 hari sebelumnya',
+    summary: {
+      totalDisbursed,
+      beneficiaries,
+      activePrograms: programsList.length,
+      averageAssistance: beneficiaries > 0 ? Math.round(totalDisbursed / beneficiaries) : 1500000,
+      change: m.growthRate || 18.7,
+      transactions: beneficiaries,
+      target: m.targetRkat || 32000000000,
+    },
+    trend: fallback.trend,
+    asnaf: asnafList,
+    programs: programsList,
+    map: fallback.map,
+    actions,
+    activities,
+  };
+}
+

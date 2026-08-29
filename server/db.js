@@ -5,6 +5,11 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
+import {
+  generateMustahikSeed,
+  INITIAL_PROGRAM_INITIATIVES,
+  INITIAL_REPORTS
+} from './seed_data.js';
 
 const { Pool } = pg;
 
@@ -443,6 +448,49 @@ export async function initDb() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS program_initiatives (
+        id SERIAL PRIMARY KEY,
+        pilar_id VARCHAR(50) NOT NULL,
+        code VARCHAR(50) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        pic VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'Aktif',
+        next_milestone VARCHAR(255),
+        mustahik_target INTEGER DEFAULT 0,
+        mustahik_count INTEGER DEFAULT 0,
+        budget_amount NUMERIC DEFAULT 0,
+        realized_amount NUMERIC DEFAULT 0,
+        percentage NUMERIC DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS reports (
+        id VARCHAR(100) PRIMARY KEY,
+        category VARCHAR(100) NOT NULL,
+        period VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        scope VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'Siap diekspor',
+        file_url TEXT,
+        metrics_json TEXT,
+        updated_at VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id SERIAL PRIMARY KEY,
+        mustahik_id INTEGER REFERENCES mustahik(id) ON DELETE CASCADE,
+        actor_name VARCHAR(255),
+        action_type VARCHAR(100),
+        title VARCHAR(255),
+        description TEXT,
+        old_status VARCHAR(100),
+        new_status VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_mustahik_file_no ON mustahik(file_no);
       CREATE INDEX IF NOT EXISTS idx_mustahik_nik ON mustahik(nik);
       CREATE INDEX IF NOT EXISTS idx_mustahik_phone ON mustahik(phone);
@@ -460,6 +508,9 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_ppd_mustahik ON ppd(mustahik_id);
       CREATE INDEX IF NOT EXISTS idx_documents_mustahik ON documents(mustahik_id);
       CREATE INDEX IF NOT EXISTS idx_wa_logs_mustahik ON wa_logs(mustahik_id);
+      CREATE INDEX IF NOT EXISTS idx_initiatives_pilar ON program_initiatives(pilar_id);
+      CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
+      CREATE INDEX IF NOT EXISTS idx_activity_mustahik ON activity_logs(mustahik_id);
     `);
 
     // Ensure all 60 columns exist in mustahik (schema evolution)
@@ -614,155 +665,183 @@ export async function initDb() {
 
 async function seedDataIfEmpty(db) {
   try {
+    // 1. Seed Mustahik dataset
     const countRes = await db.get('SELECT COUNT(*) as total FROM mustahik');
     const total = parseInt(countRes?.total || 0, 10);
-    if (total > 0) return;
+    if (total < 10) {
+      console.log('Seeding rich 218 Kota Tangerang Mustahik records...');
+      // Clean up incomplete demo entries if any
+      await db.run('DELETE FROM activity_logs');
+      await db.run('DELETE FROM documents');
+      await db.run('DELETE FROM ppd');
+      await db.run('DELETE FROM mpzis');
+      await db.run('DELETE FROM assessments');
+      await db.run('DELETE FROM applications');
+      await db.run('DELETE FROM mustahik');
 
-    const initialMustahik = [
-      {
-        file_no: 'MST-202608-0001',
-        received_date: '2026-08-01',
-        name: 'Yayasan Yatama Tangerang',
-        applicant_status: 'Lembaga',
-        beneficiary_name: 'Yayasan Yatama Tangerang',
-        nik: '3671012345670001',
-        kk_number: '3671012345670001',
-        phone: '081234567890',
-        marital_status: 'Lembaga',
-        pob: 'Tangerang',
-        dob: '2015-05-10',
-        occupation: 'Pengurus Yayasan',
-        work_place: 'Yayasan Yatama',
-        education_level: 'S1',
-        address: 'Jl. Keadilan No. 12 RT 001/002',
-        rt_rw: '001/002',
-        kelurahan: 'Cibodasari',
-        kecamatan: 'Cibodas',
-        kabupaten_kota: 'Kota Tangerang',
-        province: 'Banten',
-        survey_date: '2026-08-05',
-        surveyor_name: 'H. Ahmad Subarkah',
-        surveyor_phone: '081398765432',
-        house_ownership: 'Kontrak',
-        family_dependents: 45,
-        monthly_income: 15000000,
-        monthly_expense: 28000000,
-        remaining_income: -13000000,
-        survey_recommendation: 'Layak',
-        survey_notes: 'Lembaga aktif membina 45 anak yatim dhuafa, membutuhkan dukungan biaya SPP semester gasal.',
-        application_count: 1,
-        beneficiary_count: 45,
-        priority: '1',
-        recommended_amount: 15000000,
-        approved_amount: 15000000,
-        mpzis_date: '2026-08-10',
-        ppd_number: 'PPD/202608/001',
-        disbursement_date: '',
-        payment_method: 'Transfer',
-        bank_account: '1234567890',
-        bank_name: 'BCA',
-        bank_account_name: 'Yayasan Yatama Tangerang',
-        asnaf: 'Fakir Miskin',
-        fund_source: 'Zakat',
-        distribution_purpose: 'Bantuan biaya pendidikan semester gasal 45 santri yatim dhuafa',
-        parent_occupation: '-',
-        desil_score: 2,
-        program: 'Pendidikan',
-        request_title: 'Bantuan biaya pendidikan santri yatim dhuafa',
-        status: 'Pengajuan Dana (FPD)',
-        rejection_reason: '',
-        house_index: 3,
-        asset_index: 3,
-        income_index: 2,
-        spiritual_score: 90,
-        overall_score: 88.5,
-        notes: 'Disetujui dalam rapat pleno MPZIS'
-      },
-      {
-        file_no: 'MST-202608-0002',
-        received_date: '2026-08-03',
-        name: 'Siti Aminah',
-        applicant_status: 'Perorangan',
-        beneficiary_name: 'Siti Aminah',
-        nik: '3671025508820003',
-        kk_number: '3671025508820001',
-        phone: '085712345678',
-        marital_status: 'Janda',
-        pob: 'Tangerang',
-        dob: '1982-08-15',
-        occupation: 'Buruh Cuci',
-        work_place: 'Rumah Tangga',
-        education_level: 'SMP',
-        address: 'Jl. Merak No. 45 RT 003/005',
-        rt_rw: '003/005',
-        kelurahan: 'Sukasari',
-        kecamatan: 'Tangerang',
-        kabupaten_kota: 'Kota Tangerang',
-        province: 'Banten',
-        survey_date: '2026-08-08',
-        surveyor_name: 'Bambang Irawan',
-        surveyor_phone: '081287654321',
-        house_ownership: 'Menumpang',
-        family_dependents: 3,
-        monthly_income: 1200000,
-        monthly_expense: 1900000,
-        remaining_income: -700000,
-        survey_recommendation: 'Layak',
-        survey_notes: 'Janda dengan 3 anak sekolah, membutuhkan bantuan modal usaha warung kecil.',
-        application_count: 1,
-        beneficiary_count: 4,
-        priority: '1',
-        recommended_amount: 3500000,
-        approved_amount: 3500000,
-        mpzis_date: '2026-08-12',
-        ppd_number: 'PPD/202608/002',
-        disbursement_date: '2026-08-15',
-        payment_method: 'Transfer',
-        bank_account: '9876543210',
-        bank_name: 'BRI',
-        bank_account_name: 'Siti Aminah',
-        asnaf: 'Fakir Miskin',
-        fund_source: 'Zakat',
-        distribution_purpose: 'Bantuan modal usaha mikro warung jajanan anak',
-        parent_occupation: 'Pedagang Keliling',
-        desil_score: 1,
-        program: 'Ekonomi',
-        request_title: 'Bantuan modal usaha mikro dhuafa',
-        status: 'Penyaluran Selesai',
-        rejection_reason: '',
-        house_index: 2,
-        asset_index: 1,
-        income_index: 1,
-        spiritual_score: 85,
-        overall_score: 92.0,
-        notes: 'Dana telah disalurkan via transfer BRI'
-      }
-    ];
+      const mustahikSeed = generateMustahikSeed();
 
-    for (const m of initialMustahik) {
-      const keys = Object.keys(m);
-      const placeholders = keys.map((_, idx) => `$${idx + 1}`).join(', ');
-      const values = keys.map(k => m[k]);
+      for (const m of mustahikSeed) {
+        const allowedCols = MUSTAHIK_COLUMNS.map(c => c.name).filter(n => n !== 'id' && n !== 'created_at' && n !== 'updated_at');
+        const cols = [];
+        const placeholders = [];
+        const values = [];
 
-      const res = await db.run(
-        `INSERT INTO mustahik (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`,
-        values
-      );
-      const mustahikId = res.lastID;
+        for (const col of allowedCols) {
+          if (m[col] !== undefined) {
+            cols.push(col);
+            values.push(m[col]);
+            placeholders.push(`$${values.length}`);
+          }
+        }
 
-      await db.run(
-        `INSERT INTO applications (mustahik_id, application_number, program, request_title, status) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [mustahikId, m.file_no, m.program, m.request_title, m.status]
-      );
+        const res = await db.run(
+          `INSERT INTO mustahik (${cols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`,
+          values
+        );
+        const mustahikId = res.lastID;
 
-      if (m.survey_date) {
+        // Create application
         await db.run(
-          `INSERT INTO assessments (mustahik_id, surveyor_name, surveyor_phone, survey_date, survey_method, narrative_family, narrative_income, narrative_conclusion, house_index, asset_index, income_index, spiritual_score, overall_score, priority, recommendation, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-           RETURNING id`,
-          [mustahikId, m.surveyor_name, m.surveyor_phone, m.survey_date, 'On Location', m.survey_notes, `Pendapatan: ${m.monthly_income}`, m.survey_notes, m.house_index, m.asset_index, m.income_index, m.spiritual_score, m.overall_score, m.priority, m.survey_recommendation, m.survey_notes]
+          `INSERT INTO applications (mustahik_id, application_number, program, request_title, status, applied_at)
+           VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP) RETURNING id`,
+          [mustahikId, m.file_no, m.program, m.request_title, m.status]
+        );
+
+        // Create assessment if surveyed
+        if (m.survey_date) {
+          await db.run(
+            `INSERT INTO assessments (
+              mustahik_id, surveyor_name, surveyor_phone, survey_date, survey_method,
+              narrative_family, narrative_income, narrative_conclusion,
+              house_index, asset_index, income_index, spiritual_score, overall_score,
+              priority, recommendation, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            RETURNING id`,
+            [
+              mustahikId, m.surveyor_name, m.surveyor_phone, m.survey_date, 'On Location',
+              m.survey_notes, `Pendapatan: Rp ${m.monthly_income.toLocaleString('id-ID')}`, m.survey_notes,
+              m.house_index, m.asset_index, m.income_index, m.spiritual_score, m.overall_score,
+              m.priority, m.survey_recommendation, m.survey_notes
+            ]
+          );
+        }
+
+        // Create MPZIS if approved
+        if (m.mpzis_date) {
+          await db.run(
+            `INSERT INTO mpzis (
+              mustahik_id, form_number, mpzis_date, program_classification, purpose,
+              asnaf, fund_source, recipient_name, recipient_type, beneficiary_count, total_amount,
+              proposed_by, examined_by, ashnaf_verifier, responsible, approved_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            RETURNING id`,
+            [
+              mustahikId, `MPZIS/202608/${String(m.id).padStart(3, '0')}`, m.mpzis_date,
+              m.program, m.distribution_purpose, m.asnaf, m.fund_source, m.name,
+              'Individu', m.beneficiary_count, m.approved_amount,
+              'Petugas Lapangan', 'Tim Verifikasi', 'Asesor Syariah', 'Kabid Penyaluran', 'Pimpinan BAZNAS'
+            ]
+          );
+        }
+
+        // Create PPD if funded or completed
+        if (m.ppd_number) {
+          await db.run(
+            `INSERT INTO ppd (
+              mustahik_id, form_number, ppd_number, transaction_number, requester_name,
+              requester_role, requester_department, amount, amount_in_words, purpose,
+              fund_source, bank_account_info, payment_type, disbursement_date
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING id`,
+            [
+              mustahikId, m.ppd_number, m.ppd_number, `TRX-202608-${String(m.id).padStart(4, '0')}`,
+              'H. Rahmat Hidayat', 'Kabid Penyaluran', 'Divisi Pendistribusian',
+              m.approved_amount, `Terbilang Rp ${m.approved_amount.toLocaleString('id-ID')}`,
+              m.distribution_purpose, 'Zakat', `${m.bank_name} - ${m.bank_account} a.n ${m.bank_account_name}`,
+              m.payment_method, m.disbursement_date
+            ]
+          );
+        }
+
+        // Create default documents
+        const defaultDocs = [
+          { doc_type: 'KTP', filename: `ktp_${m.nik}.pdf`, original_name: `KTP_${m.name}.pdf` },
+          { doc_type: 'Kartu Keluarga (KK)', filename: `kk_${m.kk_number}.pdf`, original_name: `KK_${m.name}.pdf` },
+          { doc_type: 'SKTM', filename: `sktm_${m.id}.pdf`, original_name: `SKTM_${m.kelurahan}.pdf` },
+          { doc_type: 'Foto rumah', filename: `rumah_${m.id}.jpg`, original_name: `Foto_Kondisi_Rumah.jpg` }
+        ];
+
+        for (const doc of defaultDocs) {
+          await db.run(
+            `INSERT INTO documents (mustahik_id, doc_type, filename, original_name, file_url)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [mustahikId, doc.doc_type, doc.filename, doc.original_name, `/uploads/${doc.filename}`]
+          );
+        }
+
+        // Create initial activity logs
+        await db.run(
+          `INSERT INTO activity_logs (mustahik_id, actor_name, action_type, title, description, new_status)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            mustahikId, 'Sistem BAZNAS', 'PENDAFTARAN', 'Pengajuan Berkas Diterima',
+            `Berkas permohonan bantuan ${m.program} diterima di sistem dengan nomor ${m.file_no}.`,
+            'Diajukan'
+          ]
+        );
+
+        if (m.status !== 'Diajukan') {
+          await db.run(
+            `INSERT INTO activity_logs (mustahik_id, actor_name, action_type, title, description, old_status, new_status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              mustahikId, 'Tim Verifikasi', 'STATUS_CHANGE', 'Pembaruan Tahap Berkas',
+              `Berkas telah diproses dan status diperbarui menjadi ${m.status}.`,
+              'Diajukan', m.status
+            ]
+          );
+        }
+      }
+      console.log('218 Kota Tangerang Mustahik records successfully seeded.');
+    }
+
+    // 2. Seed Program Initiatives
+    const initCount = await db.get('SELECT COUNT(*) as total FROM program_initiatives');
+    if (parseInt(initCount?.total || 0, 10) === 0) {
+      console.log('Seeding 5 Pilar program initiatives...');
+      for (const item of INITIAL_PROGRAM_INITIATIVES) {
+        await db.run(
+          `INSERT INTO program_initiatives (
+            pilar_id, code, name, pic, status, next_milestone,
+            mustahik_target, mustahik_count, budget_amount, realized_amount, percentage
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            item.pilar_id, item.code, item.name, item.pic, item.status, item.next_milestone,
+            item.mustahik_target, item.mustahik_count, item.budget_amount, item.realized_amount, item.percentage
+          ]
         );
       }
+      console.log('Program initiatives successfully seeded.');
+    }
+
+    // 3. Seed Reports Catalog
+    const reportCount = await db.get('SELECT COUNT(*) as total FROM reports');
+    if (parseInt(reportCount?.total || 0, 10) === 0) {
+      console.log('Seeding reports catalog...');
+      for (const rep of INITIAL_REPORTS) {
+        await db.run(
+          `INSERT INTO reports (
+            id, category, period, title, description, scope, status, file_url, updated_at, metrics_json
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT (id) DO NOTHING`,
+          [
+            rep.id, rep.category, rep.period, rep.title, rep.description, rep.scope,
+            rep.status, rep.file_url, rep.updated_at, rep.metrics_json
+          ]
+        );
+      }
+      console.log('Reports catalog successfully seeded.');
     }
   } catch (err) {
     console.warn('Seeding notice (non-fatal):', err.message);

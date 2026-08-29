@@ -32,6 +32,19 @@ import {
   listUsers,
   updateUserLastLogin,
   createUser,
+  getPenyaluranOverview,
+  getPenyaluranByKecamatan,
+  getPilarPrograms,
+  addPilarInitiative,
+  updatePilarInitiative,
+  deletePilarInitiative,
+  getMustahikStageCounts,
+  submitMustahikDecision,
+  importMustahikBatch,
+  getActivityLogs,
+  getLaporanList,
+  generateLaporan,
+  exportLaporanData,
 } from './repository.js';
 import './bot.js';
 
@@ -166,7 +179,7 @@ export function cacheMiddleware(ttlSeconds = 60) {
 /**
  * Invalidate cache helper called whenever database data mutations occur
  */
-export function invalidateCache(patterns = ['req:/api/mustahik*', 'req:/api/data*']) {
+export function invalidateCache(patterns = ['req:/api/mustahik*', 'req:/api/data*', 'req:/api/penyaluran*', 'req:/api/activity*']) {
   patterns.forEach(p => memoryCache.delPattern(p));
 }
 
@@ -398,6 +411,171 @@ app.get('/api/data/overview', cacheMiddleware(60), async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('Overview error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================
+// PENYALURAN DOMAIN APIS
+// ==========================================
+
+// Penyaluran Overview & Dashboard Data (Period-aware)
+app.get('/api/penyaluran/overview', cacheMiddleware(30), async (req, res) => {
+  try {
+    const data = await getPenyaluranOverview(req.query.period || '30d');
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Penyaluran overview error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Penyaluran By 13 Kecamatan Kota Tangerang (Geospatial)
+app.get('/api/penyaluran/by-kecamatan', cacheMiddleware(30), async (req, res) => {
+  try {
+    const data = await getPenyaluranByKecamatan();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Penyaluran by kecamatan error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 5 Pilar Programs & Initiatives
+app.get('/api/penyaluran/program', cacheMiddleware(30), async (req, res) => {
+  try {
+    const data = await getPilarPrograms();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Pilar programs error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Create Pilar Initiative
+app.post('/api/penyaluran/program/initiatives', async (req, res) => {
+  try {
+    const id = await addPilarInitiative(req.body);
+    invalidateCache();
+    res.status(201).json({ success: true, data: { id }, message: 'Inisiatif program berhasil ditambahkan' });
+  } catch (err) {
+    console.error('Add initiative error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Update Pilar Initiative
+app.put('/api/penyaluran/program/initiatives/:id', async (req, res) => {
+  try {
+    const ok = await updatePilarInitiative(req.params.id, req.body);
+    if (!ok) return res.status(404).json({ success: false, message: 'Inisiatif tidak ditemukan' });
+    invalidateCache();
+    res.json({ success: true, message: 'Inisiatif program berhasil diperbarui' });
+  } catch (err) {
+    console.error('Update initiative error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Delete Pilar Initiative
+app.delete('/api/penyaluran/program/initiatives/:id', async (req, res) => {
+  try {
+    await deletePilarInitiative(req.params.id);
+    invalidateCache();
+    res.json({ success: true, message: 'Inisiatif program berhasil dihapus' });
+  } catch (err) {
+    console.error('Delete initiative error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Mustahik Stage Counts
+app.get('/api/mustahik/stages/count', cacheMiddleware(15), async (req, res) => {
+  try {
+    const data = await getMustahikStageCounts();
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Stage counts error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Submit Mustahik Decision (Advance workflow / Reject)
+app.post('/api/mustahik/:id/decision', async (req, res) => {
+  try {
+    const result = await submitMustahikDecision(req.params.id, req.body);
+    invalidateCache();
+    res.json(result);
+  } catch (err) {
+    console.error('Decision error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Batch Import Mustahik
+app.post('/api/mustahik/import', async (req, res) => {
+  try {
+    const items = req.body.items || (Array.isArray(req.body) ? req.body : []);
+    const result = await importMustahikBatch(items);
+    invalidateCache();
+    res.json(result);
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Laporan Penyaluran Catalog & Insights
+app.get('/api/penyaluran/laporan', cacheMiddleware(30), async (req, res) => {
+  try {
+    const data = await getLaporanList(req.query);
+    res.json({ success: true, ...data });
+  } catch (err) {
+    console.error('Laporan list error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Generate New Laporan
+app.post('/api/penyaluran/laporan/generate', async (req, res) => {
+  try {
+    const result = await generateLaporan(req.body);
+    invalidateCache();
+    res.status(201).json({ success: true, ...result });
+  } catch (err) {
+    console.error('Generate laporan error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Export Laporan Data (CSV or JSON)
+app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
+  try {
+    const format = req.query.format || 'csv';
+    const reportData = await exportLaporanData(req.params.id, format);
+
+    if (format === 'json') {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.json"`);
+      return res.json(reportData);
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.csv"`);
+    res.send(reportData);
+  } catch (err) {
+    console.error('Export laporan error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Activity Logs
+app.get('/api/activity-logs', cacheMiddleware(15), async (req, res) => {
+  try {
+    const data = await getActivityLogs(req.query.mustahik_id, parseInt(req.query.limit || '20', 10));
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Activity logs error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
