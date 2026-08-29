@@ -49,8 +49,8 @@ function adaptApiData(items: Mustahik[]): MustahikView[] {
 
 function Card({ title, icon: Icon, children, className = '' }: { title: string; icon: typeof UserRound; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_10px_35px_rgba(15,23,42,0.035)] ${className}`}>
-      <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-slate-500">
+    <section className={`rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.02)] ${className}`}>
+      <div className="mb-3.5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-slate-500">
         <Icon className="size-4 text-emerald-600" />
         {title}
       </div>
@@ -290,7 +290,7 @@ function Tabs({ value, onChange }: { value: ProfileTab; onChange: (tab: ProfileT
 
 function Summary({ selected, expanded, onExpand }: { selected: MustahikView; expanded: boolean; onExpand: () => void }) {
   return (
-    <div id="mustahik-panel-summary" role="region" aria-label="Ringkasan Mustahik" aria-labelledby="mustahik-tab-summary" className="mustahik-profile-enter grid gap-3 p-3 sm:p-4 lg:grid-cols-2">
+    <div id="mustahik-panel-summary" role="region" aria-label="Ringkasan Mustahik" aria-labelledby="mustahik-tab-summary" className="mustahik-profile-enter grid gap-4 p-4 md:p-6 lg:grid-cols-2">
       <Card title="Profil utama" icon={UserRound}>
         <dl className="grid gap-4 text-center text-sm xl:grid-cols-2">
           {[
@@ -559,7 +559,7 @@ function Profile({
   const documentLabel = selected.missingDocument ? `Perlu ${selected.missingDocument}` : 'Dokumen lengkap';
 
   return (
-    <main className="min-w-0 bg-slate-50/60">
+    <main className="min-w-0 bg-white">
       <div className="flex min-h-12 items-center border-b border-slate-200 bg-white px-4 md:px-5">
         <div className="flex items-center gap-2">
           <button type="button" onClick={onBack} aria-label="Kembali ke antrean" className="grid size-10 place-items-center rounded-xl text-slate-500 hover:bg-slate-100 md:hidden">
@@ -947,7 +947,7 @@ export function MustahikWorkspace() {
               onFilterQuick={setQuickFilter}
             />
           </div>
-          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} md:block md:pl-[310px] lg:pl-[330px] min-w-0 bg-slate-50/50`}>
+          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} md:block md:pl-[310px] lg:pl-[330px] min-w-0 bg-white`}>
             {selected ? (
               <Profile
                 selected={selected}
