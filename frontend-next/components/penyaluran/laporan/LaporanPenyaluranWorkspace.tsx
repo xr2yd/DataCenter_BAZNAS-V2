@@ -143,10 +143,15 @@ export function LaporanPenyaluranWorkspace() {
   };
 
   const handleExport = (format: 'PDF' | 'Excel', report: ReportItem) => {
-    const exportFormat = format === 'Excel' ? 'csv' : 'json';
-    const exportUrl = api.getExportUrl(report.id, exportFormat as any);
+    const exportFormat = format === 'Excel' ? 'xlsx' : 'pdf';
+    const exportUrl = api.getExportUrl(report.id, exportFormat as any, {
+      title: report.title,
+      category: report.category,
+      period: report.period,
+      scope: report.scope,
+    });
     window.open(exportUrl, '_blank');
-    setFeedback(`Berhasil mengunduh ${format} untuk "${report.title}".`);
+    setFeedback(`Memulai unduhan berkas ${format} (${format === 'Excel' ? '.xlsx' : '.pdf'}) untuk "${report.title}".`);
   };
 
   const handleCreateReport = async (e: React.FormEvent) => {
@@ -226,7 +231,7 @@ export function LaporanPenyaluranWorkspace() {
         <div className="border-t border-emerald-100 bg-white/75 px-5 py-3 sm:px-7 lg:px-8">
           <p className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
             <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,.13)]" />
-            Terhubung ke Database BAZNAS · Ekspor CSV / JSON resmi aktif
+            Terhubung ke Database BAZNAS · Ekspor Excel (.xlsx) & Cetak PDF resmi aktif
           </p>
         </div>
       </section>
@@ -337,21 +342,21 @@ export function LaporanPenyaluranWorkspace() {
                       <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch">
                         <button
                           type="button"
-                          aria-label={`Unduh JSON: ${report.title}`}
+                          aria-label={`Cetak Dokumen PDF: ${report.title}`}
                           onClick={() => handleExport('PDF', report)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold text-zinc-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:flex-none"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/60 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 hover:border-rose-300 sm:flex-none cursor-pointer"
                         >
-                          <FileDown className="size-3.5 text-emerald-600" />
-                          JSON
+                          <FileText className="size-3.5 text-rose-600" />
+                          Cetak PDF
                         </button>
                         <button
                           type="button"
-                          aria-label={`Unduh Excel: ${report.title}`}
+                          aria-label={`Unduh Dokumen Excel: ${report.title}`}
                           onClick={() => handleExport('Excel', report)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 sm:flex-none shadow-xs"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 sm:flex-none shadow-xs cursor-pointer"
                         >
                           <FileSpreadsheet className="size-3.5" />
-                          Excel CSV
+                          Unduh Excel (.xlsx)
                         </button>
                       </div>
                     </div>

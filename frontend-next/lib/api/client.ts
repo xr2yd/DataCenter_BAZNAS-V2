@@ -188,9 +188,18 @@ export const api = {
     });
   },
 
-  getExportUrl(reportId: string, format: 'csv' | 'json' = 'csv'): string {
+  getExportUrl(
+    reportId: string,
+    format: 'xlsx' | 'pdf' | 'csv' | 'json' = 'xlsx',
+    meta?: { title?: string; category?: string; period?: string; scope?: string }
+  ): string {
     const base = getApiBase();
-    return `${base}/api/penyaluran/laporan/export/${encodeURIComponent(reportId)}?format=${format}`;
+    const params = new URLSearchParams({ format });
+    if (meta?.title) params.set('title', meta.title);
+    if (meta?.category) params.set('category', meta.category);
+    if (meta?.period) params.set('period', meta.period);
+    if (meta?.scope) params.set('scope', meta.scope);
+    return `${base}/api/penyaluran/laporan/export/${encodeURIComponent(reportId)}?${params.toString()}`;
   },
 
   // 6. Activity Logs

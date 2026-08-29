@@ -46,6 +46,7 @@ import {
   generateLaporan,
   exportLaporanData,
 } from './repository.js';
+import { generateExcelReport, generatePdfReport } from './report_generator.js';
 import './bot.js';
 
 dotenv.config();
@@ -548,21 +549,47 @@ app.post('/api/penyaluran/laporan/generate', async (req, res) => {
   }
 });
 
-// Export Laporan Data (CSV or JSON)
+// Export Laporan Data (Excel .xlsx, PDF .pdf, CSV, or JSON)
 app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
   try {
-    const format = req.query.format || 'csv';
-    const reportData = await exportLaporanData(req.params.id, format);
+    const format = (req.query.format || 'xlsx').toLowerCase();
+    const db = await (await import('./db.js')).getDb();
+    const mustahikList = await db.all('SELECT * FROM mustahik ORDER BY id ASC');
+
+    const reportMeta = {
+      id: req.params.id,
+      title: req.query.title || `Laporan Penyaluran ${req.params.id.toUpperCase()}`,
+      category: req.query.category || 'Ringkasan',
+      period: req.query.period || 'Agustus 2026',
+      scope: req.query.scope || '13 Kecamatan Kota Tangerang'
+    };
+
+    if (format === 'excel' || format === 'xlsx') {
+      const excelBuffer = await generateExcelReport(reportMeta, mustahikList);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="Laporan-Penyaluran-BAZNAS-${req.params.id}.xlsx"`);
+      return res.send(excelBuffer);
+    }
+
+    if (format === 'pdf') {
+      const pdfBuffer = await generatePdfReport(reportMeta, mustahikList);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="Laporan-Penyaluran-BAZNAS-${req.params.id}.pdf"`);
+      return res.send(pdfBuffer);
+    }
 
     if (format === 'json') {
+      const reportData = await exportLaporanData(req.params.id, 'json');
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.json"`);
       return res.json(reportData);
     }
 
+    // Default CSV
+    const csvContent = await exportLaporanData(req.params.id, 'csv');
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.csv"`);
-    res.send(reportData);
+    res.send(csvContent);
   } catch (err) {
     console.error('Export laporan error:', err);
     res.status(500).json({ success: false, message: err.message });
