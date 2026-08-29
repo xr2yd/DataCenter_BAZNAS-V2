@@ -933,8 +933,8 @@ export function MustahikWorkspace() {
       <StageRail value={stage} onChange={chooseStage} stages={stages} />
 
       <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col md:flex-row md:h-[780px] lg:h-[840px] xl:h-[860px]">
-          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col h-full border-r border-slate-200 bg-white`}>
+        <div className="flex flex-col md:flex-row">
+          <div className={`${mobileView === 'queue' ? 'flex' : 'hidden'} md:flex md:w-[310px] lg:w-[330px] shrink-0 flex-col md:h-[780px] lg:h-[840px] border-r border-slate-200 bg-white`}>
             <Queue
               items={filtered}
               allItems={items}
@@ -947,7 +947,7 @@ export function MustahikWorkspace() {
               onFilterQuick={setQuickFilter}
             />
           </div>
-          <div className={`${mobileView === 'profile' ? 'flex' : 'hidden'} md:flex flex-1 flex-col h-full overflow-y-auto min-w-0 bg-slate-50/50`}>
+          <div className={`${mobileView === 'profile' ? 'block' : 'hidden'} md:block flex-1 min-w-0 bg-slate-50/50`}>
             {selected ? (
               <Profile
                 selected={selected}
@@ -959,7 +959,7 @@ export function MustahikWorkspace() {
                 onDecision={() => setDecisionOpen(true)}
               />
             ) : (
-              <div className="grid h-full place-items-center p-8 text-center text-slate-400">
+              <div className="grid place-items-center p-8 text-center text-slate-400">
                 Memuat data mustahik...
               </div>
             )}
