@@ -204,7 +204,7 @@ function Queue({
           </button>
         </div>
       </div>
-      <div className="h-[310px] space-y-2 overflow-y-auto p-3">
+      <div className="h-[730px] space-y-2 overflow-y-auto p-3">
         {items.length === 0 ? (
           <div className="grid min-h-64 place-items-center text-center">
             <div>
