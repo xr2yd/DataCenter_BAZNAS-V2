@@ -274,12 +274,6 @@ export function LaporanPenyaluranWorkspace() {
             </button>
           </div>
         </div>
-        <div className="border-t border-emerald-100 bg-white/75 px-5 py-3 sm:px-7 lg:px-8">
-          <p className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
-            <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,.13)]" />
-            Terhubung ke Database BAZNAS · Ekspor Excel (.xlsx) & Cetak PDF resmi aktif
-          </p>
-        </div>
       </section>
 
       {/* KPI Cards */}
@@ -350,15 +344,9 @@ export function LaporanPenyaluranWorkspace() {
             </div>
           </nav>
           <div className="min-w-0 p-4 sm:p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-black text-zinc-950">{activeCategory}</h3>
-                <p className="mt-1 text-xs font-medium text-zinc-500">{filteredReports.length} laporan siap diunduh</p>
-              </div>
-              <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:inline-flex">
-                <Clock3 className="size-3.5" />
-                Database live
-              </span>
+            <div className="mb-4">
+              <h3 className="text-base font-black text-zinc-950">{activeCategory}</h3>
+              <p className="mt-1 text-xs font-medium text-zinc-500">{filteredReports.length} laporan siap diunduh</p>
             </div>
             {filteredReports.length ? (
               <div className="space-y-3" role="list" aria-label="Daftar laporan">

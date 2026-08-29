@@ -1052,30 +1052,14 @@ export function MustahikWorkspace() {
 
   return (
     <div className="mx-auto max-w-[1880px] space-y-4 pb-8 text-slate-950">
-      <header className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center xl:grid-cols-[1fr_auto_1fr]">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Data Mustahik</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-            <p className="max-w-2xl text-sm leading-6 text-slate-500">
-              Kelola pengajuan, verifikasi, dan progres penyaluran dalam satu ruang kerja yang mudah dipahami.
-            </p>
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-600 xl:hidden">
-              <span className="relative flex size-2.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
-                <span className="relative inline-flex size-2.5 rounded-full bg-emerald-600" />
-              </span>
-              <span><strong className="text-emerald-700">Data tersinkron</strong><small className="ml-1 font-semibold text-slate-400">· Realtime DB</small></span>
-            </div>
-          </div>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            Kelola pengajuan, verifikasi, dan progres penyaluran dalam satu ruang kerja yang mudah dipahami.
+          </p>
         </div>
-        <div className="hidden items-center gap-2 text-xs font-bold text-slate-600 xl:flex xl:justify-self-center">
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-emerald-600" />
-          </span>
-          <span><strong className="text-emerald-700">Database Terhubung</strong><small className="mt-0.5 block font-semibold text-slate-400">PostgreSQL / SQLite Turbo Adapter</small></span>
-        </div>
-        <div className="flex gap-2 md:justify-self-end xl:justify-self-end">
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setImportModalOpen(true)}
