@@ -215,7 +215,7 @@ export async function generateExcelReport(reportMeta = {}, mustahikList = []) {
   sheetSummary.getCell(sigRowStart + 2, 4).value = 'Wakil Ketua II Bidang Pendistribusian';
   sheetSummary.getCell(sigRowStart + 2, 4).font = { bold: true, size: 8.5 };
 
-  sheetSummary.getCell(sigRowStart + 6, 1).value = 'MOHAMMAD ROFIQ, S.Kom.';
+  sheetSummary.getCell(sigRowStart + 6, 1).value = 'AHMAD NAUFAL, S.E.I., M.E.';
   sheetSummary.getCell(sigRowStart + 6, 1).font = { bold: true, size: 9, underline: true };
   sheetSummary.getCell(sigRowStart + 7, 1).value = 'ID Amil / NIP: 3671.2026.08.012';
   sheetSummary.getCell(sigRowStart + 7, 1).font = { size: 7.5, color: { argb: 'FF64748B' } };
@@ -606,7 +606,7 @@ export function generatePdfReport(reportMeta = {}, mustahikList = []) {
       // Sign-off names
       const sigNamesY = sigBoxY + 88;
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A');
-      doc.text('MOHAMMAD ROFIQ, S.Kom.', 50, sigNamesY, { align: 'center', width: 190, underline: true });
+      doc.text('AHMAD NAUFAL, S.E.I., M.E.', 50, sigNamesY, { align: 'center', width: 190, underline: true });
       doc.text('Drs. H. ACHMAD SUBCHI, M.Si.', 330, sigNamesY, { align: 'center', width: 210, underline: true });
 
       doc.font('Helvetica').fontSize(6.5).fillColor('#64748B');
