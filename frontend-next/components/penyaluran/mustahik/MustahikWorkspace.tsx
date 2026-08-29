@@ -1026,14 +1026,14 @@ export function MustahikWorkspace() {
       {decisionOpen && selected && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-3 sm:p-5">
           <div
-            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs backdrop-fade transition-opacity"
             onClick={() => setDecisionOpen(false)}
           />
           <section
             role="dialog"
             aria-modal="true"
             aria-label="Keputusan Mustahik"
-            className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200"
+            className="modal-pop relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200"
           >
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:px-6">
               <div>
@@ -1069,8 +1069,8 @@ export function MustahikWorkspace() {
       {/* Add Mustahik Modal */}
       {addModalOpen && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-xs" onClick={() => setAddModalOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs backdrop-fade" onClick={() => setAddModalOpen(false)} />
+          <div className="modal-pop relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-lg font-black text-slate-900">Tambah Mustahik Baru</h2>
               <button type="button" onClick={() => setAddModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
@@ -1195,8 +1195,8 @@ export function MustahikWorkspace() {
       {/* Import Data Modal */}
       {importModalOpen && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-xs" onClick={() => setImportModalOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs backdrop-fade" onClick={() => setImportModalOpen(false)} />
+          <div className="modal-pop relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-lg font-black text-slate-900">Impor Data Mustahik Massal</h2>
               <button type="button" onClick={() => setImportModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">

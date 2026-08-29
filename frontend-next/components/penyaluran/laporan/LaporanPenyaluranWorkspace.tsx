@@ -429,8 +429,8 @@ export function LaporanPenyaluranWorkspace() {
       {/* Create Report Modal */}
       {createModalOpen && (
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-xs" onClick={() => setCreateModalOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs backdrop-fade" onClick={() => setCreateModalOpen(false)} />
+          <div className="modal-pop relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-lg font-black text-slate-900">Buat Laporan Penyaluran Baru</h2>
               <button type="button" onClick={() => setCreateModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">

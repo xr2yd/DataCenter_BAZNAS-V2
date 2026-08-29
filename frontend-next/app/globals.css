@@ -169,13 +169,47 @@ body {
   }
 }
 
-@keyframes mustahik-overlay-enter {
+@keyframes modal-pop-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes backdrop-fade-enter {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
+@keyframes page-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-pop {
+  animation: modal-pop-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.backdrop-fade {
+  animation: backdrop-fade-enter 180ms ease-out both;
+}
+
+.page-enter {
+  animation: page-content-enter 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .mustahik-row {
-  animation: mustahik-row-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: mustahik-row-enter 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .mustahik-toast {
@@ -183,36 +217,11 @@ body {
 }
 
 .mustahik-profile-enter {
-  animation: mustahik-profile-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.mustahik-decision-sheet {
-  animation: mustahik-sheet-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: mustahik-profile-enter 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .mustahik-overlay {
-  animation: mustahik-overlay-enter 200ms ease-out both;
-}
-
-.mustahik-stage-scroll {
-  scrollbar-width: none;
-}
-
-.mustahik-stage-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  @keyframes mustahik-sheet-enter {
-    from {
-      opacity: 0;
-      transform: translateX(28px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
+  animation: backdrop-fade-enter 180ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
