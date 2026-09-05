@@ -82,4 +82,19 @@ describe('apiFetch client', () => {
       expect.anything()
     );
   });
+
+  it('uses the master-data endpoint for operational configuration', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: [] }),
+    });
+
+    await api.getMasterData({ category: 'program' });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/penyaluran/master-data?category=program'),
+      expect.anything()
+    );
+  });
 });

@@ -286,6 +286,17 @@ export interface PenyaluranTransaction {
   status: Mustahik['status'];
 }
 
+export interface MasterDataRecord {
+  id: number | string;
+  category: string;
+  record_key: string;
+  label: string;
+  description?: string;
+  is_active: boolean;
+  sort_order: number;
+  updated_at?: string;
+}
+
 export interface ActivityLogItem {
   id: number;
   mustahik_id: number;

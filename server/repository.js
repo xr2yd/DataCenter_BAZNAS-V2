@@ -1309,6 +1309,40 @@ export async function listPenyaluranTransactions(filters = {}) {
   }));
 }
 
+export async function listMasterData(category) {
+  const db = await getDb();
+  const params = [];
+  const where = category ? 'WHERE category = $1' : '';
+  if (category) params.push(category);
+  return db.all(
+    `SELECT id, category, record_key, label, description, is_active, sort_order, updated_at
+     FROM master_data ${where}
+     ORDER BY category ASC, sort_order ASC, label ASC`,
+    params
+  );
+}
+
+export async function createMasterData(record) {
+  const db = await getDb();
+  const result = await db.run(
+    `INSERT INTO master_data (category, record_key, label, description, is_active, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [record.category, record.record_key, record.label, record.description || '', record.is_active !== false, Number(record.sort_order || 0)]
+  );
+  return result.lastID;
+}
+
+export async function updateMasterData(id, record) {
+  const db = await getDb();
+  const result = await db.run(
+    `UPDATE master_data
+     SET label = $1, description = $2, is_active = $3, sort_order = $4, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $5`,
+    [record.label, record.description || '', record.is_active !== false, Number(record.sort_order || 0), id]
+  );
+  return result.rowCount > 0;
+}
+
 /**
  * 3. 5 Pilar Programs & Sub-Program Initiatives
  */

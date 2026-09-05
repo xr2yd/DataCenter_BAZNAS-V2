@@ -195,6 +195,20 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 10. Table: master_data (configurable choices for operational workflows)
+CREATE TABLE IF NOT EXISTS master_data (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    record_key VARCHAR(100) NOT NULL,
+    label VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category, record_key)
+);
+
 -- ====================================================================
 -- Performance Indexes for Ultra-Fast Query Throughput
 -- ====================================================================
@@ -218,3 +232,4 @@ CREATE INDEX IF NOT EXISTS idx_mpzis_mustahik_id ON mpzis(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_ppd_mustahik_id ON ppd(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_documents_mustahik_id ON documents(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_wa_logs_mustahik_id ON wa_logs(mustahik_id);
+CREATE INDEX IF NOT EXISTS idx_master_data_category ON master_data(category);

@@ -35,6 +35,9 @@ import {
   getPenyaluranOverview,
   getPenyaluranByKecamatan,
   listPenyaluranTransactions,
+  listMasterData,
+  createMasterData,
+  updateMasterData,
   getPilarPrograms,
   addPilarInitiative,
   updatePilarInitiative,
@@ -455,6 +458,37 @@ app.get('/api/penyaluran/transaksi', cacheMiddleware(15), async (req, res) => {
     res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error('Transaction journal error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Master data is visible to operational users; only admin can mutate configuration.
+app.get('/api/penyaluran/master-data', authenticateToken, requireRole('penyaluran', 'surveyor'), async (req, res) => {
+  try {
+    const data = await listMasterData(req.query.category);
+    res.json({ success: true, count: data.length, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/penyaluran/master-data', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const id = await createMasterData(req.body);
+    invalidateCache();
+    res.status(201).json({ success: true, data: { id } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/penyaluran/master-data/:id', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const updated = await updateMasterData(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, message: 'Data master tidak ditemukan.' });
+    invalidateCache();
+    res.json({ success: true, data: { id: req.params.id } });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });

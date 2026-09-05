@@ -491,6 +491,19 @@ export async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS master_data (
+        id SERIAL PRIMARY KEY,
+        category VARCHAR(100) NOT NULL,
+        record_key VARCHAR(100) NOT NULL,
+        label VARCHAR(255) NOT NULL,
+        description TEXT,
+        is_active BOOLEAN DEFAULT TRUE,
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(category, record_key)
+      );
+
       CREATE INDEX IF NOT EXISTS idx_mustahik_file_no ON mustahik(file_no);
       CREATE INDEX IF NOT EXISTS idx_mustahik_nik ON mustahik(nik);
       CREATE INDEX IF NOT EXISTS idx_mustahik_phone ON mustahik(phone);
@@ -511,6 +524,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_initiatives_pilar ON program_initiatives(pilar_id);
       CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
       CREATE INDEX IF NOT EXISTS idx_activity_mustahik ON activity_logs(mustahik_id);
+      CREATE INDEX IF NOT EXISTS idx_master_data_category ON master_data(category);
     `);
 
     // Ensure all 60 columns exist in mustahik (schema evolution)
@@ -655,11 +669,43 @@ export async function initDb() {
     }
 
     await seedDataIfEmpty(db);
+    await seedMasterData(db);
     await seedDefaultUsers(db);
     return db;
   } catch (err) {
     console.error('Database initialization notice/error:', err.message);
     throw err;
+  }
+}
+
+async function seedMasterData(db) {
+  const count = await db.get('SELECT COUNT(*) as total FROM master_data');
+  if (parseInt(count?.total || 0, 10) > 0) return;
+
+  const records = [
+    ['program', 'tangerang-cerdas', 'Tangerang Cerdas', 'Pendidikan dan penguatan kapasitas belajar.', 1],
+    ['program', 'tangerang-sehat', 'Tangerang Sehat', 'Bantuan pengobatan dan layanan kesehatan.', 2],
+    ['program', 'tangerang-makmur', 'Tangerang Makmur', 'Pemberdayaan usaha dan ekonomi keluarga.', 3],
+    ['program', 'tangerang-peduli', 'Tangerang Peduli', 'Respons sosial, darurat, dan kemanusiaan.', 4],
+    ['program', 'tangerang-taqwa', 'Tangerang Taqwa', 'Dakwah, advokasi, dan pembinaan umat.', 5],
+    ['asnaf', 'fakir', 'Fakir', 'Tidak memiliki sumber penghidupan yang mencukupi.', 1],
+    ['asnaf', 'miskin', 'Miskin', 'Penghasilan belum memenuhi kebutuhan dasar.', 2],
+    ['asnaf', 'gharimin', 'Gharimin', 'Memiliki utang untuk kebutuhan yang dibenarkan.', 3],
+    ['asnaf', 'fisabilillah', 'Fisabilillah', 'Mendukung kemaslahatan dan perjuangan di jalan Allah.', 4],
+    ['dokumen', 'ktp', 'KTP', 'Identitas pemohon yang masih berlaku.', 1],
+    ['dokumen', 'kk', 'Kartu Keluarga', 'Kartu keluarga terbaru.', 2],
+    ['dokumen', 'sktm', 'SKTM / surat keterangan', 'Dokumen pendukung kondisi ekonomi bila diperlukan.', 3],
+    ['pencairan', 'transfer', 'Transfer bank', 'Pencairan melalui rekening terverifikasi.', 1],
+    ['pencairan', 'tunai', 'Tunai', 'Penyaluran langsung dengan bukti serah terima.', 2],
+  ];
+
+  for (const [category, recordKey, label, description, sortOrder] of records) {
+    await db.run(
+      `INSERT INTO master_data (category, record_key, label, description, is_active, sort_order)
+       VALUES ($1, $2, $3, $4, TRUE, $5)
+       ON CONFLICT(category, record_key) DO NOTHING`,
+      [category, recordKey, label, description, sortOrder]
+    );
   }
 }
 

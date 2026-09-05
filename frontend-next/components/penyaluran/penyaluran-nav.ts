@@ -5,6 +5,8 @@ import {
   Compass,
   FileText,
   WalletCards,
+  ListTodo,
+  Settings2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -35,6 +37,18 @@ export const PENYALURAN_NAV_ITEMS: PenyaluranNavItem[] = [
     label: 'Transaksi',
     href: '/penyaluran/transaksi',
     icon: WalletCards,
+  },
+  {
+    id: 'tugas',
+    label: 'Tugas Amil',
+    href: '/penyaluran/tugas',
+    icon: ListTodo,
+  },
+  {
+    id: 'pengaturan',
+    label: 'Pengaturan',
+    href: '/penyaluran/pengaturan',
+    icon: Settings2,
   },
   {
     id: 'program',

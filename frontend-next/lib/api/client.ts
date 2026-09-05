@@ -15,6 +15,7 @@ import type {
   PublicApplicationResult,
   PublicTrackingResult,
   PenyaluranTransaction,
+  MasterDataRecord,
 } from './types';
 
 // In browser, if NEXT_PUBLIC_API_BASE_URL is set, use it; otherwise use same origin (relative /api)
@@ -192,6 +193,19 @@ export const api = {
   async getPenyaluranTransactions(params?: Record<string, string>): Promise<ApiEnvelope<PenyaluranTransaction[]>> {
     const search = params ? `?${new URLSearchParams(params).toString()}` : '';
     return apiFetch<PenyaluranTransaction[]>(`/api/penyaluran/transaksi${search}`);
+  },
+
+  async getMasterData(params?: Record<string, string>): Promise<ApiEnvelope<MasterDataRecord[]>> {
+    const search = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiFetch<MasterDataRecord[]>(`/api/penyaluran/master-data${search}`);
+  },
+
+  async createMasterData(record: Omit<MasterDataRecord, 'id' | 'updated_at'>): Promise<ApiEnvelope<{ id: number | string }>> {
+    return apiFetch<{ id: number | string }>('/api/penyaluran/master-data', { method: 'POST', body: JSON.stringify(record) });
+  },
+
+  async updateMasterData(id: number | string, record: Partial<MasterDataRecord>): Promise<ApiEnvelope<{ id: number | string }>> {
+    return apiFetch<{ id: number | string }>(`/api/penyaluran/master-data/${id}`, { method: 'PUT', body: JSON.stringify(record) });
   },
 
   // 6. Laporan Penyaluran & Exports
