@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, ClipboardCheck, FileUp, HeartHandshake, ShieldCheck } from 'lucide-react';
 import { api, ApiError } from '@/lib/api/client';
@@ -8,6 +8,8 @@ import { api, ApiError } from '@/lib/api/client';
 const STEPS = ['Data pemohon', 'Domisili & kondisi', 'Kebutuhan bantuan', 'Dokumen', 'Konfirmasi'];
 const PROGRAMS = ['Tangerang Cerdas', 'Tangerang Sehat', 'Tangerang Makmur', 'Tangerang Peduli', 'Tangerang Taqwa'];
 const ASNAF = ['Fakir', 'Miskin', 'Gharimin', 'Fisabilillah', 'Ibnu Sabil', 'Mualaf'];
+let configuredProgramOptions = PROGRAMS;
+let configuredAsnafOptions = ASNAF;
 const KECAMATAN = ['Batuceper', 'Benda', 'Cibodas', 'Ciledug', 'Cipondoh', 'Jatiuwung', 'Karangtengah', 'Karawaci', 'Larangan', 'Neglasari', 'Periuk', 'Pinang', 'Tangerang'];
 
 type FormValues = {
@@ -41,7 +43,8 @@ function TextField({ label, value, onChange, type = 'text', required = false, hi
 
 function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   const id = `field-${label.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`;
-  return <label htmlFor={id} className="block text-sm font-bold text-slate-800">{label}<select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">{options.map((option) => <option key={option}>{option}</option>)}</select></label>;
+  const displayOptions = label === 'Program bantuan' ? configuredProgramOptions : label === 'Kategori asnaf' ? configuredAsnafOptions : options;
+  return <label htmlFor={id} className="block text-sm font-bold text-slate-800">{label}<select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">{displayOptions.map((option) => <option key={option}>{option}</option>)}</select></label>;
 }
 
 export function PublicApplicationForm() {
@@ -51,6 +54,17 @@ export function PublicApplicationForm() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [fileNumber, setFileNumber] = useState('');
+  const [, refreshConfiguredOptions] = useState(0);
+
+  useEffect(() => {
+    Promise.all([api.getPublicMasterData('program'), api.getPublicMasterData('asnaf')]).then(([programs, asnaf]) => {
+      const nextPrograms = programs.data?.map((item) => item.label).filter(Boolean) || [];
+      const nextAsnaf = asnaf.data?.map((item) => item.label).filter(Boolean) || [];
+      if (nextPrograms.length) { configuredProgramOptions = nextPrograms; setValues((current) => ({ ...current, program: nextPrograms.includes(current.program) ? current.program : nextPrograms[0]! })); }
+      if (nextAsnaf.length) { configuredAsnafOptions = nextAsnaf; setValues((current) => ({ ...current, asnaf: nextAsnaf.includes(current.asnaf) ? current.asnaf : nextAsnaf[0]! })); }
+      refreshConfiguredOptions((version) => version + 1);
+    }).catch(() => undefined);
+  }, []);
 
   const stepLabel = useMemo(() => `${step + 1} dari ${STEPS.length}`, [step]);
   const setValue = <K extends keyof FormValues>(key: K, value: FormValues[K]) => setValues((current) => ({ ...current, [key]: value }));

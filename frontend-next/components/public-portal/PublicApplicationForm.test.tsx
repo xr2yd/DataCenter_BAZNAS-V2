@@ -5,7 +5,7 @@ import { PublicApplicationForm } from './PublicApplicationForm';
 const { submitPublicApplication } = vi.hoisted(() => ({ submitPublicApplication: vi.fn() }));
 
 vi.mock('@/lib/api/client', () => ({
-  api: { submitPublicApplication },
+  api: { submitPublicApplication, getPublicMasterData: vi.fn().mockResolvedValue({ success: true, data: [] }) },
 }));
 
 describe('PublicApplicationForm', () => {

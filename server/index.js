@@ -494,6 +494,17 @@ app.put('/api/penyaluran/master-data/:id', authenticateToken, requireRole('admin
   }
 });
 
+app.get('/api/public/master-data', async (req, res) => {
+  try {
+    const category = String(req.query.category || '');
+    if (!['program', 'asnaf', 'dokumen'].includes(category)) return res.status(422).json({ success: false, message: 'Kategori tidak tersedia.' });
+    const data = await listMasterData(category);
+    res.json({ success: true, data: data.filter((item) => item.is_active) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 5 Pilar Programs & Initiatives
 app.get('/api/penyaluran/program', cacheMiddleware(30), async (req, res) => {
   try {

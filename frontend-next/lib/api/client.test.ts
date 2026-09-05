@@ -98,6 +98,21 @@ describe('apiFetch client', () => {
     );
   });
 
+  it('requests active master options for the public application form', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: [] }),
+    });
+
+    await api.getPublicMasterData('program');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/public/master-data?category=program'),
+      expect.anything()
+    );
+  });
+
   it('requests immutable approval history for one mustahik', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

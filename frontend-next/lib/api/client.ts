@@ -209,6 +209,10 @@ export const api = {
     return apiFetch<MasterDataRecord[]>(`/api/penyaluran/master-data${search}`);
   },
 
+  async getPublicMasterData(category: string): Promise<ApiEnvelope<MasterDataRecord[]>> {
+    return apiFetch<MasterDataRecord[]>(`/api/public/master-data?category=${encodeURIComponent(category)}`);
+  },
+
   async createMasterData(record: Omit<MasterDataRecord, 'id' | 'updated_at'>): Promise<ApiEnvelope<{ id: number | string }>> {
     return apiFetch<{ id: number | string }>('/api/penyaluran/master-data', { method: 'POST', body: JSON.stringify(record) });
   },
