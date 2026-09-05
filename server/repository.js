@@ -1250,6 +1250,66 @@ export async function getPenyaluranByKecamatan() {
 }
 
 /**
+ * Read-only journal of disbursement requests and completed distribution.
+ * Bank details are intentionally excluded from this operational list.
+ */
+export async function listPenyaluranTransactions(filters = {}) {
+  const db = await getDb();
+  const conditions = [];
+  const values = [];
+  const add = (condition, value) => {
+    values.push(value);
+    conditions.push(condition.replace('?', `$${values.length}`));
+  };
+
+  if (filters.status) add('m.status = ?', filters.status);
+  if (filters.program) add('m.program = ?', filters.program);
+  if (filters.kecamatan) add('m.kecamatan = ?', filters.kecamatan);
+  if (filters.search) {
+    const query = `%${String(filters.search).toLowerCase()}%`;
+    values.push(query);
+    const placeholder = `$${values.length}`;
+    conditions.push(`(
+      LOWER(COALESCE(p.transaction_number, '')) LIKE ${placeholder}
+      OR LOWER(COALESCE(p.ppd_number, '')) LIKE ${placeholder}
+      OR LOWER(COALESCE(m.name, '')) LIKE ${placeholder}
+      OR LOWER(COALESCE(m.file_no, '')) LIKE ${placeholder}
+    )`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const rows = await db.all(
+    `SELECT
+      p.id,
+      p.mustahik_id,
+      p.transaction_number,
+      p.ppd_number,
+      p.form_number,
+      p.amount,
+      p.purpose,
+      p.payment_type,
+      p.disbursement_date,
+      p.created_at,
+      m.file_no,
+      m.name AS recipient_name,
+      m.program,
+      m.asnaf,
+      m.kecamatan,
+      m.status
+    FROM ppd p
+    INNER JOIN mustahik m ON m.id = p.mustahik_id
+    ${where}
+    ORDER BY COALESCE(p.disbursement_date, p.created_at) DESC, p.id DESC`,
+    values
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    amount: Number(row.amount || 0),
+  }));
+}
+
+/**
  * 3. 5 Pilar Programs & Sub-Program Initiatives
  */
 export async function getPilarPrograms() {

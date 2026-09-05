@@ -34,6 +34,7 @@ import {
   createUser,
   getPenyaluranOverview,
   getPenyaluranByKecamatan,
+  listPenyaluranTransactions,
   getPilarPrograms,
   addPilarInitiative,
   updatePilarInitiative,
@@ -438,6 +439,22 @@ app.get('/api/penyaluran/by-kecamatan', cacheMiddleware(30), async (req, res) =>
     res.json({ success: true, data });
   } catch (err) {
     console.error('Penyaluran by kecamatan error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Read-only Penyaluran transaction journal from PPD records
+app.get('/api/penyaluran/transaksi', cacheMiddleware(15), async (req, res) => {
+  try {
+    const data = await listPenyaluranTransactions({
+      status: req.query.status,
+      program: req.query.program,
+      kecamatan: req.query.kecamatan,
+      search: req.query.search,
+    });
+    res.json({ success: true, count: data.length, data });
+  } catch (err) {
+    console.error('Transaction journal error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

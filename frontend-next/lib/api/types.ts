@@ -267,6 +267,25 @@ export interface PublicTrackingResult {
   rejection_reason?: string;
 }
 
+export interface PenyaluranTransaction {
+  id: number | string;
+  mustahik_id: number | string;
+  transaction_number?: string;
+  ppd_number?: string;
+  form_number?: string;
+  amount: number;
+  purpose?: string;
+  payment_type?: string;
+  disbursement_date?: string;
+  created_at?: string;
+  file_no?: string;
+  recipient_name: string;
+  program?: string;
+  asnaf?: string;
+  kecamatan?: string;
+  status: Mustahik['status'];
+}
+
 export interface ActivityLogItem {
   id: number;
   mustahik_id: number;

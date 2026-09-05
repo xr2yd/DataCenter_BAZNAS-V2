@@ -14,6 +14,7 @@ import type {
   ActivityLogItem,
   PublicApplicationResult,
   PublicTrackingResult,
+  PenyaluranTransaction,
 } from './types';
 
 // In browser, if NEXT_PUBLIC_API_BASE_URL is set, use it; otherwise use same origin (relative /api)
@@ -186,6 +187,11 @@ export const api = {
 
   async trackPublicApplication(query: string): Promise<ApiEnvelope<PublicTrackingResult>> {
     return apiFetch<PublicTrackingResult>(`/api/public/lacak/${encodeURIComponent(query)}`);
+  },
+
+  async getPenyaluranTransactions(params?: Record<string, string>): Promise<ApiEnvelope<PenyaluranTransaction[]>> {
+    const search = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiFetch<PenyaluranTransaction[]>(`/api/penyaluran/transaksi${search}`);
   },
 
   // 6. Laporan Penyaluran & Exports

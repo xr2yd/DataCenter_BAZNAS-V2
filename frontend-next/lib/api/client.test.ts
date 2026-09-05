@@ -67,4 +67,19 @@ describe('apiFetch client', () => {
       expect.anything()
     );
   });
+
+  it('requests the transaction journal with supplied filters', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: [] }),
+    });
+
+    await api.getPenyaluranTransactions({ status: 'Penyaluran Selesai' });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/penyaluran/transaksi?status=Penyaluran+Selesai'),
+      expect.anything()
+    );
+  });
 });

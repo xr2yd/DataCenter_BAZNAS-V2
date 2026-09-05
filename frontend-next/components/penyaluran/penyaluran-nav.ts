@@ -4,6 +4,7 @@ import {
   Layers,
   Compass,
   FileText,
+  WalletCards,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -28,6 +29,12 @@ export const PENYALURAN_NAV_ITEMS: PenyaluranNavItem[] = [
     label: 'Data Mustahik',
     href: '/penyaluran/mustahik',
     icon: Users,
+  },
+  {
+    id: 'transaksi',
+    label: 'Transaksi',
+    href: '/penyaluran/transaksi',
+    icon: WalletCards,
   },
   {
     id: 'program',
