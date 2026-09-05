@@ -252,17 +252,18 @@ export interface PublicApplicationResult {
 }
 
 export interface PublicTrackingTimelineItem {
-  key: string;
-  label: string;
+  phase: number;
+  name: string;
   description?: string;
   date?: string | null;
-  completed?: boolean;
+  status: 'completed' | 'active' | 'pending' | 'rejected';
 }
 
 export interface PublicTrackingResult {
   mustahik: Pick<Mustahik, 'file_no' | 'name' | 'kecamatan' | 'program' | 'asnaf' | 'status' | 'received_date'>;
   timeline?: PublicTrackingTimelineItem[];
-  next_action?: string;
+  status?: Mustahik['status'];
+  is_rejected?: boolean;
   rejection_reason?: string;
 }
 

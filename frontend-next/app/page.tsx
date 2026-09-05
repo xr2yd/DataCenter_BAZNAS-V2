@@ -58,7 +58,7 @@ export default function PublicPortalPage() {
 
         {/* Quick Action Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto text-left pt-4">
-          <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 space-y-2 hover:border-emerald-600 transition-colors">
+          <Link href="/cek-pengajuan" className="group p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 space-y-2 hover:border-emerald-600 hover:bg-emerald-50/40 transition-colors">
             <div className="size-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
               <FileSearch className="size-5" />
             </div>
@@ -66,9 +66,10 @@ export default function PublicPortalPage() {
             <p className="text-xs text-zinc-500">
               Lacak perkembangan verifikasi berkas dan jadwal pencairan dana bantuan dengan NIK KTP Anda.
             </p>
-          </div>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">Cek status pengajuan <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+          </Link>
 
-          <div className="p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 space-y-2 hover:border-emerald-600 transition-colors">
+          <Link href="/pengajuan" className="group p-5 rounded-2xl border border-zinc-200 bg-zinc-50/60 space-y-2 hover:border-emerald-600 hover:bg-emerald-50/40 transition-colors">
             <div className="size-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
               <UserPlus className="size-5" />
             </div>
@@ -76,7 +77,8 @@ export default function PublicPortalPage() {
             <p className="text-xs text-zinc-500">
               Ajukan permohonan bantuan biaya pendidikan, kesehatan darurat, modal usaha, dan santunan sosial.
             </p>
-          </div>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">Ajukan bantuan <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+          </Link>
         </div>
       </main>
 
