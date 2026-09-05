@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { apiFetch, ApiError } from './client';
+import { api, apiFetch, ApiError } from './client';
 
 describe('apiFetch client', () => {
   beforeEach(() => {
@@ -34,5 +34,37 @@ describe('apiFetch client', () => {
     });
 
     await expect(apiFetch('/api/notfound')).rejects.toThrow(ApiError);
+  });
+
+  it('submits a public application as multipart form data', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: { id: 44, file_no: 'MST-202609-0044' } }),
+    });
+
+    const payload = new FormData();
+    payload.append('name', 'Siti Aminah');
+    await api.submitPublicApplication(payload);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/public/pengajuan'),
+      expect.objectContaining({ method: 'POST', body: payload })
+    );
+  });
+
+  it('encodes a public tracking query in the request URL', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: { mustahik: { name: 'Siti Aminah' } } }),
+    });
+
+    await api.trackPublicApplication('MST 2026/1');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/public/lacak/MST%202026%2F1'),
+      expect.anything()
+    );
   });
 });

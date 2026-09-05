@@ -242,6 +242,30 @@ export interface MustahikDecisionPayload {
   actor_name?: string;
 }
 
+export interface PublicApplicationResult {
+  id: number | string;
+  file_no: string;
+  received_date?: string;
+  name?: string;
+  program?: string;
+  status?: Mustahik['status'];
+}
+
+export interface PublicTrackingTimelineItem {
+  key: string;
+  label: string;
+  description?: string;
+  date?: string | null;
+  completed?: boolean;
+}
+
+export interface PublicTrackingResult {
+  mustahik: Pick<Mustahik, 'file_no' | 'name' | 'kecamatan' | 'program' | 'asnaf' | 'status' | 'received_date'>;
+  timeline?: PublicTrackingTimelineItem[];
+  next_action?: string;
+  rejection_reason?: string;
+}
+
 export interface ActivityLogItem {
   id: number;
   mustahik_id: number;

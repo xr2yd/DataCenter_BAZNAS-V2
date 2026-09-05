@@ -12,6 +12,8 @@ import type {
   ReportListResponse,
   ReportItem,
   ActivityLogItem,
+  PublicApplicationResult,
+  PublicTrackingResult,
 } from './types';
 
 // In browser, if NEXT_PUBLIC_API_BASE_URL is set, use it; otherwise use same origin (relative /api)
@@ -174,7 +176,19 @@ export const api = {
     });
   },
 
-  // 5. Laporan Penyaluran & Exports
+  // 5. Public mustahik portal (no amil session required)
+  async submitPublicApplication(payload: FormData): Promise<ApiEnvelope<PublicApplicationResult>> {
+    return apiFetch<PublicApplicationResult>('/api/public/pengajuan', {
+      method: 'POST',
+      body: payload,
+    });
+  },
+
+  async trackPublicApplication(query: string): Promise<ApiEnvelope<PublicTrackingResult>> {
+    return apiFetch<PublicTrackingResult>(`/api/public/lacak/${encodeURIComponent(query)}`);
+  },
+
+  // 6. Laporan Penyaluran & Exports
   async getLaporanList(params?: Record<string, string>): Promise<ReportListResponse> {
     const search = params ? `?${new URLSearchParams(params).toString()}` : '';
     const res = await apiFetch<unknown>(`/api/penyaluran/laporan${search}`);
