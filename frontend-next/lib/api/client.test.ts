@@ -97,4 +97,19 @@ describe('apiFetch client', () => {
       expect.anything()
     );
   });
+
+  it('requests immutable approval history for one mustahik', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ success: true, data: [] }),
+    });
+
+    await api.getApprovalDecisions(12);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/mustahik/12/approvals'),
+      expect.anything()
+    );
+  });
 });
