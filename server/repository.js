@@ -1731,7 +1731,7 @@ export async function getMustahikStageCounts() {
 /**
  * 5. Submit Mustahik Decision (Approve / Reject / Advance Workflow Stage)
  */
-export async function submitMustahikDecision(id, data = {}) {
+export async function submitMustahikDecision(id, data = {}, actor = null) {
   const db = await getDb();
   const mustahik = await db.get('SELECT * FROM mustahik WHERE id = $1', [id]);
   if (!mustahik) {
@@ -1740,7 +1740,12 @@ export async function submitMustahikDecision(id, data = {}) {
 
   const currentStatus = mustahik.status || 'Diajukan';
   const action = data.action || (data.reject ? 'reject' : 'approve');
-  const actorName = data.actor_name || 'Petugas Penyaluran';
+  const actorName = actor?.name || 'Petugas Penyaluran';
+  const actorRole = actor?.role || 'penyaluran';
+  const note = String(data.notes || data.reason || '').trim();
+  if (!note) throw new Error('Catatan keputusan wajib diisi untuk kebutuhan audit.');
+  const allowedRoles = currentStatus === 'Survey' ? ['surveyor', 'admin'] : ['penyaluran', 'admin'];
+  if (!allowedRoles.includes(actorRole)) throw new Error('Peran Anda tidak berwenang mengambil keputusan pada tahap ini.');
   const today = new Date().toISOString().split('T')[0];
 
   let nextStatus = currentStatus;
@@ -1750,7 +1755,7 @@ export async function submitMustahikDecision(id, data = {}) {
   if (action === 'reject') {
     nextStatus = 'Ditolak';
     activityTitle = 'Pengajuan Ditolak';
-    activityDesc = data.notes || data.reason || 'Pengajuan permohonan ditolak berdasarkan hasil verifikasi syariah.';
+    activityDesc = note;
 
     await updateMustahik(id, {
       status: nextStatus,
@@ -1777,12 +1782,16 @@ export async function submitMustahikDecision(id, data = {}) {
       nextStatus = 'Penyaluran Selesai';
     }
 
+    if (currentStatus === 'Persetujuan MPZIS' && action === 'approve' && Number(data.approved_amount) <= 0) {
+      throw new Error('Nominal disetujui wajib diisi pada persetujuan MPZIS.');
+    }
+
     activityTitle = `Tahap ${nextStatus}`;
-    activityDesc = data.notes || `Keputusan verifikasi disetujui. Berkas diteruskan ke tahap ${nextStatus}.`;
+    activityDesc = note;
 
     const updatePayload = {
       status: nextStatus,
-      notes: data.notes ? `${mustahik.notes ? mustahik.notes + ' | ' : ''}${data.notes}` : mustahik.notes
+      notes: `${mustahik.notes ? mustahik.notes + ' | ' : ''}${note}`
     };
 
     if (nextStatus === 'Survey') {
@@ -1802,6 +1811,13 @@ export async function submitMustahikDecision(id, data = {}) {
 
     await updateMustahik(id, updatePayload);
   }
+
+  // Approval audit is append-only and stored before the visible activity/status change.
+  await db.run(
+    `INSERT INTO approval_decisions (mustahik_id, stage, action, previous_status, next_status, note, approved_amount, actor_id, actor_name, actor_role)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [id, currentStatus, action, currentStatus, nextStatus, note, data.approved_amount || null, actor?.id || null, actorName, actorRole]
+  );
 
   // Record in activity_logs
   await db.run(
@@ -1832,6 +1848,29 @@ export async function submitMustahikDecision(id, data = {}) {
     new_status: nextStatus,
     message: `Keputusan berhasil disimpan. Status mustahik kini: ${nextStatus}.`
   };
+}
+
+export async function getApprovalDecisions(filters = {}) {
+  const db = await getDb();
+  const where = [];
+  const params = [];
+  const add = (sql, value) => { params.push(value); where.push(sql.replace('?', `$${params.length}`)); };
+  if (filters.mustahik_id) add('ad.mustahik_id = ?', filters.mustahik_id);
+  if (filters.action) add('ad.action = ?', filters.action);
+  if (filters.stage) add('ad.stage = ?', filters.stage);
+  if (filters.actor_id) add('ad.actor_id = ?', filters.actor_id);
+  if (filters.from) add('ad.created_at >= ?', filters.from);
+  if (filters.to) add('ad.created_at <= ?', `${filters.to} 23:59:59`);
+  const rows = await db.all(
+    `SELECT ad.*, m.file_no, m.name AS mustahik_name
+     FROM approval_decisions ad
+     JOIN mustahik m ON m.id = ad.mustahik_id
+     ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+     ORDER BY ad.created_at DESC
+     LIMIT 300`,
+    params
+  );
+  return rows;
 }
 
 /**

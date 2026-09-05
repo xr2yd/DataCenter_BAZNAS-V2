@@ -309,6 +309,23 @@ export interface ActivityLogItem {
   created_at: string;
 }
 
+export interface ApprovalDecision {
+  id: number | string;
+  mustahik_id: number | string;
+  stage: string;
+  action: 'approve' | 'reject' | 'return' | 'hold';
+  previous_status: string;
+  next_status: string;
+  note: string;
+  approved_amount?: number | null;
+  actor_id?: number | string | null;
+  actor_name: string;
+  actor_role: string;
+  file_no?: string;
+  mustahik_name?: string;
+  created_at: string;
+}
+
 export interface ReportItem {
   id: string;
   category: string;

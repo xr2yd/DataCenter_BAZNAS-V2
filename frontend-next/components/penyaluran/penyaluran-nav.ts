@@ -7,6 +7,7 @@ import {
   WalletCards,
   ListTodo,
   Settings2,
+  ScrollText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -49,6 +50,12 @@ export const PENYALURAN_NAV_ITEMS: PenyaluranNavItem[] = [
     label: 'Pengaturan',
     href: '/penyaluran/pengaturan',
     icon: Settings2,
+  },
+  {
+    id: 'audit',
+    label: 'Audit Keputusan',
+    href: '/penyaluran/audit',
+    icon: ScrollText,
   },
   {
     id: 'program',

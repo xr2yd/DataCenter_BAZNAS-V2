@@ -504,6 +504,21 @@ export async function initDb() {
         UNIQUE(category, record_key)
       );
 
+      CREATE TABLE IF NOT EXISTS approval_decisions (
+        id SERIAL PRIMARY KEY,
+        mustahik_id INTEGER NOT NULL,
+        stage VARCHAR(100) NOT NULL,
+        action VARCHAR(30) NOT NULL,
+        previous_status VARCHAR(100) NOT NULL,
+        next_status VARCHAR(100) NOT NULL,
+        note TEXT NOT NULL,
+        approved_amount NUMERIC,
+        actor_id INTEGER,
+        actor_name VARCHAR(255) NOT NULL,
+        actor_role VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_mustahik_file_no ON mustahik(file_no);
       CREATE INDEX IF NOT EXISTS idx_mustahik_nik ON mustahik(nik);
       CREATE INDEX IF NOT EXISTS idx_mustahik_phone ON mustahik(phone);
@@ -525,6 +540,7 @@ export async function initDb() {
       CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
       CREATE INDEX IF NOT EXISTS idx_activity_mustahik ON activity_logs(mustahik_id);
       CREATE INDEX IF NOT EXISTS idx_master_data_category ON master_data(category);
+      CREATE INDEX IF NOT EXISTS idx_approval_decisions_mustahik ON approval_decisions(mustahik_id, created_at DESC);
     `);
 
     // Ensure all 60 columns exist in mustahik (schema evolution)

@@ -44,6 +44,7 @@ import {
   deletePilarInitiative,
   getMustahikStageCounts,
   submitMustahikDecision,
+  getApprovalDecisions,
   importMustahikBatch,
   getActivityLogs,
   getLaporanList,
@@ -553,13 +554,39 @@ app.get('/api/mustahik/stages/count', cacheMiddleware(15), async (req, res) => {
 });
 
 // Submit Mustahik Decision (Advance workflow / Reject)
-app.post('/api/mustahik/:id/decision', async (req, res) => {
+app.post('/api/mustahik/:id/decision', authenticateToken, requireRole('penyaluran', 'surveyor'), async (req, res) => {
   try {
-    const result = await submitMustahikDecision(req.params.id, req.body);
+    const result = await submitMustahikDecision(req.params.id, req.body, req.user);
     invalidateCache();
     res.json(result);
   } catch (err) {
     console.error('Decision error:', err);
+    const restricted = err.message.includes('tidak berwenang');
+    const invalid = err.message.includes('wajib');
+    res.status(restricted ? 403 : invalid ? 422 : 500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/mustahik/:id/approvals', authenticateToken, requireRole('penyaluran', 'surveyor'), async (req, res) => {
+  try {
+    const data = await getApprovalDecisions({ mustahik_id: req.params.id });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/penyaluran/audit-decisions', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const data = await getApprovalDecisions({
+      action: req.query.action,
+      stage: req.query.stage,
+      actor_id: req.query.actor_id,
+      from: req.query.from,
+      to: req.query.to,
+    });
+    res.json({ success: true, count: data.length, data });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });

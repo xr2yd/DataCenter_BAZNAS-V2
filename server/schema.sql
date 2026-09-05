@@ -209,6 +209,22 @@ CREATE TABLE IF NOT EXISTS master_data (
     UNIQUE(category, record_key)
 );
 
+-- 11. Table: approval_decisions (append-only decision audit trail)
+CREATE TABLE IF NOT EXISTS approval_decisions (
+    id SERIAL PRIMARY KEY,
+    mustahik_id INTEGER NOT NULL REFERENCES mustahik(id) ON DELETE CASCADE,
+    stage VARCHAR(100) NOT NULL,
+    action VARCHAR(30) NOT NULL,
+    previous_status VARCHAR(100) NOT NULL,
+    next_status VARCHAR(100) NOT NULL,
+    note TEXT NOT NULL,
+    approved_amount NUMERIC,
+    actor_id INTEGER REFERENCES users(id),
+    actor_name VARCHAR(255) NOT NULL,
+    actor_role VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ====================================================================
 -- Performance Indexes for Ultra-Fast Query Throughput
 -- ====================================================================
@@ -233,3 +249,4 @@ CREATE INDEX IF NOT EXISTS idx_ppd_mustahik_id ON ppd(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_documents_mustahik_id ON documents(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_wa_logs_mustahik_id ON wa_logs(mustahik_id);
 CREATE INDEX IF NOT EXISTS idx_master_data_category ON master_data(category);
+CREATE INDEX IF NOT EXISTS idx_approval_decisions_mustahik ON approval_decisions(mustahik_id, created_at DESC);

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api/client';
-import type { Mustahik, MustahikStageCounts } from '@/lib/api/types';
+import type { ApprovalDecision, Mustahik, MustahikStageCounts } from '@/lib/api/types';
 import {
   AlertTriangle, ArrowLeft, BadgeCheck, Briefcase, Calendar, Check, CheckCircle2, ChevronRight,
   ClipboardCheck, CreditCard, FileCheck2, Filter, HeartHandshake, History, Home, MapPin,
@@ -523,6 +523,17 @@ function Documents({ selected }: { selected: MustahikView }) {
 }
 
 function HistoryPanel({ selected }: { selected: MustahikView }) {
+  const [approvals, setApprovals] = useState<ApprovalDecision[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    api.getApprovalDecisions(selected.id).then((response) => {
+      if (active) setApprovals(response.data || []);
+    }).catch(() => {
+      if (active) setApprovals([]);
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [selected.id]);
   const activity = [
     ['25 Agu · 09:58', 'Identitas berhasil diverifikasi'],
     ['25 Agu · 09:32', `Alamat ${selected.subdistrict || selected.kecamatan} dikonfirmasi`],
@@ -531,8 +542,20 @@ function HistoryPanel({ selected }: { selected: MustahikView }) {
   return (
     <div id="mustahik-panel-history" role="region" aria-label="Riwayat Mustahik" aria-labelledby="mustahik-tab-history" className="mustahik-profile-enter p-3 sm:p-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h3 className="text-base font-extrabold">Riwayat proses</h3>
-        <p className="mt-1 text-xs text-slate-500">Jejak aktivitas terbaru pada pengajuan ini.</p>
+        <h3 className="text-base font-extrabold">Riwayat keputusan</h3>
+        <p className="mt-1 text-xs text-slate-500">Jejak keputusan bersifat tetap dan mencatat aktor, status, serta alasan.</p>
+        <div className="mt-5 space-y-3">
+          {loading ? <p className="text-sm text-slate-500">Memuat jejak keputusan…</p> : approvals.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Belum ada keputusan yang tercatat.</p> : approvals.map((decision) => (
+            <article key={decision.id} className="rounded-xl border border-slate-200 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm text-slate-900">{decision.action === 'reject' ? 'Pengajuan ditolak' : 'Keputusan disetujui'}</strong><span className="text-xs font-semibold text-slate-400">{new Date(decision.created_at).toLocaleString('id-ID')}</span></div>
+              <p className="mt-2 text-xs font-bold text-emerald-700">{decision.previous_status} → {decision.next_status}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{decision.note}</p>
+              <p className="mt-3 text-xs font-semibold text-slate-500">{decision.actor_name} · {decision.actor_role}{decision.approved_amount ? ` · ${money(Number(decision.approved_amount))}` : ''}</p>
+            </article>
+          ))}
+        </div>
+        <h3 className="mt-8 text-base font-extrabold">Aktivitas proses</h3>
+        <p className="mt-1 text-xs text-slate-500">Jejak aktivitas operasional terbaru pada pengajuan ini.</p>
         <div className="mt-5 space-y-5">
           {activity.map(([time, title], index) => (
             <div key={time} className="flex gap-3">
@@ -952,6 +975,10 @@ export function MustahikWorkspace() {
 
   const handleDecisionSubmit = async (action: 'approve' | 'reject') => {
     if (!selected) return;
+    if (!note.trim()) {
+      toast('Catatan keputusan wajib diisi untuk kebutuhan audit.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await api.submitMustahikDecision(selected.id, {

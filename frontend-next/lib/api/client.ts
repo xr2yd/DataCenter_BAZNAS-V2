@@ -171,6 +171,15 @@ export const api = {
     });
   },
 
+  async getApprovalDecisions(mustahikId: string | number): Promise<ApiEnvelope<import('./types').ApprovalDecision[]>> {
+    return apiFetch<import('./types').ApprovalDecision[]>(`/api/mustahik/${mustahikId}/approvals`);
+  },
+
+  async getApprovalAudit(params?: Record<string, string>): Promise<ApiEnvelope<import('./types').ApprovalDecision[]>> {
+    const search = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiFetch<import('./types').ApprovalDecision[]>(`/api/penyaluran/audit-decisions${search}`);
+  },
+
   async importMustahikBatch(items: Partial<Mustahik>[]): Promise<ApiEnvelope<{ count: number }>> {
     return apiFetch<{ count: number }>('/api/mustahik/import', {
       method: 'POST',
