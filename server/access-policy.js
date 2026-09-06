@@ -44,7 +44,10 @@ export function requireAnyRole(...allowedRoles) {
 }
 
 export function requireProductionSecret({ jwtSecret = process.env.JWT_SECRET, nodeEnv = process.env.NODE_ENV } = {}) {
-  const isUnsafeSecret = !jwtSecret || jwtSecret === REPOSITORY_DEFAULT_JWT_SECRET || jwtSecret === EXAMPLE_JWT_SECRET;
+  const isUnsafeSecret = !jwtSecret ||
+    jwtSecret === REPOSITORY_DEFAULT_JWT_SECRET ||
+    jwtSecret === EXAMPLE_JWT_SECRET ||
+    jwtSecret === DEVELOPMENT_JWT_SECRET;
 
   if (nodeEnv === 'production' && isUnsafeSecret) {
     throw new Error('JWT_SECRET must be set to a non-example secret in production.');
