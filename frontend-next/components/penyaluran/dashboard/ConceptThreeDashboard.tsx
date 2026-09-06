@@ -28,7 +28,7 @@ const RealKecamatanMap = dynamic(
   }
 );
 
-export function ConceptThreeDashboard() {
+export function ConceptThreeDashboard({ mapboxAccessToken }: { mapboxAccessToken?: string }) {
   const { user } = useAuth();
   const [period, setPeriod] = useState<DashboardPeriod>('30d');
   const [selectedKecamatan, setSelectedKecamatan] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function ConceptThreeDashboard() {
               </div>
               <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">13 kecamatan terjangkau</span>
             </div>
-            <RealKecamatanMap selectedKecamatan={selectedKecamatan} onSelectKecamatan={setSelectedKecamatan} liveData={kecamatanData} periodData={data.map} />
+            <RealKecamatanMap selectedKecamatan={selectedKecamatan} onSelectKecamatan={setSelectedKecamatan} liveData={kecamatanData} periodData={data.map} mapboxAccessToken={mapboxAccessToken} />
             {selectedKecamatan && (
               <div className="mt-4 flex flex-col gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>

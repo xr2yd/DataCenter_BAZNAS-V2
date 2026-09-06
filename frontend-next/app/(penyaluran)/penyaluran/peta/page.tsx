@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function PetaPage() {
-  return <PetaSebaranWorkspace />;
+  return <PetaSebaranWorkspace mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN} />;
 }

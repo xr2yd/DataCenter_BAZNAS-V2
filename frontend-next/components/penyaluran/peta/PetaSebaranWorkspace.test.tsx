@@ -5,8 +5,8 @@ import { PetaSebaranWorkspace } from './PetaSebaranWorkspace';
 const getPenyaluranByKecamatan = vi.hoisted(() => vi.fn());
 
 vi.mock('next/dynamic', () => ({
-  default: () => function RealKecamatanMapMock({ onSelectKecamatan }: { onSelectKecamatan: (name: string) => void }) {
-    return <button type="button" onClick={() => onSelectKecamatan('Karawaci')}>Pilih Karawaci</button>;
+  default: () => function RealKecamatanMapMock({ onSelectKecamatan, mapboxAccessToken }: { onSelectKecamatan: (name: string) => void; mapboxAccessToken?: string }) {
+    return <button type="button" data-mapbox-token={mapboxAccessToken} onClick={() => onSelectKecamatan('Karawaci')}>Pilih Karawaci</button>;
   },
 }));
 
@@ -17,6 +17,12 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 describe('PetaSebaranWorkspace', () => {
+  it('forwards the server-provided public Mapbox token to the map renderer', () => {
+    render(<PetaSebaranWorkspace mapboxAccessToken="public-mapbox-token" />);
+
+    expect(screen.getByRole('button', { name: 'Pilih Karawaci' })).toHaveAttribute('data-mapbox-token', 'public-mapbox-token');
+  });
+
   beforeEach(() => {
     getPenyaluranByKecamatan.mockReset();
     getPenyaluranByKecamatan.mockRejectedValue(new Error('Data API belum tersedia'));

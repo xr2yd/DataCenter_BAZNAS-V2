@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function PenyaluranPage() {
-  return <ConceptThreeDashboard />;
+  return <ConceptThreeDashboard mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN} />;
 }
