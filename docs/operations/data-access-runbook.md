@@ -24,7 +24,9 @@ pg_dump "$DATABASE_URL" > "baznas-$(date +%F).sql"
 
 ### Ketentuan Variabel Lingkungan Produksi:
 - **`JWT_SECRET`**: Wajib diset string acak dengan entropi tinggi (minimal 32 karakter acak). Backend akan *fail-closed* (menolak start) jika `NODE_ENV=production` dan `JWT_SECRET` kosong atau memakai nilai default/contoh (`baznas_tangkot_super_secret_jwt_key_2026`, `change-me-in-production`, `development-only-jwt-secret`).
+- **`DATABASE_URL`**: Wajib menunjuk PostgreSQL yang dapat diakses. Saat `NODE_ENV=production`, backend menolak start bila PostgreSQL gagal; SQLite fallback dan demo seed tidak pernah dipakai.
 - **`FRONTEND_URL`**: Wajib diset origin resmi frontend (contoh: `https://muhammadrofiq.my.id`). Di mode produksi, CORS akan menolak browser origin tanpa konfigurasi ini.
+- **`frontend-next/.env.local`**: Simpan `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` hanya di VPS. Next.js dibangun di VPS agar token domain-restricted ini tersedia saat build dan tidak disalin melalui GitHub Actions.
 - **`NEXT_PUBLIC_DEMO_MODE`**: **JANGAN** diset atau set ke string kosong/`false` di VPS produksi. Nilai `true` hanya diperuntukkan bagi demo offline lokal. Pada lingkungan produksi, sistem wajib menyajikan data operasional riil dan menampilkan status kosong (*empty state*) jujur bila belum ada transaksi tervalidasi.
 
 ---
@@ -87,34 +89,41 @@ Lakukan pengujian cepat menggunakan `curl` untuk memastikan matriks akses berjal
 
 ---
 
-## 4. Prosedur Rollback (*API & Frontend Rollback*)
+## 4. Rilis Otomatis Aman (*GitHub → VPS*)
+
+Workflow GitHub hanya memvalidasi commit. VPS membangun dan merilis SHA yang tervalidasi melalui `deploy/release-vps.sh`; proses ini menggunakan `npm ci`, tidak menjalankan Docker, dan mempertahankan `.env`, `frontend-next/.env.local`, serta `uploads`.
+
+Secrets GitHub yang wajib tersedia:
+- `VPS_HOST`
+- `VPS_USERNAME`
+- `SSH_PRIVATE_KEY`
+- `VPS_KNOWN_HOSTS` — baris host key VPS dari `ssh-keyscan -H <host>` yang telah diverifikasi oleh administrator.
+
+Setelah workflow selesai, verifikasi:
+
+```bash
+pm2 status
+curl -fsS http://127.0.0.1:3001/api/health
+curl -fsSI http://127.0.0.1:3002/penyaluran
+```
+
+Jika salah satu health check gagal, script otomatis mengembalikan source ke SHA sebelumnya, membangun ulang, dan merestart PM2.
+
+## 5. Prosedur Rollback Manual (*API & Frontend*)
 
 Apabila ditemukan anomali kritis pasca-deploy:
 
 1. **Identifikasi Commit SHA Sebelumnya:**
    ```bash
-   cd /var/www/baznas-data-center
+   cd /home/xruncy/repo
    git log -n 5 --oneline
    ```
 2. **Rollback Source Code:**
    ```bash
-   git checkout <PREVIOUS_COMMIT_SHA>
+   bash deploy/release-vps.sh <PREVIOUS_COMMIT_SHA>
    ```
-3. **Rebuild & Restart:**
-   ```bash
-   # Backend
-   cd /var/www/baznas-data-center/server
-   npm install --omit=dev
-   pm2 restart baznas-api
-
-   # Frontend
-   cd /var/www/baznas-data-center/frontend-next
-   npm install --omit=dev
-   npm run build
-   pm2 restart baznas-frontend
-   ```
-4. **Verifikasi Ulang Pasca-Rollback:**
+3. **Verifikasi Ulang Pasca-Rollback:**
    ```bash
    curl -fsS http://127.0.0.1:3001/api/health
-   curl -fsS http://127.0.0.1:3000
+   curl -fsSI http://127.0.0.1:3002/penyaluran
    ```

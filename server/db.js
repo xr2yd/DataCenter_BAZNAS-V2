@@ -10,6 +10,7 @@ import {
   INITIAL_PROGRAM_INITIATIVES,
   INITIAL_REPORTS
 } from './seed_data.js';
+import { allowsDemoSeed, requiresPostgres } from './runtime-policy.js';
 
 const { Pool } = pg;
 
@@ -145,10 +146,10 @@ function adaptSqlForSqlite(sql) {
  * Provides a database adapter with SQLite-compatible method ergonomics
  * (get, all, run, query, exec) powered by PostgreSQL Pool with resilient local fallback.
  */
-export async function getDb() {
+export async function getDb({ env = process.env, poolFactory = getPool } = {}) {
   if (dbWrapper) return dbWrapper;
 
-  const pool = getPool();
+  const pool = poolFactory();
 
   try {
     // Probe PostgreSQL connection with timeout
@@ -196,6 +197,12 @@ export async function getDb() {
       }
     };
   } catch (pgErr) {
+    if (requiresPostgres(env)) {
+      const error = new Error('PostgreSQL wajib tersedia di production. Backend tidak akan menggunakan SQLite fallback.');
+      error.code = 'POSTGRES_REQUIRED';
+      error.cause = pgErr;
+      throw error;
+    }
     console.warn(`⚠️ PostgreSQL unavailable (${pgErr.message}), activating high-speed SQLite adapter engine...`);
     const sqlitePath = path.resolve(__dirname, 'baznas_demo.db');
     const sqliteDb = await open({
@@ -684,9 +691,13 @@ export async function initDb() {
       console.warn('Column sync notice:', colErr.message);
     }
 
-    await seedDataIfEmpty(db);
-    await seedMasterData(db);
-    await seedDefaultUsers(db);
+    if (allowsDemoSeed()) {
+      await seedDataIfEmpty(db);
+      await seedMasterData(db);
+      await seedDefaultUsers(db);
+    } else {
+      console.log('Production mode: demo data and default-user seeding are disabled.');
+    }
     return db;
   } catch (err) {
     console.error('Database initialization notice/error:', err.message);

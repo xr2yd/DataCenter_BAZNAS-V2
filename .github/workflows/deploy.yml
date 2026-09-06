@@ -1,72 +1,56 @@
-name: Build and Auto Deploy to VPS
+name: Validate and Deploy BAZNAS
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  build-and-deploy:
+  validate-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout exact commit
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: npm
 
-      - name: Install Root Dependencies
-        run: npm ci
-
-      - name: Build Root Frontend Bundle
-        run: npm run build
-
-      - name: Install Next.js Dependencies & Build
+      - name: Validate backend
         run: |
-          cd frontend-next
           npm ci
+          node --test server/access-policy.test.js server/access-control.integration.test.js server/repository.metrics.test.js server/audit-log.test.js server/public-tracking.repository.test.js server/runtime-policy.test.js deploy/release-vps.test.js
+
+      - name: Validate frontend
+        working-directory: frontend-next
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
           npm run build
 
-      - name: Deploy to VPS via SCP
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: 'dist/*,frontend-next/*,frontend-next/.next/*,server/*,package.json,package-lock.json'
-          target: '/home/xruncy/repo'
+      - name: Configure VPS SSH trust
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
-      - name: Remote Setup, PM2 Next & Backend & Nginx Reload
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            sudo mkdir -p /var/www/baznas-tangkot-v2
-            sudo cp -r /home/xruncy/repo/dist/* /var/www/baznas-tangkot-v2/ || true
-            sudo chown -R www-data:www-data /var/www/baznas-tangkot-v2 || true
-            
-            cd /home/xruncy/repo
-            npm install --omit=dev
-            
-            cd /home/xruncy/repo/frontend-next
-            npm install --omit=dev
-            
-            # Restart or Start Next.js App Router on Port 3002
-            pm2 restart baznas-frontend-next || pm2 start "npm run start" --name "baznas-frontend-next" -- -p 3002
-            
-            # Restart Express Backend API on Port 5000 / 3001
-            cd /home/xruncy/repo
-            pm2 restart baznas-backend || pm2 start server/index.js --name "baznas-backend"
-            
-            pm2 save
-            sudo systemctl reload nginx || sudo service nginx reload
-            echo "Auto-Deployment of Next.js & Backend completed successfully!"
+      - name: Deploy validated commit on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes "$VPS_USERNAME@$VPS_HOST" \
+            "git -C /home/xruncy/repo fetch --no-tags origin main && git -C /home/xruncy/repo show $TARGET_SHA:deploy/release-vps.sh | bash -s -- $TARGET_SHA"
