@@ -295,6 +295,8 @@ const upload = multer({
 app.locals.dataAccessRepository = {
   createPublicApplication,
   trackApplication,
+  exportLaporanData,
+  appendActivityLog,
 };
 
 // ==========================================
@@ -687,17 +689,8 @@ app.post('/api/penyaluran/laporan/generate', authenticateToken, requireRole('adm
 app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const format = (req.query.format || 'xlsx').toLowerCase();
-    const db = await (await import('./db.js')).getDb();
-    const mustahikList = await db.all('SELECT * FROM mustahik ORDER BY id ASC');
-
-    const reportMeta = {
-      id: req.params.id,
-      title: req.query.title || `Laporan Penyaluran ${req.params.id.toUpperCase()}`,
-      category: req.query.category || 'Ringkasan',
-      period: req.query.period || 'Agustus 2026',
-      scope: req.query.scope || '13 Kecamatan Kota Tangerang'
-    };
-    const auditExport = () => appendActivityLog({
+    const repository = req.app.locals.dataAccessRepository || { exportLaporanData };
+    const auditExport = () => (req.app.locals.dataAccessRepository?.appendActivityLog || appendActivityLog)({
       actor: req.user,
       action: 'REPORT_EXPORT',
       target: `laporan:${req.params.id}`,
@@ -706,6 +699,15 @@ app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('ad
     });
 
     if (format === 'excel' || format === 'xlsx') {
+      const db = await (await import('./db.js')).getDb();
+      const mustahikList = await db.all('SELECT * FROM mustahik ORDER BY id ASC');
+      const reportMeta = {
+        id: req.params.id,
+        title: req.query.title || `Laporan Penyaluran ${req.params.id.toUpperCase()}`,
+        category: req.query.category || 'Ringkasan',
+        period: req.query.period || 'Agustus 2026',
+        scope: req.query.scope || '13 Kecamatan Kota Tangerang'
+      };
       const excelBuffer = await generateExcelReport(reportMeta, mustahikList);
       await auditExport();
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -714,6 +716,15 @@ app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('ad
     }
 
     if (format === 'pdf') {
+      const db = await (await import('./db.js')).getDb();
+      const mustahikList = await db.all('SELECT * FROM mustahik ORDER BY id ASC');
+      const reportMeta = {
+        id: req.params.id,
+        title: req.query.title || `Laporan Penyaluran ${req.params.id.toUpperCase()}`,
+        category: req.query.category || 'Ringkasan',
+        period: req.query.period || 'Agustus 2026',
+        scope: req.query.scope || '13 Kecamatan Kota Tangerang'
+      };
       const pdfBuffer = await generatePdfReport(reportMeta, mustahikList);
       await auditExport();
       res.setHeader('Content-Type', 'application/pdf');
@@ -722,7 +733,7 @@ app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('ad
     }
 
     if (format === 'json') {
-      const reportData = await exportLaporanData(req.params.id, 'json');
+      const reportData = await (repository.exportLaporanData ? repository.exportLaporanData(req.params.id, 'json') : exportLaporanData(req.params.id, 'json'));
       await auditExport();
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.json"`);
@@ -730,7 +741,7 @@ app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('ad
     }
 
     // Default CSV
-    const csvContent = await exportLaporanData(req.params.id, 'csv');
+    const csvContent = await (repository.exportLaporanData ? repository.exportLaporanData(req.params.id, 'csv') : exportLaporanData(req.params.id, 'csv'));
     await auditExport();
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.csv"`);
@@ -832,7 +843,7 @@ app.get('/api/public/lacak/:query', async (req, res) => {
 app.get('/api/mustahik/export/data', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const data = await exportMustahikData();
-    await appendActivityLog({
+    await (req.app.locals.dataAccessRepository?.appendActivityLog || appendActivityLog)({
       actor: req.user,
       action: 'MUSTAHIK_EXPORT',
       target: 'mustahik:all',

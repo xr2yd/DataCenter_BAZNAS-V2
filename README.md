@@ -133,12 +133,18 @@ Endpoint yang digunakan:
 
 Model default yang digunakan: `kimi-k2.6`. Pastikan API key valid dan model tersedia di akun Ollama Cloud Anda.
 
-## Catatan Keamanan & Demo
+## Operasional Produksi & Hardening
 
-- Ini adalah sistem **demo lokal**. Jangan gunakan di production tanpa hardening.
-- Token Telegram dan API key disimpan di `.env`.
-- SQLite hanya untuk demo lokal. Untuk production, gunakan PostgreSQL/MySQL.
-- Notifikasi otomatis ke Mustahik belum diimplementasikan karena membutuhkan chat ID Telegram. Fitur ini akan ditambahkan saat migrasi ke WhatsApp.
+Untuk panduan lengkap operasional produksi, manajemen rahasia (`JWT_SECRET`), verifikasi hak akses per divisi, pencadangan database, dan prosedur *rollback*, rujuk ke dokumen runbook:
+- [Data & Access Foundation Operations Runbook](docs/operations/data-access-runbook.md)
+
+Pemeriksaan wajib pra-deploy di VPS:
+```bash
+test -n "$JWT_SECRET" && test "$JWT_SECRET" != "baznas_tangkot_super_secret_jwt_key_2026"
+curl -fsS http://127.0.0.1:3001/api/health
+pm2 status
+pg_dump "$DATABASE_URL" > "baznas-$(date +%F).sql"
+```
 
 ## Development Commands
 

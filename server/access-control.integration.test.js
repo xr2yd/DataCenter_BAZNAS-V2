@@ -49,6 +49,13 @@ before(async () => {
     file_no: 'MST-TEST-0901',
     uploaded_files: files.length,
   });
+  app.locals.dataAccessRepository.exportLaporanData = async (id, format) => ({
+    report_id: id,
+    format,
+    total_records: 0,
+    data: [],
+  });
+  app.locals.dataAccessRepository.appendActivityLog = async () => ({ id: 1 });
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => {
     server.once('listening', resolve);
@@ -241,4 +248,9 @@ test('production CORS accepts each configured origin without a wildcard', async 
     assert.equal(allowed, true);
   }
   assert.equal(options.credentials, true);
+});
+
+test('denies a report export without a Bearer token and permits an Amil token', async () => {
+  assert.equal((await request('/api/penyaluran/laporan/export/lap-1?format=json')).status, 401);
+  assert.equal((await request('/api/penyaluran/laporan/export/lap-1?format=json', { token: tokenFor('penyaluran') })).status, 200);
 });
