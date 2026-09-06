@@ -1,10 +1,40 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LaporanPenyaluranWorkspace } from './LaporanPenyaluranWorkspace';
 
 describe('LaporanPenyaluranWorkspace', () => {
+  let downloaded: { href: string; filename: string }[];
+  let exportRequests: { url: string; authorization: string | null }[];
+  let exportResponse: Response;
+
+  beforeEach(() => {
+    downloaded = [];
+    exportRequests = [];
+    localStorage.setItem('baznas_auth_token', 'test-session-token');
+    exportResponse = new Response('report content', { headers: { 'content-type': 'application/pdf' } });
+    vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes('/laporan/export/')) {
+        exportRequests.push({ url, authorization: new Headers(options?.headers).get('Authorization') });
+        return exportResponse;
+      }
+      return new Response(JSON.stringify({ reports: [] }), { headers: { 'content-type': 'application/json' } });
+    }));
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    vi.stubGlobal('URL', class extends URL {
+      static override createObjectURL = vi.fn(() => 'blob:report-download');
+      static override revokeObjectURL = vi.fn();
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloaded.push({ href: this.href, filename: this.download });
+    });
+  });
+
   afterEach(() => {
+    cleanup();
     vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it('renders the library before a balanced insight grid', () => {
@@ -35,27 +65,61 @@ describe('LaporanPenyaluranWorkspace', () => {
     expect(screen.queryByText('Rekapitulasi Penyaluran ZIS')).not.toBeInTheDocument();
   });
 
-  it('confirms that a PDF export is ready for backend processing', () => {
+  it.each([
+    ['PDF', 'Cetak Dokumen PDF', 'pdf'],
+    ['Excel', 'Unduh Dokumen Excel', 'xlsx'],
+  ])('downloads %s with session authorization and a Blob URL', async (_label, button, extension) => {
     render(<LaporanPenyaluranWorkspace />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Siapkan PDF: Rekapitulasi Penyaluran ZIS' }));
+    fireEvent.click(screen.getByRole('button', { name: `${button}: Rekapitulasi Penyaluran ZIS` }));
 
-    expect(screen.getByRole('status')).toHaveTextContent('PDF untuk Rekapitulasi Penyaluran ZIS siap diproses');
+    await waitFor(() => expect(downloaded).toHaveLength(1));
+    expect(exportRequests).toEqual([{ url: expect.stringContaining(`format=${extension}`), authorization: 'Bearer test-session-token' }]);
+    expect(exportRequests[0]?.url).not.toContain('test-session-token');
+    expect(downloaded[0]).toEqual({ href: 'blob:report-download', filename: `Rekapitulasi Penyaluran ZIS.${extension}` });
+    const blob = vi.mocked(URL.createObjectURL).mock.calls[0]?.[0] as Blob;
+    expect(await blob.text()).toBe('report content');
+    expect(screen.getByRole('status')).toHaveTextContent('Memulai unduhan');
+    await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:report-download'));
+  });
+
+  it.each([
+    [401, /masuk kembali/i],
+    [403, /tidak memiliki izin/i],
+    [500, /coba lagi/i],
+  ])('shows a usable error for HTTP %s without downloading an error document', async (status, message) => {
+    exportResponse = new Response(JSON.stringify({ message: 'Request rejected' }), {
+      status, headers: { 'content-type': 'application/json' },
+    });
+    render(<LaporanPenyaluranWorkspace />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cetak Dokumen PDF: Rekapitulasi Penyaluran ZIS' }));
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(message));
+    expect(downloaded).toHaveLength(0);
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('shows a retry error for a network failure', async () => {
+    render(<LaporanPenyaluranWorkspace />);
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cetak Dokumen PDF: Rekapitulasi Penyaluran ZIS' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/coba lagi/i));
+    expect(downloaded).toHaveLength(0);
   });
 
   it('auto-dismisses and allows dismissing feedback toast actions', () => {
     vi.useFakeTimers();
     render(<LaporanPenyaluranWorkspace />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Buat laporan' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Draft laporan baru siap disusun');
+    fireEvent.click(screen.getByRole('button', { name: /^per asnaf/i }));
+    expect(screen.getByRole('status')).toHaveTextContent('Menampilkan laporan kategori Per Asnaf');
 
     fireEvent.click(screen.getByRole('button', { name: 'Tutup notifikasi' }));
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Buat laporan' }));
+    fireEvent.click(screen.getByRole('button', { name: /^per program/i }));
     act(() => {
-      vi.advanceTimersByTime(3200);
+      vi.advanceTimersByTime(3500);
     });
 
     expect(screen.getByRole('status')).toBeEmptyDOMElement();

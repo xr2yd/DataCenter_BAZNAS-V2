@@ -380,15 +380,24 @@ export async function createPublicApplication(data, files = []) {
 /**
  * Track status and full timeline by file_no, NIK, or phone using case-insensitive search
  */
+export async function findTrackedMustahik(db, query) {
+  const value = String(query || '').trim();
+  if (!value) return null;
+  return db.get(
+    `SELECT * FROM mustahik
+     WHERE LOWER(file_no) = LOWER($1) OR nik = $2 OR phone = $3 OR kk_number = $4
+     ORDER BY id DESC
+     LIMIT 1`,
+    [value, value, value, value]
+  );
+}
+
 export async function trackApplication(query) {
   const db = await getDb();
   if (!query) return null;
 
   const q = String(query).trim();
-  const mustahik = await db.get(
-    `SELECT * FROM mustahik WHERE file_no ILIKE $1 OR nik ILIKE $2 OR phone ILIKE $3 OR kk_number ILIKE $4 ORDER BY id DESC LIMIT 1`,
-    [q, q, q, q]
-  );
+  const mustahik = await findTrackedMustahik(db, q);
 
   if (!mustahik) return null;
 

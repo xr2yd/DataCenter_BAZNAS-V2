@@ -235,6 +235,24 @@ export const api = {
     });
   },
 
+  async exportLaporan(
+    reportId: string,
+    format: 'xlsx' | 'pdf',
+    meta?: { title?: string; category?: string; period?: string; scope?: string }
+  ): Promise<Blob> {
+    const headers = new Headers();
+    const token = getClientToken();
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const response = await fetch(api.getExportUrl(reportId, format, meta), { headers });
+    if (!response.ok) {
+      const payload = response.headers.get('content-type')?.includes('application/json')
+        ? await response.json().catch(() => null)
+        : null;
+      throw new ApiError(payload?.message || payload?.error || 'Gagal mengunduh laporan.', response.status, payload);
+    }
+    return response.blob();
+  },
+
   getExportUrl(
     reportId: string,
     format: 'xlsx' | 'pdf' | 'csv' | 'json' = 'xlsx',

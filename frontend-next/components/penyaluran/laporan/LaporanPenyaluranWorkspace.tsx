@@ -18,7 +18,7 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { api } from '@/lib/api/client';
+import { api, ApiError } from '@/lib/api/client';
 import type { ReportItem, ReportKpi, ReportDistributionItem } from '@/lib/api/types';
 import {
   ASNAF_DISTRIBUTION,
@@ -171,16 +171,39 @@ export function LaporanPenyaluranWorkspace() {
     setFeedback(`Menampilkan laporan kategori ${category}.`);
   };
 
-  const handleExport = (format: 'PDF' | 'Excel', report: ReportItem) => {
+  const handleExport = async (format: 'PDF' | 'Excel', report: ReportItem) => {
     const exportFormat = format === 'Excel' ? 'xlsx' : 'pdf';
-    const exportUrl = api.getExportUrl(report.id, exportFormat as any, {
-      title: report.title,
-      category: report.category,
-      period: report.period,
-      scope: report.scope,
-    });
-    window.open(exportUrl, '_blank');
-    setFeedback(`Memulai unduhan berkas ${format} (${format === 'Excel' ? '.xlsx' : '.pdf'}) untuk "${report.title}".`);
+    setFeedback(`Menyiapkan unduhan ${format} untuk "${report.title}"...`);
+    try {
+      const blob = await api.exportLaporan(report.id, exportFormat, {
+        title: report.title,
+        category: report.category,
+        period: report.period,
+        scope: report.scope,
+      });
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      const filename = report.title.replace(/[^\p{L}\p{N} ._-]/gu, '_').trim() || 'Laporan';
+      link.download = `${filename}.${exportFormat}`;
+      document.body.appendChild(link);
+      try {
+        link.click();
+      } finally {
+        link.remove();
+        // Release after the browser has had a turn to start the download.
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+      }
+      setFeedback(`Memulai unduhan berkas ${format} (.${exportFormat}) untuk "${report.title}".`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setFeedback('Sesi Anda berakhir. Silakan masuk kembali untuk mengunduh laporan.');
+      } else if (error instanceof ApiError && error.status === 403) {
+        setFeedback('Anda tidak memiliki izin untuk mengunduh laporan. Hubungi admin.');
+      } else {
+        setFeedback('Gagal mengunduh laporan. Periksa koneksi Anda dan coba lagi.');
+      }
+    }
   };
 
   const handleCreateReport = async (e: React.FormEvent) => {
