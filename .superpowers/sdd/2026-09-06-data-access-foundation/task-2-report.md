@@ -50,3 +50,32 @@
 - Validation checks declared MIME type against extension, but does not inspect file magic bytes or run malware scanning. Those require a content-inspection service or library and quarantine workflow.
 - The repository includes an existing Nginx example that serves `/uploads` directly. Express now protects `/uploads`, but a deployment using that direct alias must separately remove it or replace it with an authenticated internal-redirect design. Deployment/frontend configuration was outside this Task 2 assignment.
 - Public tracking remains a possession-based lookup using an exact file number, NIK, phone, or family-card number. Minimum length and exact matching prevent trivial partial enumeration, but rate limiting is not yet implemented.
+
+## Review fix round 1 — 2026-09-06
+
+Implementation commit: `5d09021685ea69d85f67c1a553b865d51ff52102`.
+
+### P1: literal public tracking
+
+- Confirmed the original raw `ILIKE` predicate treated user-supplied `%` and `_` as patterns. The earlier report's claim of exact matching was incorrect for those inputs.
+- Completed the inherited uncommitted lookup extraction and changed the repository predicate to literal equality: case-insensitive equality for file numbers, exact equality for NIK, phone, and family-card numbers. The public endpoint retains its minimum-length check; a wildcard input now cannot broaden the lookup.
+- Added an in-memory PostgreSQL-compatible regression using existing `pg-mem`. It covers wildcard-only and mixed wildcard patterns, all numeric identifier types, and case-insensitive exact file numbers. It never connects to the configured database.
+- RED: temporarily restored the original `ILIKE` predicate in the inherited lookup helper and ran `node --test server/public-tracking.repository.test.js`: 1 failed, 2 passed. `%%%%%%%%` returned the seeded applicant when the test expected no match.
+- GREEN: restored literal equality and reran the same command: 3 passed, 0 failed.
+
+### P1: authenticated report downloads
+
+- The review assignment explicitly extends the original backend-only brief to fix the existing report UI. Replaced `window.open` with the API client's session-token convention, authenticated fetch, and a Blob download for PDF and XLSX. The token is sent only in the Authorization header; the existing export URL metadata and server role protection remain intact.
+- Download names use a sanitized report title and the selected extension. Temporary anchors are removed and Blob URLs are revoked after the browser has a turn to start the download. Feedback confirms the download only after a successful response and gives actionable Indonesian messages for expired sessions, denied permissions, and server/network failures.
+- RED: `npm test -- components/penyaluran/laporan/LaporanPenyaluranWorkspace.test.tsx --reporter=dot` in `frontend-next`: 6 failed, 4 passed with the old `window.open` implementation. PDF/XLSX produced no Blob download; HTTP 401/403/500 and network failures still displayed success instead of an actionable error.
+- GREEN: `npm test -- components/penyaluran/laporan/LaporanPenyaluranWorkspace.test.tsx lib/api/client.test.ts --reporter=dot`: 18 passed, 0 failed. Tests exercise the real component, API URL builder, and session reader with only network/browser download boundaries substituted. They verify the Authorization header, downloaded body and extension, URL cleanup, and absence of downloads on errors.
+- Updated two stale assertions in the existing component test file to current export button labels and category-feedback behavior; the prior expectations described UI behavior no longer present before this fix.
+
+### Final verification and bounds
+
+- `node --test server/access-policy.test.js server/access-control.integration.test.js server/audit-log.test.js server/public-tracking.repository.test.js`: 25 passed, 0 failed.
+- `node --check server/repository.js`, `git diff --check`, and staged diff check: passed.
+- Full `npm run typecheck`: blocked by the existing missing `mapbox-gl` dependency at `components/penyaluran/map/RealKecamatanMap.tsx:5` (TS2307). No changed production file reported an error.
+- An isolated strict typecheck extending the existing frontend tsconfig and including the changed component/API plus their tests passed. Command: `node node_modules/typescript/bin/tsc --noEmit --project tsconfig.task2-check.json`; the temporary config was removed afterward, and generated `tsconfig.tsbuildinfo` changes were restored.
+- Frontend tests emit the existing Vite warning about `__dirname` in `vitest.config.ts`. The installed frontend dependencies were reused through an ignored local `frontend-next/node_modules` junction; no dependency installation or lockfile change was required.
+- No deployment, secret changes, configured-database access, or public application submission changes were made. Existing possession-based tracking and rate-limit limitations remain.
