@@ -78,14 +78,6 @@ export default function RealKecamatanMap({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <div className="h-[360px] w-full rounded-xl bg-zinc-100 flex items-center justify-center text-xs text-zinc-400">
-        Memuat Peta Geospasial Tangerang...
-      </div>
-    );
-  }
-
   const metricPresentation = getMapMetricPresentation(metric);
 
   const getMetricValue = (name: string) => getMapMetricValue(name, metric, liveData, periodData);
@@ -159,6 +151,14 @@ export default function RealKecamatanMap({
 
     layer.bindTooltip(tooltipCopy(name, metricValue), { sticky: true, className: 'leaflet-custom-tooltip' });
   };
+
+  if (!mounted) {
+    return (
+      <div className="h-[360px] w-full rounded-xl bg-zinc-100 flex items-center justify-center text-xs text-zinc-400">
+        Memuat Peta Geospasial Tangerang...
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-[430px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-emerald-50/30 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
