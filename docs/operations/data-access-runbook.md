@@ -24,7 +24,7 @@ pg_dump "$DATABASE_URL" > "baznas-$(date +%F).sql"
 
 ### Ketentuan Variabel Lingkungan Produksi:
 - **`JWT_SECRET`**: Wajib diset string acak dengan entropi tinggi (minimal 32 karakter acak). Backend akan *fail-closed* (menolak start) jika `NODE_ENV=production` dan `JWT_SECRET` kosong atau memakai nilai default/contoh (`baznas_tangkot_super_secret_jwt_key_2026`, `change-me-in-production`, `development-only-jwt-secret`).
-- **`FRONTEND_URL`**: Wajib diset origin resmi frontend (contoh: `https://tangkot.baznas.go.id`). Di mode produksi, CORS akan menolak browser origin tanpa konfigurasi ini.
+- **`FRONTEND_URL`**: Wajib diset origin resmi frontend (contoh: `https://muhammadrofiq.my.id`). Di mode produksi, CORS akan menolak browser origin tanpa konfigurasi ini.
 - **`NEXT_PUBLIC_DEMO_MODE`**: **JANGAN** diset atau set ke string kosong/`false` di VPS produksi. Nilai `true` hanya diperuntukkan bagi demo offline lokal. Pada lingkungan produksi, sistem wajib menyajikan data operasional riil dan menampilkan status kosong (*empty state*) jujur bila belum ada transaksi tervalidasi.
 
 ---
