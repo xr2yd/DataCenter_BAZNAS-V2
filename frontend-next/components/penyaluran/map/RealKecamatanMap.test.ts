@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKecamatanStyle, getTileLayerConfig } from './RealKecamatanMap';
+import { getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -22,5 +22,12 @@ describe('getKecamatanStyle', () => {
 
     expect(tileLayer.url).toContain('basemaps.cartocdn.com/rastertiles/voyager');
     expect(tileLayer.url).toContain('api_key=carto-token');
+  });
+
+  it('configures the professional Mapbox Light basemap with the supplied public token', () => {
+    expect(getMapboxStyleConfig('mapbox-public-token')).toEqual({
+      accessToken: 'mapbox-public-token',
+      style: 'mapbox://styles/mapbox/light-v11',
+    });
   });
 });

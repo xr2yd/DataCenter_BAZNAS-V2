@@ -1,239 +1,44 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
-import type { FeatureCollection, Feature, Geometry } from 'geojson';
-import type { GeoJSON as LeafletGeoJSON, Path } from 'leaflet';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import mapboxgl, { type GeoJSONSource, type Map as MapboxMap } from 'mapbox-gl';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
-import {
-  getChoroplethColor,
-  getMapMetricValue,
-  getMapMetricPresentation,
-  type MapMetric,
-} from './map-data';
+import { getChoroplethColor, getMapMetricPresentation, getMapMetricValue, type MapMetric } from './map-data';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
 import type { MapPeriodData } from '../dashboard/dashboard-data';
 
 const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
+const SOURCE_ID = 'kecamatan-boundaries';
+const FILL_ID = 'kecamatan-fill';
+type Props = { name: string; fillColor?: string; isSelected?: boolean; metricValue?: number };
 
-type KecamatanFeatureLayer = Path & {
-  feature?: Feature<Geometry, { name: string }>;
-  getBounds: () => ReturnType<LeafletGeoJSON['getBounds']>;
-  setTooltipContent?: (content: string) => void;
-};
-
-export function getKecamatanStyle(
-  feature: { name: string },
-  selectedKecamatan: string | null | undefined,
-  colorScaleValue: number,
-) {
-  const isSelected = selectedKecamatan?.toLowerCase() === feature.name.toLowerCase();
-
-  return {
-    fillColor: getChoroplethColor(colorScaleValue),
-    weight: isSelected ? 3 : 1,
-    opacity: 1,
-    color: isSelected ? '#047857' : '#ffffff',
-    fillOpacity: isSelected ? 0.88 : 0.75,
-  };
+export function getKecamatanStyle(feature: { name: string }, selected: string | null | undefined, value: number) {
+  const isSelected = selected?.toLowerCase() === feature.name.toLowerCase();
+  return { fillColor: getChoroplethColor(value), weight: isSelected ? 3 : 1, opacity: 1, color: isSelected ? '#047857' : '#ffffff', fillOpacity: isSelected ? 0.88 : 0.75 };
 }
-
 export function getTileLayerConfig(mapTilerKey?: string, cartoAccessToken?: string) {
-  if (cartoAccessToken) {
-    return {
-      url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?api_key=${cartoAccessToken}`,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    };
-  }
+  if (cartoAccessToken) return { url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?api_key=${cartoAccessToken}`, attribution: '&copy; CARTO' };
+  if (mapTilerKey) return { url: `https://api.maptiler.com/maps/streets-v2-light/{z}/{x}/{y}.png?key=${mapTilerKey}`, attribution: '&copy; MapTiler' };
+  return { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; OpenStreetMap' };
+}
+export function getMapboxStyleConfig(accessToken?: string) { return { accessToken, style: 'mapbox://styles/mapbox/light-v11' }; }
 
-  if (mapTilerKey) {
-    return {
-      url: `https://api.maptiler.com/maps/streets-v2-light/{z}/{x}/{y}.png?key=${mapTilerKey}`,
-      attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    };
-  }
-
-  return {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  };
+function boundsFor(feature: Feature<Geometry, Props>) {
+  const bounds = new mapboxgl.LngLatBounds();
+  const visit = (v: unknown): void => { if (!Array.isArray(v)) return; if (typeof v[0] === 'number' && typeof v[1] === 'number') bounds.extend([v[0], v[1]]); else v.forEach(visit); };
+  if ('coordinates' in feature.geometry) visit(feature.geometry.coordinates); return bounds;
 }
 
-function MapSelectionFocus({
-  selectedKecamatan,
-  geoJsonRef,
-}: {
-  selectedKecamatan?: string | null;
-  geoJsonRef: React.RefObject<LeafletGeoJSON | null>;
-}) {
-  const map = useMap();
-  const skipInitialFocus = useRef(true);
-
-  useEffect(() => {
-    if (skipInitialFocus.current) {
-      skipInitialFocus.current = false;
-      return;
-    }
-    if (!selectedKecamatan || !geoJsonRef.current) return;
-
-    const selectedLayer = geoJsonRef.current.getLayers().find((layer) => {
-      const feature = (layer as KecamatanFeatureLayer).feature;
-      return feature?.properties?.name?.toLowerCase() === selectedKecamatan.toLowerCase();
-    }) as KecamatanFeatureLayer | undefined;
-    if (!selectedLayer) return;
-
-    map.flyToBounds(selectedLayer.getBounds(), {
-      padding: [44, 44],
-      duration: 0.42,
-      easeLinearity: 0.25,
-      maxZoom: 13,
-    });
-  }, [geoJsonRef, map, selectedKecamatan]);
-
-  return null;
-}
-
-export default function RealKecamatanMap({
-  metric = 'funds',
-  selectedKecamatan,
-  onSelectKecamatan,
-  liveData,
-  periodData,
-}: {
-  metric?: MapMetric;
-  selectedKecamatan?: string | null;
-  onSelectKecamatan?: (name: string) => void;
-  liveData?: PenyaluranByKecamatan[];
-  periodData?: MapPeriodData;
-}) {
-  const [mounted, setMounted] = useState(false);
-  const tileLayer = getTileLayerConfig(
-    process.env.NEXT_PUBLIC_MAPTILER_KEY,
-    process.env.NEXT_PUBLIC_CARTO_ACCESS_TOKEN,
-  );
-  const geoJsonRef = useRef<LeafletGeoJSON | null>(null);
-  const selectedRef = useRef(selectedKecamatan);
-  const onSelectRef = useRef(onSelectKecamatan);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const metricPresentation = getMapMetricPresentation(metric);
-
-  const getMetricValue = (name: string) => getMapMetricValue(name, metric, liveData, periodData);
-
-  const toColorScaleValue = (value: number) => {
-    if (metric === 'funds') return value / 1_000_000;
-    if (metric === 'asnafNeed') return value * 2;
-    return value;
-  };
-
-  const formatMetricValue = (value: number) => {
-    if (metric === 'funds') return `Rp ${(value / 1_000_000_000).toFixed(2).replace('.', ',')} M`;
-    return `${value.toLocaleString('id-ID')} ${metricPresentation.unit}`;
-  };
-
-  const tooltipCopy = (name: string, metricValue: number) => `<div class="p-1 text-xs"><strong class="text-zinc-900">${name}</strong><div class="text-[10px] text-zinc-600">${metricPresentation.label}: ${formatMetricValue(metricValue)}</div></div>`;
-
-  const styleFeature = (feature?: Feature<Geometry, { name: string }>) => {
-    if (!feature || !feature.properties) return {};
-    const name = feature.properties.name;
-    const metricValue = getMetricValue(name);
-
-    return getKecamatanStyle({ name }, selectedKecamatan, toColorScaleValue(metricValue));
-  };
-
-  useEffect(() => {
-    selectedRef.current = selectedKecamatan;
-    onSelectRef.current = onSelectKecamatan;
-  }, [onSelectKecamatan, selectedKecamatan]);
-
-  useEffect(() => {
-    geoJsonRef.current?.eachLayer((layer) => {
-      const featureLayer = layer as KecamatanFeatureLayer;
-      const feature = featureLayer.feature;
-      if (!feature?.properties) return;
-      const name = feature.properties.name;
-      const metricValue = getMetricValue(name);
-      featureLayer.setStyle(styleFeature(feature));
-      featureLayer.setTooltipContent?.(tooltipCopy(name, metricValue));
-    });
-  }, [liveData, metric, periodData, selectedKecamatan]);
-
-  const onEachFeature = (feature: Feature<Geometry, { name: string }>, layer: any) => {
-    const name = feature.properties.name;
-    const metricValue = getMetricValue(name);
-
-    layer.on({
-      click: () => {
-        onSelectRef.current?.(name);
-      },
-      mouseover: (e: any) => {
-        const l = e.target;
-        l.setStyle({ fillOpacity: 0.95, weight: 2 });
-      },
-      mouseout: (e: any) => {
-        const l = e.target;
-        const isSelected = selectedRef.current?.toLowerCase() === name.toLowerCase();
-        l.setStyle({
-          fillOpacity: isSelected ? 0.88 : 0.75,
-          weight: isSelected ? 3 : 1,
-        });
-      },
-    });
-
-    layer.bindTooltip(tooltipCopy(name, metricValue), { sticky: true, className: 'leaflet-custom-tooltip' });
-  };
-
-  if (!mounted) {
-    return (
-      <div className="h-[360px] w-full rounded-xl bg-zinc-100 flex items-center justify-center text-xs text-zinc-400">
-        Memuat Peta Geospasial Tangerang...
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative h-[430px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-emerald-50/30 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-      <MapContainer
-        center={[-6.1783, 106.6319]}
-        zoom={12}
-        scrollWheelZoom={false}
-        className="h-full w-full"
-        zoomControl={false}
-      >
-        <TileLayer
-          attribution={tileLayer.attribution}
-          url={tileLayer.url}
-        />
-        <GeoJSON
-          ref={geoJsonRef}
-          data={geojsonData}
-          style={styleFeature as any}
-          onEachFeature={onEachFeature}
-        />
-        <MapSelectionFocus selectedKecamatan={selectedKecamatan} geoJsonRef={geoJsonRef} />
-      </MapContainer>
-
-      {/* Legend Badge */}
-      <div className="absolute bottom-4 left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm backdrop-blur-xs">
-        <p className="mb-1.5 font-bold text-zinc-900">Intensitas {metricPresentation.label.toLowerCase()}</p>
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-1">
-            <span className="size-2 rounded-xs" style={{ backgroundColor: '#a7f3d0' }} />
-            <span className="text-zinc-600">Rendah</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="size-2 rounded-xs" style={{ backgroundColor: '#10b981' }} />
-            <span className="text-zinc-600">Menengah</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="size-2 rounded-xs" style={{ backgroundColor: '#00663d' }} />
-            <span className="text-zinc-600">Tinggi</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, onSelectKecamatan, liveData, periodData }: { metric?: MapMetric; selectedKecamatan?: string | null; onSelectKecamatan?: (name: string) => void; liveData?: PenyaluranByKecamatan[]; periodData?: MapPeriodData }) {
+  const container = useRef<HTMLDivElement | null>(null); const mapRef = useRef<MapboxMap | null>(null); const onSelect = useRef(onSelectKecamatan); const firstFocus = useRef(true); const [ready, setReady] = useState(false); const [error, setError] = useState(false);
+  const presentation = getMapMetricPresentation(metric); const config = getMapboxStyleConfig(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN);
+  const data = useMemo(() => ({ ...geojsonData, features: geojsonData.features.map((feature) => { const name = (feature.properties as Props).name; const raw = getMapMetricValue(name, metric, liveData, periodData); const scale = metric === 'funds' ? raw / 1_000_000 : metric === 'asnafNeed' ? raw * 2 : raw; const style = getKecamatanStyle({ name }, selectedKecamatan, scale); return { ...feature, properties: { ...feature.properties, fillColor: style.fillColor, isSelected: style.color === '#047857', metricValue: raw } }; }) }) as FeatureCollection<Geometry, Props>, [liveData, metric, periodData, selectedKecamatan]);
+  useEffect(() => { onSelect.current = onSelectKecamatan; }, [onSelectKecamatan]);
+  useEffect(() => { if (!container.current || !config.accessToken || mapRef.current) return; const map = new mapboxgl.Map({ container: container.current, accessToken: config.accessToken, style: config.style, center: [106.6319, -6.1783], zoom: 11.8, minZoom: 10, maxZoom: 15 }); map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right'); map.scrollZoom.disable(); map.on('load', () => { map.addSource(SOURCE_ID, { type: 'geojson', data, generateId: true }); map.addLayer({ id: FILL_ID, type: 'fill', source: SOURCE_ID, paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], .95, ['case', ['get', 'isSelected'], .88, .75]] } }); map.addLayer({ id: 'kecamatan-outline', type: 'line', source: SOURCE_ID, paint: { 'line-color': ['case', ['get', 'isSelected'], '#047857', '#ffffff'], 'line-width': ['case', ['get', 'isSelected'], 3, 1], 'line-opacity': .95 } }); map.on('mouseenter', FILL_ID, () => map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', FILL_ID, () => map.getCanvas().style.cursor = ''); map.on('click', FILL_ID, e => { const name = e.features?.[0]?.properties?.name; if (name) onSelect.current?.(name); }); setReady(true); }); map.on('error', () => setError(true)); mapRef.current = map; return () => { map.remove(); mapRef.current = null; }; }, [config.accessToken, config.style]);
+  useEffect(() => { if (ready) (mapRef.current?.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(data); }, [data, ready]);
+  useEffect(() => { if (firstFocus.current) { firstFocus.current = false; return; } if (!ready || !selectedKecamatan) return; const feature = data.features.find(f => f.properties.name.toLowerCase() === selectedKecamatan.toLowerCase()); if (feature) mapRef.current?.fitBounds(boundsFor(feature), { padding: 44, duration: 420, maxZoom: 13 }); }, [data, ready, selectedKecamatan]);
+  if (!config.accessToken) return <div className="flex h-[360px] items-center justify-center rounded-xl bg-zinc-100 text-xs text-zinc-500">Token Mapbox belum terpasang.</div>;
+  return <div className="relative h-[430px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-emerald-50/30 shadow-[0_10px_30px_rgba(15,23,42,0.04)]"><div ref={container} className="h-full w-full" aria-label="Peta interaktif Kota Tangerang" />{!ready && !error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 text-xs text-zinc-500">Memuat peta Kota Tangerang...</div>}{error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm font-semibold text-rose-700">Peta Mapbox tidak dapat dimuat.</div>}<div className="absolute bottom-4 left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm"><p className="mb-1.5 font-bold text-zinc-900">Intensitas {presentation.label.toLowerCase()}</p><div className="flex gap-2 text-zinc-600"><span>Rendah</span><span>Menengah</span><span>Tinggi</span></div></div></div>;
 }
