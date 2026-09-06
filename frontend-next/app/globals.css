@@ -156,10 +156,6 @@ body {
   animation: map-focus-card-enter 280ms cubic-bezier(.2, .85, .3, 1) both;
 }
 
-.map-callout-exit {
-  animation: map-callout-exit 180ms ease-in both;
-}
-
 .map-connector-path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -180,20 +176,6 @@ body {
 @keyframes map-connector-pulse {
   0%, 70% { opacity: .9; transform: scale(.65); }
   100% { opacity: 0; transform: scale(1.8); }
-}
-
-@keyframes map-callout-exit {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-6px); }
-}
-
-svg.map-callout-exit {
-  animation-name: map-callout-fade;
-}
-
-@keyframes map-callout-fade {
-  from { opacity: 1; }
-  to { opacity: 0; }
 }
 
 .map-map-legend {
@@ -217,8 +199,7 @@ svg.map-callout-exit {
   .map-detail-enter,
   .map-focus-card,
   .map-connector-path,
-  .map-connector-pulse,
-  .map-callout-exit { animation: none; transition: none; }
+  .map-connector-pulse { animation: none; transition: none; }
 
   .map-connector-path { stroke-dashoffset: 0; }
 }

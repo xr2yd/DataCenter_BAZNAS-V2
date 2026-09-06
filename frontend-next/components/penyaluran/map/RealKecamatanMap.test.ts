@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getCalloutDecisionContext, getCalloutLayoutMode, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getCalloutDecisionContext, getCalloutLayoutMode, getCalloutPositionEvents, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -85,6 +85,10 @@ describe('shouldRenderMapConnector', () => {
   it('uses the same container-width threshold for compact callout layout', () => {
     expect(getCalloutLayoutMode(639)).toBe('compact');
     expect(getCalloutLayoutMode(640)).toBe('desktop');
+  });
+
+  it('recalculates the single connector only when the map size changes', () => {
+    expect(getCalloutPositionEvents()).toEqual(['resize']);
   });
 });
 
