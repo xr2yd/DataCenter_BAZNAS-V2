@@ -146,9 +146,20 @@ body {
   animation: map-detail-enter 180ms ease-out both;
 }
 
+@keyframes map-focus-card-enter {
+  from { opacity: 0; transform: translate(-50%, 12px) scale(.96); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.map-focus-card {
+  animation: map-focus-card-enter 280ms cubic-bezier(.2, .85, .3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .leaflet-container .leaflet-interactive,
-  .map-detail-enter { animation: none; transition: none; }
+  .map-detail-enter,
+  .map-focus-card { animation: none; transition: none; }
 }
 
 @keyframes mustahik-row-enter {

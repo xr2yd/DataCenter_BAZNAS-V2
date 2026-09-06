@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -42,8 +42,21 @@ describe('getKecamatanStyle', () => {
       'case',
       ['boolean', ['feature-state', 'hover'], false],
       0.95,
-      ['case', ['get', 'isSelected'], 0.88, 0.75],
+      ['get', 'fillOpacity'],
     ]);
+  });
+
+  it('uses a lifted focus treatment without requesting a camera zoom', () => {
+    expect(getSelectionFocusStyle(true)).toEqual({
+      fillOpacity: 0.94,
+      outlineColor: '#047857',
+      outlineWidth: 3,
+    });
+    expect(getSelectionFocusStyle(false)).toEqual({
+      fillOpacity: 0.42,
+      outlineColor: '#ffffff',
+      outlineWidth: 1,
+    });
   });
 
   it('attaches custom GeoJSON layers when the Mapbox style is ready', () => {
