@@ -95,7 +95,7 @@ export function LaporanPenyaluranWorkspace() {
   const [kpis, setKpis] = useState<ReportKpi[]>(isDemo ? (REPORT_KPIS as any) : []);
   const [progAlloc, setProgAlloc] = useState<ReportDistributionItem[]>(isDemo ? (PROGRAM_ALLOCATION as any) : []);
   const [asnafAlloc, setAsnafAlloc] = useState<ReportDistributionItem[]>(isDemo ? (ASNAF_DISTRIBUTION as any) : []);
-  const [dataStatus, setDataStatus] = useState<'ready' | 'empty' | 'demo' | 'loading'>(isDemo ? 'demo' : 'loading');
+  const [dataStatus, setDataStatus] = useState<'ready' | 'empty' | 'demo' | 'loading' | 'error'>(isDemo ? 'demo' : 'loading');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -132,9 +132,10 @@ export function LaporanPenyaluranWorkspace() {
         }
         setDataStatus(res.dataStatus || (res.reports && res.reports.length > 0 ? 'ready' : 'empty'));
       }
-    }).catch(() => {
+    }).catch((err) => {
       if (!isDemo) {
-        setDataStatus('empty');
+        setDataStatus('error');
+        setFeedback(err?.message || 'Gagal memuat arsip laporan dari server.');
       }
     });
   };
@@ -326,6 +327,13 @@ export function LaporanPenyaluranWorkspace() {
         </div>
       )}
 
+      {dataStatus === 'error' && (
+        <div className="flex items-center gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
+          <CircleAlert className="size-4 shrink-0 text-rose-500" />
+          <span>Gagal memuat arsip laporan dari server. Periksa koneksi atau coba lagi nanti.</span>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <section aria-label="Ringkasan periode laporan" className="grid overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
         {(kpis.length > 0 ? kpis : [
@@ -464,10 +472,10 @@ export function LaporanPenyaluranWorkspace() {
               <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-12 text-center">
                 <FileText className="mx-auto size-6 text-zinc-400" />
                 <h3 className="mt-3 font-bold text-zinc-900">
-                  {search ? 'Laporan tidak ditemukan' : 'Belum ada laporan'}
+                  {dataStatus === 'error' ? 'Gagal memuat laporan' : search ? 'Laporan tidak ditemukan' : 'Belum ada laporan'}
                 </h3>
                 <p className="mt-1 text-sm text-zinc-500">
-                  {search ? 'Coba kata kunci lain atau hapus pencarian.' : 'Belum ada data untuk diekspor pada periode ini.'}
+                  {dataStatus === 'error' ? 'Terjadi kesalahan saat menghubungi server data center.' : search ? 'Coba kata kunci lain atau hapus pencarian.' : 'Belum ada data untuk diekspor pada periode ini.'}
                 </p>
                 {search ? (
                   <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer">

@@ -34,15 +34,19 @@ export function ConceptThreeDashboard({ mapboxAccessToken }: { mapboxAccessToken
   const [selectedKecamatan, setSelectedKecamatan] = useState<string | null>(null);
   const [kecamatanData, setKecamatanData] = useState<PenyaluranByKecamatan[]>([]);
   const [liveOverview, setLiveOverview] = useState<DashboardData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoadError(null);
     api.getPenyaluranOverview(period)
       .then((res) => {
         if (res.data) {
           setLiveOverview(adaptBackendOverviewToDashboardData(res.data, period));
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        setLoadError(err?.message || 'Gagal memuat data ringkasan operasional.');
+      });
   }, [period]);
 
   useEffect(() => {
@@ -69,11 +73,15 @@ export function ConceptThreeDashboard({ mapboxAccessToken }: { mapboxAccessToken
     <div className="mx-auto max-w-[1540px] space-y-6 pb-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <DashboardPeriodControl value={period} onChange={setPeriod} />
-        {data.dataStatus === 'empty' && (
+        {loadError ? (
+          <p className="text-xs font-semibold text-rose-600">
+            {loadError}
+          </p>
+        ) : data.dataStatus === 'empty' ? (
           <p className="text-xs font-semibold text-slate-500">
             Belum ada transaksi tervalidasi untuk periode ini.
           </p>
-        )}
+        ) : null}
       </div>
 
       <DecisionStudioHero data={data} />
