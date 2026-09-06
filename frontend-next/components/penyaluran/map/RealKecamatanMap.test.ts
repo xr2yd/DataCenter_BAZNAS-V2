@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -73,5 +73,12 @@ describe('getConnectedCalloutPlacement', () => {
       anchor: point,
       side: 'left',
     });
+  });
+});
+
+describe('shouldRenderMapConnector', () => {
+  it('keeps the map readable on compact viewports while showing the connector at desktop width', () => {
+    expect(shouldRenderMapConnector(639)).toBe(false);
+    expect(shouldRenderMapConnector(640)).toBe(true);
   });
 });
