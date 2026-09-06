@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -80,5 +80,20 @@ describe('shouldRenderMapConnector', () => {
   it('keeps the map readable on compact viewports while showing the connector at desktop width', () => {
     expect(shouldRenderMapConnector(639)).toBe(false);
     expect(shouldRenderMapConnector(640)).toBe(true);
+  });
+});
+
+describe('getResolvedCalloutCardPosition', () => {
+  it('keeps the upper-right placement clear of Mapbox controls at the 640px connector breakpoint', () => {
+    const placement = getConnectedCalloutPlacement({ x: 160, y: 50 }, { width: 640, height: 430 });
+
+    expect(getResolvedCalloutCardPosition(placement, { width: 640, height: 430 })).toEqual({ left: 336, top: 60.2 });
+  });
+
+  it('moves a lower-left callout above the map legend without changing its placement decision', () => {
+    const placement = getConnectedCalloutPlacement({ x: 500, y: 380 }, { width: 640, height: 430 });
+
+    expect(placement.card).toEqual({ left: '4%', top: '60%' });
+    expect(getResolvedCalloutCardPosition(placement, { width: 640, height: 430 })).toEqual({ left: 25.6, top: 188 });
   });
 });
