@@ -21,8 +21,14 @@ describe('peta metric helpers', () => {
     ).toBe(2_900_000_000);
   });
 
-  it('uses fallback beneficiary data when API data is unavailable', () => {
-    expect(getKecamatanMapValue('Cipondoh', 'beneficiaries')).toBe(1_480);
+  it('uses fallback beneficiary data when demo mode is enabled and API data is unavailable', () => {
+    const original = process.env.NEXT_PUBLIC_DEMO_MODE;
+    process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
+    try {
+      expect(getKecamatanMapValue('Cipondoh', 'beneficiaries')).toBe(1_480);
+    } finally {
+      process.env.NEXT_PUBLIC_DEMO_MODE = original;
+    }
   });
 
   it('returns a known kecamatan insight', () => {
@@ -45,7 +51,29 @@ describe('peta metric helpers', () => {
     }], { Cipondoh: { amount: 1_000_000_000, beneficiaries: 500 } })).toBe(2_900_000_000);
   });
 
-  it('uses desil one fallback for the asnaf need metric', () => {
-    expect(getKecamatanMapValue('Cipondoh', 'asnafNeed')).toBe(560);
+  it('uses desil one fallback for the asnaf need metric when demo mode is enabled', () => {
+    const original = process.env.NEXT_PUBLIC_DEMO_MODE;
+    process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
+    try {
+      expect(getKecamatanMapValue('Cipondoh', 'asnafNeed')).toBe(560);
+    } finally {
+      process.env.NEXT_PUBLIC_DEMO_MODE = original;
+    }
+  });
+
+  it('returns 0 when demo mode is disabled and API data is unavailable', () => {
+    const original = process.env.NEXT_PUBLIC_DEMO_MODE;
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+    try {
+      expect(getKecamatanMapValue('Cipondoh', 'beneficiaries')).toBe(0);
+      expect(getKecamatanMapValue('Cipondoh', 'funds')).toBe(0);
+      expect(getKecamatanMapValue('Cipondoh', 'asnafNeed')).toBe(0);
+    } finally {
+      process.env.NEXT_PUBLIC_DEMO_MODE = original;
+    }
+  });
+
+  it('does not use demo kecamatan values when the API has no record', () => {
+    expect(getMapMetricValue('Cipondoh', 'funds', [], undefined)).toBe(0);
   });
 });

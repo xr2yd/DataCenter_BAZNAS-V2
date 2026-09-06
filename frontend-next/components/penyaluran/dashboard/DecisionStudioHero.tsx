@@ -7,12 +7,15 @@ import type { DashboardData } from './dashboard-data';
 type DecisionStudioHeroProps = { data: DashboardData };
 
 function formatRupiah(value: number) {
+  if (!value || value === 0) return 'Rp 0';
   if (value >= 1_000_000_000) return `Rp ${(value / 1_000_000_000).toFixed(2)} M`;
   return `Rp ${Math.round(value / 1_000_000)} Jt`;
 }
 
 export function DecisionStudioHero({ data }: DecisionStudioHeroProps) {
-  const completion = Math.floor((data.summary.totalDisbursed / data.summary.target) * 100);
+  const completion = data.summary.target > 0
+    ? Math.floor((data.summary.totalDisbursed / data.summary.target) * 100)
+    : 0;
   const activeActions = data.actions.reduce((sum, item) => sum + item.count, 0);
 
   return (
@@ -34,8 +37,21 @@ export function DecisionStudioHero({ data }: DecisionStudioHeroProps) {
       <div className="relative grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)] lg:p-8">
         <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_12px_32px_rgba(6,95,70,0.05)] sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div><p className="text-xs font-bold text-zinc-500">Capaian periode aktif</p><div className="mt-2 flex items-end gap-3"><p className="text-6xl font-extrabold leading-none tracking-[-0.07em] text-emerald-900">{completion}%</p><span className="mb-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-800">ON TRACK</span></div></div>
-            <div className="sm:text-right"><p className="text-xl font-black text-zinc-950">{formatRupiah(data.summary.totalDisbursed)}</p><p className="mt-1 text-xs font-semibold text-zinc-500">Target {formatRupiah(data.summary.target)}</p></div>
+            <div>
+              <p className="text-xs font-bold text-zinc-500">Capaian periode aktif</p>
+              <div className="mt-2 flex items-end gap-3">
+                <p className="text-6xl font-extrabold leading-none tracking-[-0.07em] text-emerald-900">{completion}%</p>
+                <span className={`mb-1.5 rounded-full px-2.5 py-1 text-[10px] font-black ${data.dataStatus === 'empty' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-800'}`}>
+                  {data.dataStatus === 'empty' ? 'BELUM ADA DATA' : 'ON TRACK'}
+                </span>
+              </div>
+            </div>
+            <div className="sm:text-right">
+              <p className="text-xl font-black text-zinc-950">{formatRupiah(data.summary.totalDisbursed)}</p>
+              <p className="mt-1 text-xs font-semibold text-zinc-500">
+                {data.summary.target > 0 ? `Target ${formatRupiah(data.summary.target)}` : 'Target belum ditentukan'}
+              </p>
+            </div>
           </div>
           <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-[linear-gradient(90deg,#047857,#10b981)] transition-all duration-700" style={{ width: `${completion}%` }} /></div>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -43,7 +59,10 @@ export function DecisionStudioHero({ data }: DecisionStudioHeroProps) {
             <div className="flex items-center gap-3 rounded-xl bg-zinc-50/80 p-3.5"><UsersRound className="size-5 text-emerald-700" /><div><p className="text-lg font-black text-zinc-950">{data.summary.beneficiaries.toLocaleString('id-ID')}</p><p className="text-[11px] font-semibold text-zinc-500">mustahik terbantu</p></div></div>
             <div className="flex items-center gap-3 rounded-xl bg-zinc-50/80 p-3.5"><Layers3 className="size-5 text-emerald-700" /><div><p className="text-lg font-black text-zinc-950">{data.summary.activePrograms}</p><p className="text-[11px] font-semibold text-zinc-500">program aktif</p></div></div>
           </div>
-          <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-emerald-800"><CircleCheckBig className="size-4" />Data capaian tersinkron dengan penyaluran aktif</div>
+          <div className="mt-4 flex items-center gap-2 text-[11px] font-semibold text-emerald-800">
+            <CircleCheckBig className="size-4" />
+            {data.dataStatus === 'empty' ? 'Belum ada transaksi tervalidasi untuk periode ini.' : 'Data capaian tersinkron dengan penyaluran aktif'}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)] sm:p-6">

@@ -360,4 +360,5 @@ export interface ReportListResponse {
   programAllocation: ReportDistributionItem[];
   asnafDistribution: ReportDistributionItem[];
   count: number;
+  dataStatus?: 'ready' | 'empty' | 'demo';
 }

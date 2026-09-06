@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDashboardData } from './dashboard-data';
+import { getDashboardData, adaptBackendOverviewToDashboardData } from './dashboard-data';
 
 describe('getDashboardData', () => {
   it('returns a distinct operational summary for each selectable period', () => {
@@ -21,4 +21,11 @@ describe('getDashboardData', () => {
     expect(composition).toBe(100);
     expect(data.asnaf.every((item) => item.amount > 0 && item.beneficiaries > 0)).toBe(true);
   });
+
+  it('does not substitute demo totals when the overview is empty', () => {
+    const dashboard = adaptBackendOverviewToDashboardData({ dataStatus: 'empty', metrics: { totalPenyaluran: 0 } }, '30d');
+    expect(dashboard.summary.totalPenyaluran).toBe(0);
+    expect(dashboard.dataStatus).toBe('empty');
+  });
 });
+

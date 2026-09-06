@@ -4,6 +4,7 @@ import type { DashboardData } from './dashboard-data';
 
 export function ImpactMetrics({ data }: { data: DashboardData }) {
   const formatRupiah = (num: number) => {
+    if (!num || num === 0) return 'Rp 0';
     if (num >= 1000000000) {
       return `Rp ${(num / 1000000000).toFixed(2)} M`;
     }
@@ -21,7 +22,7 @@ export function ImpactMetrics({ data }: { data: DashboardData }) {
           {formatRupiah(data.summary.totalDisbursed)}
         </p>
         <div className="mt-2 flex items-center gap-1 text-xs font-bold text-emerald-700">
-          <TrendingUp className="size-3.5" /> +{data.summary.change}% vs {data.comparisonLabel}
+          <TrendingUp className="size-3.5" /> {data.summary.change > 0 ? `+${data.summary.change}%` : `${data.summary.change}%`} vs {data.comparisonLabel}
         </div>
       </div>
 

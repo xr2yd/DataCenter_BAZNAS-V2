@@ -10,7 +10,7 @@ import { TrendPanel } from './TrendPanel';
 import { AsnafBreakdown } from './AsnafBreakdown';
 import { ProgramImpactGrid } from './ProgramImpactGrid';
 import { DecisionStudioHero } from './DecisionStudioHero';
-import { getDashboardData, adaptBackendOverviewToDashboardData, type DashboardPeriod, type DashboardData } from './dashboard-data';
+import { getDashboardData, getEmptyDashboardData, adaptBackendOverviewToDashboardData, type DashboardPeriod, type DashboardData } from './dashboard-data';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { api } from '@/lib/api/client';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
@@ -51,11 +51,11 @@ export function ConceptThreeDashboard({ mapboxAccessToken }: { mapboxAccessToken
         if (res.data) setKecamatanData(res.data);
       })
       .catch(() => {
-        // Fallback to local demo data
+        // Fallback only if demo mode
       });
   }, []);
 
-  const data = liveOverview || getDashboardData(period);
+  const data = liveOverview || (process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? getDashboardData(period) : getEmptyDashboardData(period));
 
   const selectedData = selectedKecamatan
     ? kecamatanData.find(
@@ -67,6 +67,15 @@ export function ConceptThreeDashboard({ mapboxAccessToken }: { mapboxAccessToken
 
   return (
     <div className="mx-auto max-w-[1540px] space-y-6 pb-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <DashboardPeriodControl value={period} onChange={setPeriod} />
+        {data.dataStatus === 'empty' && (
+          <p className="text-xs font-semibold text-slate-500">
+            Belum ada transaksi tervalidasi untuk periode ini.
+          </p>
+        )}
+      </div>
+
       <DecisionStudioHero data={data} />
 
       <ImpactMetrics data={data} />

@@ -81,8 +81,16 @@ export function getKecamatanMapValue(
   metric: MapMetric,
   liveData?: PenyaluranByKecamatan[],
 ): number {
-  const data = liveData?.find((item) => item.name.toLowerCase() === name.toLowerCase())
-    ?? DEMO_KECAMATAN_DATA[name];
+  if (liveData !== undefined) {
+    const data = liveData.find((item) => item.name.toLowerCase() === name.toLowerCase());
+    if (metric === 'funds') return data?.totalDisalurkan ?? 0;
+    if (metric === 'beneficiaries') return data?.totalMustahik ?? 0;
+    return data?.desil1Count ?? 0;
+  }
+
+  // Demo fallback is only allowed when NEXT_PUBLIC_DEMO_MODE is explicitly 'true'
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const data = isDemo ? DEMO_KECAMATAN_DATA[name] : undefined;
 
   if (metric === 'funds') return data?.totalDisalurkan ?? 0;
   if (metric === 'beneficiaries') return data?.totalMustahik ?? 0;
@@ -91,7 +99,7 @@ export function getKecamatanMapValue(
 
 /**
  * Resolves the value shown on the map with a deliberate precedence order:
- * live API response, period dashboard snapshot, then local demo fallback.
+ * live API response, period dashboard snapshot, then explicit demo fallback.
  */
 export function getMapMetricValue(
   name: string,
@@ -99,13 +107,20 @@ export function getMapMetricValue(
   liveData?: PenyaluranByKecamatan[],
   periodData?: PeriodMetricData,
 ): number {
-  const liveValue = liveData?.find((item) => item.name.toLowerCase() === name.toLowerCase());
-  if (liveValue) return getKecamatanMapValue(name, metric, [liveValue]);
+  if (liveData !== undefined) {
+    const liveValue = liveData.find((item) => item.name.toLowerCase() === name.toLowerCase());
+    if (liveValue) return getKecamatanMapValue(name, metric, [liveValue]);
+    return 0;
+  }
 
   const periodValue = periodData?.[name];
   if (periodValue) {
     if (metric === 'funds') return periodValue.amount;
     if (metric === 'beneficiaries') return periodValue.beneficiaries;
+  }
+
+  if (periodData !== undefined) {
+    return 0;
   }
 
   return getKecamatanMapValue(name, metric);

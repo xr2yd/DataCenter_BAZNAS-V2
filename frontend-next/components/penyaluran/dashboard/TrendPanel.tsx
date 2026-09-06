@@ -7,7 +7,7 @@ function formatCompactRupiah(value: number) {
 }
 
 export function TrendPanel({ data }: { data: DashboardData }) {
-  const maximum = Math.max(...data.trend.flatMap((point) => [point.current, point.previous, point.target]));
+  const maximum = Math.max(1, ...data.trend.flatMap((point) => [point.current, point.previous, point.target]));
 
   return (
     <section className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
@@ -29,23 +29,29 @@ export function TrendPanel({ data }: { data: DashboardData }) {
         </div>
       </div>
 
-      <div className="mt-6 grid h-44 grid-cols-[repeat(6,minmax(0,1fr))] items-end gap-2 border-b border-zinc-100 px-1 pt-4 sm:gap-3" aria-label={`Grafik tren ${data.periodLabel}`}>
-        {data.trend.map((point) => {
-          const currentHeight = Math.max(8, Math.round((point.current / maximum) * 100));
-          const previousHeight = Math.max(5, Math.round((point.previous / maximum) * 100));
-          const targetHeight = Math.max(8, Math.round((point.target / maximum) * 100));
-          return (
-            <div key={point.label} className="flex h-full min-w-0 flex-col justify-end gap-1">
-              <div className="relative flex flex-1 items-end justify-center gap-1">
-                <span className="w-1.5 rounded-t-full bg-zinc-200" style={{ height: `${previousHeight}%` }} title={`Periode sebelumnya ${formatCompactRupiah(point.previous * 1_000_000)}`} />
-                <span className="w-2 rounded-t-full bg-emerald-600 shadow-[0_0_14px_rgba(5,150,105,0.28)] transition-all duration-500" style={{ height: `${currentHeight}%` }} title={`Realisasi ${formatCompactRupiah(point.current * 1_000_000)}`} />
-                <span className="w-1 rounded-t-full bg-amber-300" style={{ height: `${targetHeight}%` }} title={`Target ${formatCompactRupiah(point.target * 1_000_000)}`} />
+      {data.trend.length === 0 ? (
+        <div className="flex h-44 items-center justify-center border-b border-zinc-100 text-xs font-semibold text-slate-500">
+          Belum ada transaksi tervalidasi untuk periode ini.
+        </div>
+      ) : (
+        <div className="mt-6 grid h-44 grid-cols-[repeat(6,minmax(0,1fr))] items-end gap-2 border-b border-zinc-100 px-1 pt-4 sm:gap-3" aria-label={`Grafik tren ${data.periodLabel}`}>
+          {data.trend.map((point) => {
+            const currentHeight = Math.max(8, Math.round((point.current / maximum) * 100));
+            const previousHeight = Math.max(5, Math.round((point.previous / maximum) * 100));
+            const targetHeight = Math.max(8, Math.round((point.target / maximum) * 100));
+            return (
+              <div key={point.label} className="flex h-full min-w-0 flex-col justify-end gap-1">
+                <div className="relative flex flex-1 items-end justify-center gap-1">
+                  <span className="w-1.5 rounded-t-full bg-zinc-200" style={{ height: `${previousHeight}%` }} title={`Periode sebelumnya ${formatCompactRupiah(point.previous * 1_000_000)}`} />
+                  <span className="w-2 rounded-t-full bg-emerald-600 shadow-[0_0_14px_rgba(5,150,105,0.28)] transition-all duration-500" style={{ height: `${currentHeight}%` }} title={`Realisasi ${formatCompactRupiah(point.current * 1_000_000)}`} />
+                  <span className="w-1 rounded-t-full bg-amber-300" style={{ height: `${targetHeight}%` }} title={`Target ${formatCompactRupiah(point.target * 1_000_000)}`} />
+                </div>
+                <span className="truncate text-center text-[10px] font-medium text-zinc-500">{point.label}</span>
               </div>
-              <span className="truncate text-center text-[10px] font-medium text-zinc-500">{point.label}</span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium text-zinc-500">
         <span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-full bg-emerald-600" />Periode ini</span>

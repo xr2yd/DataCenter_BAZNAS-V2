@@ -19,17 +19,23 @@ export function AsnafBreakdown({ data }: { data: DashboardData }) {
         <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">100%</span>
       </div>
 
-      <div className="mt-4 space-y-2.5">
-        {data.asnaf.map((item) => (
-          <div key={item.id} className="group grid grid-cols-[minmax(112px,1fr)_minmax(88px,1.6fr)_auto] items-center gap-3">
-            <p className="truncate text-sm font-bold text-zinc-800">{item.name} <span className="text-[11px] font-medium text-zinc-400">· {item.beneficiaries.toLocaleString('id-ID')}</span></p>
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-100" aria-label={`${item.name} ${item.percentage}%`}>
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${item.percentage}%`, backgroundColor: item.color }} />
+      {data.asnaf.length === 0 ? (
+        <div className="py-8 text-center text-xs font-semibold text-slate-500">
+          Belum ada transaksi tervalidasi untuk periode ini.
+        </div>
+      ) : (
+        <div className="mt-4 space-y-2.5">
+          {data.asnaf.map((item) => (
+            <div key={item.id} className="group grid grid-cols-[minmax(112px,1fr)_minmax(88px,1.6fr)_auto] items-center gap-3">
+              <p className="truncate text-sm font-bold text-zinc-800">{item.name} <span className="text-[11px] font-medium text-zinc-400">· {item.beneficiaries.toLocaleString('id-ID')}</span></p>
+              <div className="h-2 overflow-hidden rounded-full bg-zinc-100" aria-label={`${item.name} ${item.percentage}%`}>
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${item.percentage}%`, backgroundColor: item.color }} />
+              </div>
+              <p className="whitespace-nowrap text-right text-sm font-black tabular-nums text-zinc-900">{item.percentage}% <span className="text-[11px] font-medium text-zinc-500">{formatAmount(item.amount)}</span></p>
             </div>
-            <p className="whitespace-nowrap text-right text-sm font-black tabular-nums text-zinc-900">{item.percentage}% <span className="text-[11px] font-medium text-zinc-500">{formatAmount(item.amount)}</span></p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -86,14 +86,16 @@ function DistributionList({ items }: { items: Array<{ label: string; value: stri
 }
 
 export function LaporanPenyaluranWorkspace() {
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   const [activeCategory, setActiveCategory] = useState<ReportCategory>('Ringkasan');
   const [search, setSearch] = useState('');
   const [period, setPeriod] = useState('2026-08');
   const [feedback, setFeedback] = useState('');
-  const [reports, setReports] = useState<ReportItem[]>(REPORT_RECORDS as any);
-  const [kpis, setKpis] = useState<ReportKpi[]>(REPORT_KPIS as any);
-  const [progAlloc, setProgAlloc] = useState<ReportDistributionItem[]>(PROGRAM_ALLOCATION as any);
-  const [asnafAlloc, setAsnafAlloc] = useState<ReportDistributionItem[]>(ASNAF_DISTRIBUTION as any);
+  const [reports, setReports] = useState<ReportItem[]>(isDemo ? (REPORT_RECORDS as any) : []);
+  const [kpis, setKpis] = useState<ReportKpi[]>(isDemo ? (REPORT_KPIS as any) : []);
+  const [progAlloc, setProgAlloc] = useState<ReportDistributionItem[]>(isDemo ? (PROGRAM_ALLOCATION as any) : []);
+  const [asnafAlloc, setAsnafAlloc] = useState<ReportDistributionItem[]>(isDemo ? (ASNAF_DISTRIBUTION as any) : []);
+  const [dataStatus, setDataStatus] = useState<'ready' | 'empty' | 'demo' | 'loading'>(isDemo ? 'demo' : 'loading');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,19 +111,37 @@ export function LaporanPenyaluranWorkspace() {
   const loadReports = () => {
     const params: Record<string, string> = {};
     if (search.trim()) params.search = search.trim();
+    if (period) params.period = period;
     api.getLaporanList(params).then((res) => {
-      if (res && Array.isArray(res.reports) && res.reports.length > 0) {
-        setReports(res.reports);
-        if (res.kpis) setKpis(res.kpis);
-        if (res.programAllocation) setProgAlloc(res.programAllocation);
-        if (res.asnafDistribution) setAsnafAlloc(res.asnafDistribution);
+      if (res) {
+        setReports(Array.isArray(res.reports) ? res.reports : []);
+        if (Array.isArray(res.kpis) && res.kpis.length > 0) {
+          setKpis(res.kpis);
+        } else if (!isDemo) {
+          setKpis([]);
+        }
+        if (Array.isArray(res.programAllocation)) {
+          setProgAlloc(res.programAllocation);
+        } else if (!isDemo) {
+          setProgAlloc([]);
+        }
+        if (Array.isArray(res.asnafDistribution)) {
+          setAsnafAlloc(res.asnafDistribution);
+        } else if (!isDemo) {
+          setAsnafAlloc([]);
+        }
+        setDataStatus(res.dataStatus || (res.reports && res.reports.length > 0 ? 'ready' : 'empty'));
       }
-    }).catch(() => {});
+    }).catch(() => {
+      if (!isDemo) {
+        setDataStatus('empty');
+      }
+    });
   };
 
   useEffect(() => {
     loadReports();
-  }, [search]);
+  }, [search, period]);
 
   useEffect(() => {
     if (!feedback) {
@@ -299,9 +319,21 @@ export function LaporanPenyaluranWorkspace() {
         </div>
       </section>
 
+      {dataStatus === 'empty' && (
+        <div className="flex items-center gap-2.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs font-semibold text-slate-500">
+          <CircleAlert className="size-4 shrink-0 text-slate-400" />
+          <span>Belum ada transaksi tervalidasi untuk periode ini.</span>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <section aria-label="Ringkasan periode laporan" className="grid overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi, index) => (
+        {(kpis.length > 0 ? kpis : [
+          { label: 'Dana tersalurkan', value: 'Rp 0', detail: 'Realisasi periode ini', trend: '0% dari periode lalu' },
+          { label: 'Mustahik terbantu', value: '0 jiwa', detail: 'Penerima manfaat terverifikasi', trend: '0% dari periode lalu' },
+          { label: 'Total laporan', value: `${reports.length} laporan`, detail: 'Laporan tercatat', trend: `${reports.filter(r => r.status === 'Siap diekspor').length} siap ekspor` },
+          { label: 'Laporan siap ekspor', value: `${reports.filter(r => r.status === 'Siap diekspor').length}`, detail: 'Dokumen final', trend: '0% kesiapan' },
+        ]).map((kpi, index) => (
           <article key={kpi.label} className="bg-white p-5 transition-colors hover:bg-emerald-50/40 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-zinc-500">{kpi.label}</p>
@@ -373,62 +405,75 @@ export function LaporanPenyaluranWorkspace() {
             </div>
             {filteredReports.length ? (
               <div className="space-y-3" role="list" aria-label="Daftar laporan">
-                {filteredReports.map((report) => (
-                  <article
-                    key={report.id}
-                    role="listitem"
-                    className="group rounded-2xl border border-zinc-200 bg-white p-4 transition duration-200 hover:border-emerald-200 hover:shadow-md sm:p-5"
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-700">
-                            {report.period}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset ${STATUS_CLASSES[report.status] || STATUS_CLASSES['Siap diekspor']}`}>
-                            {report.status}
-                          </span>
+                {filteredReports.map((report) => {
+                  const isExportable = report.status === 'Siap diekspor' || (report.status as string) === 'ready';
+                  return (
+                    <article
+                      key={report.id}
+                      role="listitem"
+                      className="group rounded-2xl border border-zinc-200 bg-white p-4 transition duration-200 hover:border-emerald-200 hover:shadow-md sm:p-5"
+                    >
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-700">
+                              {report.period}
+                            </span>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset ${STATUS_CLASSES[report.status] || STATUS_CLASSES['Siap diekspor']}`}>
+                              {report.status}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 text-base font-black leading-6 text-zinc-950">{report.title}</h3>
+                          <p className="mt-1 text-sm leading-6 text-zinc-600">{report.description}</p>
+                          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-zinc-500">
+                            <span>{report.scope}</span>
+                            <span className="hidden h-1 w-1 rounded-full bg-zinc-300 sm:block" />
+                            <span>{report.updated_at}</span>
+                          </div>
                         </div>
-                        <h3 className="mt-3 text-base font-black leading-6 text-zinc-950">{report.title}</h3>
-                        <p className="mt-1 text-sm leading-6 text-zinc-600">{report.description}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-zinc-500">
-                          <span>{report.scope}</span>
-                          <span className="hidden h-1 w-1 rounded-full bg-zinc-300 sm:block" />
-                          <span>{report.updated_at}</span>
+                        <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch">
+                          <button
+                            type="button"
+                            disabled={!isExportable}
+                            title={!isExportable ? 'Belum ada data untuk diekspor' : `Cetak Dokumen PDF: ${report.title}`}
+                            aria-label={`Cetak Dokumen PDF: ${report.title}`}
+                            onClick={() => handleExport('PDF', report)}
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/60 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 hover:border-rose-300 sm:flex-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FileText className="size-3.5 text-rose-600" />
+                            Cetak PDF
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!isExportable}
+                            title={!isExportable ? 'Belum ada data untuk diekspor' : `Unduh Dokumen Excel: ${report.title}`}
+                            aria-label={`Unduh Dokumen Excel: ${report.title}`}
+                            onClick={() => handleExport('Excel', report)}
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 sm:flex-none shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <FileSpreadsheet className="size-3.5" />
+                            Unduh Excel (.xlsx)
+                          </button>
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-stretch">
-                        <button
-                          type="button"
-                          aria-label={`Cetak Dokumen PDF: ${report.title}`}
-                          onClick={() => handleExport('PDF', report)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/60 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 hover:border-rose-300 sm:flex-none cursor-pointer"
-                        >
-                          <FileText className="size-3.5 text-rose-600" />
-                          Cetak PDF
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`Unduh Dokumen Excel: ${report.title}`}
-                          onClick={() => handleExport('Excel', report)}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 sm:flex-none shadow-xs cursor-pointer"
-                        >
-                          <FileSpreadsheet className="size-3.5" />
-                          Unduh Excel (.xlsx)
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-5 py-12 text-center">
-                <Search className="mx-auto size-6 text-zinc-400" />
-                <h3 className="mt-3 font-bold text-zinc-900">Laporan tidak ditemukan</h3>
-                <p className="mt-1 text-sm text-zinc-500">Coba kata kunci lain atau hapus pencarian.</p>
-                <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer">
-                  Hapus pencarian
-                </button>
+                <FileText className="mx-auto size-6 text-zinc-400" />
+                <h3 className="mt-3 font-bold text-zinc-900">
+                  {search ? 'Laporan tidak ditemukan' : 'Belum ada laporan'}
+                </h3>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {search ? 'Coba kata kunci lain atau hapus pencarian.' : 'Belum ada data untuk diekspor pada periode ini.'}
+                </p>
+                {search ? (
+                  <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer">
+                    Hapus pencarian
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
@@ -447,7 +492,11 @@ export function LaporanPenyaluranWorkspace() {
           </div>
           <p className="mt-2 text-sm leading-6 text-zinc-500">Realisasi penyaluran pada periode yang dipilih.</p>
           <div className="mt-6">
-            <DistributionList items={progAlloc} />
+            {progAlloc.length > 0 ? (
+              <DistributionList items={progAlloc} />
+            ) : (
+              <p className="text-xs font-semibold text-slate-500 py-6 text-center">Belum ada transaksi tervalidasi untuk periode ini.</p>
+            )}
           </div>
           <Link
             href="/penyaluran/program"
@@ -465,7 +514,11 @@ export function LaporanPenyaluranWorkspace() {
             <Sparkles className="size-5 text-violet-600" />
           </div>
           <div className="mt-6">
-            <DistributionList items={asnafAlloc} />
+            {asnafAlloc.length > 0 ? (
+              <DistributionList items={asnafAlloc} />
+            ) : (
+              <p className="text-xs font-semibold text-slate-500 py-6 text-center">Belum ada transaksi tervalidasi untuk periode ini.</p>
+            )}
           </div>
         </section>
         <section className="rounded-3xl border border-amber-200 bg-amber-50/60 p-5 sm:p-6">
