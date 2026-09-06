@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getSelectionFocusStyle, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -61,5 +61,17 @@ describe('getKecamatanStyle', () => {
 
   it('attaches custom GeoJSON layers when the Mapbox style is ready', () => {
     expect(MAP_READY_EVENT).toBe('style.load');
+  });
+});
+
+describe('getConnectedCalloutPlacement', () => {
+  it('places the callout in the opposing upper-left safe zone for an upper-right point', () => {
+    const point = { x: 640, y: 250 };
+
+    expect(getConnectedCalloutPlacement(point, { width: 900, height: 430 })).toEqual({
+      card: { left: '4%', top: '14%' },
+      anchor: point,
+      side: 'left',
+    });
   });
 });

@@ -41,6 +41,24 @@ export function getSelectionFocusStyle(isSelected: boolean) {
     : { fillOpacity: 0.42, outlineColor: '#ffffff', outlineWidth: 1 };
 }
 
+export function getConnectedCalloutPlacement(
+  point: { x: number; y: number },
+  viewport: { width: number; height: number },
+): {
+  card: { left: string; top: string };
+  anchor: { x: number; y: number };
+  side: 'left' | 'right';
+} {
+  const side = point.x >= viewport.width / 2 ? 'left' : 'right';
+  const top = point.y > viewport.height * 0.62 ? '60%' : '14%';
+
+  return {
+    card: { left: side === 'left' ? '4%' : '68%', top },
+    anchor: point,
+    side,
+  };
+}
+
 export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, onSelectKecamatan, liveData, periodData, mapboxAccessToken }: { metric?: MapMetric; selectedKecamatan?: string | null; onSelectKecamatan?: (name: string) => void; liveData?: PenyaluranByKecamatan[]; periodData?: MapPeriodData; mapboxAccessToken?: string }) {
   const container = useRef<HTMLDivElement | null>(null); const mapRef = useRef<MapboxMap | null>(null); const onSelect = useRef(onSelectKecamatan); const [ready, setReady] = useState(false); const [error, setError] = useState(false); const [lastSelected, setLastSelected] = useState<string | null>(selectedKecamatan ?? null);
   const presentation = getMapMetricPresentation(metric); const config = getMapboxStyleConfig(mapboxAccessToken ?? process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN);
