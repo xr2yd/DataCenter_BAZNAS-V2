@@ -1071,6 +1071,25 @@ export function getPeriodStart(period, now = new Date()) {
 
 const REPORT_MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
+function normalizeReportDate(value) {
+  const text = String(value || '').trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(Z|[+-]\d{2}:\d{2})?)?$/.exec(text);
+  const local = /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/.exec(text);
+  if (!iso && !local) return null;
+  const year = Number(iso ? iso[1] : local[3]);
+  const month = iso ? Number(iso[2]) : REPORT_MONTHS.findIndex(name =>
+    [name.toLowerCase(), name.slice(0, 3).toLowerCase()].includes(local[2].toLowerCase())) + 1;
+  const day = Number(iso ? iso[3] : local[1]);
+  if (year < 1000 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  // Reject impossible calendar dates instead of allowing Date to roll them over.
+  if (new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) !== date) return null;
+  if (!iso?.[4]) return date;
+  // Timezone-less stored timestamps use UTC, matching the rolling date range.
+  const timestamp = new Date(`${date}T${iso[4]}${iso[5] || 'Z'}`);
+  return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString().slice(0, 10);
+}
+
 function getReportRange(period, now) {
   const end = now.toISOString().slice(0, 10);
   if (!period || ['all', 'semua'].includes(String(period).trim().toLowerCase())) {
@@ -1974,9 +1993,6 @@ export async function getLaporanList(filters = {}, dbOverride = null, now = new 
   if (range.aliases) {
     params.push(...range.aliases.map(p => p.toLowerCase()));
     conditions.push(`LOWER(period) IN ($${params.length - 1}, $${params.length})`);
-  } else if (filters.period && ['7d', '30d', '1y'].includes(filters.period)) {
-    params.push(range.start, range.end);
-    conditions.push(`updated_at >= $${params.length - 1} AND updated_at <= $${params.length}`);
   }
 
   if (filters.search) {
@@ -1993,7 +2009,15 @@ export async function getLaporanList(filters = {}, dbOverride = null, now = new 
   }
 
   query += ' ORDER BY id DESC';
-  const rows = await db.all(query, params);
+  let rows = await db.all(query, params);
+  if (['7d', '30d', '1y'].includes(filters.period)) {
+    // Legacy localized text and ISO timestamps cannot be compared lexically.
+    // Normalize before filtering so the entire end calendar day is included.
+    rows = rows.filter(row => {
+      const updatedDate = normalizeReportDate(row.updated_at);
+      return updatedDate !== null && updatedDate >= range.start && updatedDate <= range.end;
+    });
+  }
 
   // Normalize report category output
   const normalizeOutputCat = (c) => {

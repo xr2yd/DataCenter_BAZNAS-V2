@@ -62,9 +62,9 @@ async function fixture(t, engine = 'sqlite') {
     };
     await db.run(`INSERT INTO mustahik (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')})`, Object.values(row));
   };
-  const insertReport = async (id, period, category = 'Ringkasan', status = 'Siap diekspor') => {
+  const insertReport = async (id, period, category = 'Ringkasan', status = 'Siap diekspor', updatedAt = '2026-09-06') => {
     await db.run('INSERT INTO reports (id, period, category, status, title, metrics_json, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [id, period, category, status, id, '{"totalRealisasi":999999999}', '2026-09-06']);
+      [id, period, category, status, id, '{"totalRealisasi":999999999}', updatedAt]);
   };
   return { db, insertMustahik, insertReport };
 }
@@ -172,6 +172,35 @@ for (const engine of ['sqlite', 'postgres']) {
     assert.equal(empty.dataStatus, 'empty');
     assert.equal(empty.count, 0);
     assert.deepEqual(empty.programAllocation, []);
+  });
+
+  test(`${engine}: rolling report periods normalize Indonesian dates and reject invalid dates`, async t => {
+    const { db, insertReport } = await fixture(t, engine);
+    for (const [id, date] of [
+      ['local-inside', '25 Agu 2026'], ['local-start', '7 Agustus 2026'],
+      ['local-end', '6 Sep 2026'], ['local-old', '6 Agu 2026'],
+      ['local-future', '7 September 2026'], ['local-invalid', '31 Aguu 2026'],
+      ['local-overflow', '32 Agu 2026'], ['missing-date', null],
+    ]) await insertReport(id, 'Agustus 2026', 'Ringkasan', 'Siap diekspor', date);
+    const result = await repository.getLaporanList({ period: '30d' }, db, NOW);
+    assert.deepEqual(result.reports.map(r => r.id).sort(), ['local-end', 'local-inside', 'local-start']);
+    assert.equal(result.categoryCounts.Ringkasan, 3);
+    assert.equal(result.kpis.find(k => k.key === 'totalLaporan').rawValue, 3);
+    assert.equal(result.kpis.find(k => k.key === 'laporanSiapEkspor').rawValue, 3);
+  });
+
+  test(`${engine}: rolling report periods include the entire UTC end day for ISO timestamps`, async t => {
+    const { db, insertReport } = await fixture(t, engine);
+    for (const [id, date] of [
+      ['iso-start', '2026-08-30'], ['iso-end', '2026-09-06T23:59:59.999Z'],
+      ['iso-space', '2026-09-06 23:59:59'], ['iso-offset-inside', '2026-09-07T00:30:00+07:00'],
+      ['iso-old', '2026-08-29T23:59:59.999Z'], ['iso-future', '2026-09-07T00:00:00Z'],
+      ['iso-offset-future', '2026-09-06T23:00:00-03:00'], ['iso-invalid', '2026-08-32'],
+    ]) await insertReport(id, 'September 2026', 'Ringkasan', 'Siap diekspor', date);
+    const result = await repository.getLaporanList({ period: '7d' }, db, NOW);
+    assert.deepEqual(result.reports.map(r => r.id).sort(), ['iso-end', 'iso-offset-inside', 'iso-space', 'iso-start']);
+    assert.equal(result.count, 4);
+    assert.equal(result.categoryCounts.Ringkasan, 4);
   });
 }
 
