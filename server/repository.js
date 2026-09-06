@@ -1061,53 +1061,65 @@ export async function createUser(userData) {
 /**
  * 1. Overview & Dashboard Penyaluran (Period-aware)
  */
-export async function getPenyaluranOverview(period = '30d') {
-  const db = await getDb();
+export function getPeriodStart(period, now = new Date()) {
+  const days = { '7d': 7, '30d': 30, '1y': 365 }[period];
+  if (!days) throw new Error('Periode tidak valid');
+  const start = new Date(now);
+  start.setUTCDate(start.getUTCDate() - days);
+  return start.toISOString().slice(0, 10);
+}
 
-  // Basic totals
-  const totalMustahikRow = await db.get('SELECT COUNT(*) as count, COALESCE(SUM(beneficiary_count), 0) as total_jiwa FROM mustahik');
-  const totalDisalurkanRow = await db.get(`
-    SELECT
-      COALESCE(SUM(approved_amount), 0) as total_disalurkan,
-      COALESCE(SUM(CASE WHEN disbursement_date IS NOT NULL AND disbursement_date != '' THEN approved_amount ELSE 0 END), 0) as total_cair,
-      COALESCE(SUM(CASE WHEN strftime('%Y-%m', received_date) = strftime('%Y-%m', 'now') OR strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now') THEN approved_amount ELSE 0 END), 0) as bulan_ini
-    FROM mustahik
-  `);
+const REPORT_MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-  const totalMustahik = parseInt(totalMustahikRow?.count || 0, 10);
-  const totalJiwa = parseInt(totalMustahikRow?.total_jiwa || 0, 10) || totalMustahik * 4;
-  const rawDisalurkan = parseFloat(totalDisalurkanRow?.total_disalurkan || 0);
-  const totalDisalurkan = rawDisalurkan > 0 ? rawDisalurkan : 29_840_000_000;
-  const targetRkat = 32_000_000_000;
-  const efektivitasPenyaluran = Math.min(100, Math.round((totalDisalurkan / targetRkat) * 1000) / 10);
-  const balance = Math.max(0, targetRkat - totalDisalurkan);
-  const penyaluranBulanIni = parseFloat(totalDisalurkanRow?.bulan_ini || 0) || 4_210_000_000;
+function getReportRange(period, now) {
+  const end = now.toISOString().slice(0, 10);
+  if (!period || ['all', 'semua'].includes(String(period).trim().toLowerCase())) {
+    return { start: '0001-01-01', end, aliases: null };
+  }
+  if (['7d', '30d', '1y'].includes(period)) {
+    return { start: getPeriodStart(period, now), end, aliases: null };
+  }
+  const value = String(period).trim();
+  const iso = /^(\d{4})-(\d{2})$/.exec(value);
+  const named = /^([A-Za-z]+) (\d{4})$/.exec(value);
+  const year = iso ? Number(iso[1]) : named ? Number(named[2]) : 0;
+  const month = iso ? Number(iso[2]) : named ? REPORT_MONTHS.findIndex(m => m.toLowerCase() === named[1].toLowerCase()) + 1 : 0;
+  if (year < 1000 || month < 1 || month > 12) throw new Error('Periode tidak valid');
+  const prefix = `${year}-${String(month).padStart(2, '0')}`;
+  const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  return { start: `${prefix}-01`, end: monthEnd < end ? monthEnd : end, aliases: [prefix, `${REPORT_MONTHS[month - 1]} ${year}`] };
+}
 
-  // Monthly trends (12 months)
-  const monthlyData = [
-    { month: 'Jan', realisasi: 2.1, target: 2.5, mustahik: 2450 },
-    { month: 'Feb', realisasi: 2.4, target: 2.5, mustahik: 2800 },
-    { month: 'Mar', realisasi: 3.2, target: 2.8, mustahik: 3900 },
-    { month: 'Apr', realisasi: 4.8, target: 3.5, mustahik: 6200 },
-    { month: 'Mei', realisasi: 3.9, target: 3.0, mustahik: 4800 },
-    { month: 'Jun', realisasi: 3.1, target: 2.8, mustahik: 3600 },
-    { month: 'Jul', realisasi: 3.5, target: 3.0, mustahik: 4100 },
-    { month: 'Agu', realisasi: 4.21, target: 3.5, mustahik: 4850 },
-    { month: 'Sep', realisasi: 0, target: 2.8, mustahik: 0 },
-    { month: 'Okt', realisasi: 0, target: 2.8, mustahik: 0 },
-    { month: 'Nov', realisasi: 0, target: 2.8, mustahik: 0 },
-    { month: 'Des', realisasi: 0, target: 3.0, mustahik: 0 }
-  ];
+// Mustahik is the canonical realized ledger here. PPD mirrors the same payment;
+// summing both would count one disbursement twice. Dates are stored as ISO text.
+async function getRealizedAggregates(db, start, end) {
+  const where = `status IN ('Disetujui', 'Pengajuan Dana (FPD)', 'Pengajuan Dana (PPD)', 'PPD', 'FPD', 'Penyaluran Selesai', 'Selesai')
+    AND disbursement_date >= $1 AND disbursement_date <= $2`;
+  const params = [start, end];
+  const totals = await db.get(`SELECT COUNT(*) AS count,
+    COALESCE(SUM(approved_amount), 0) AS amount,
+    COALESCE(SUM(beneficiary_count), 0) AS beneficiaries
+    FROM mustahik WHERE ${where}`, params);
+  const monthly = await db.all(`SELECT SUBSTR(disbursement_date, 1, 7) AS month,
+    COUNT(*) AS count, COALESCE(SUM(approved_amount), 0) AS amount
+    FROM mustahik WHERE ${where}
+    GROUP BY SUBSTR(disbursement_date, 1, 7) ORDER BY month`, params);
+  const groupBy = async column => db.all(`SELECT COALESCE(NULLIF(${column}, ''), 'Belum diklasifikasikan') AS name,
+    COUNT(*) AS count, COALESCE(SUM(approved_amount), 0) AS amount,
+    COALESCE(SUM(beneficiary_count), 0) AS beneficiaries
+    FROM mustahik WHERE ${where}
+    GROUP BY COALESCE(NULLIF(${column}, ''), 'Belum diklasifikasikan') ORDER BY name`, params);
+  return {
+    count: Number(totals.count), amount: Number(totals.amount), beneficiaries: Number(totals.beneficiaries),
+    monthly, asnaf: await groupBy('asnaf'), programs: await groupBy('program'),
+  };
+}
 
-  // Asnaf breakdown
-  const asnafRows = await db.all(`
-    SELECT asnaf, COUNT(*) as count, COALESCE(SUM(approved_amount), 0) as amount
-    FROM mustahik
-    WHERE asnaf IS NOT NULL AND asnaf != ''
-    GROUP BY asnaf
-    ORDER BY count DESC
-  `);
-
+export async function getPenyaluranOverview(period = '30d', dbOverride = null, now = new Date()) {
+  const start = getPeriodStart(period, now);
+  const end = now.toISOString().slice(0, 10);
+  const db = dbOverride || await getDb();
+  const realized = await getRealizedAggregates(db, start, end);
   const asnafColorMap = {
     Fakir: '#059669',
     Miskin: '#10b981',
@@ -1119,45 +1131,20 @@ export async function getPenyaluranOverview(period = '30d') {
     Amil: '#14b8a6'
   };
 
-  const asnafBreakdown = asnafRows.map(r => ({
-    name: r.asnaf,
-    count: parseInt(r.count, 10),
-    amount: parseFloat(r.amount) || 0,
-    percentage: totalMustahik > 0 ? Math.round((parseInt(r.count, 10) / totalMustahik) * 100) : 0,
-    color: asnafColorMap[r.asnaf] || '#10b981'
+  const asnafBreakdown = realized.asnaf.map(r => ({
+    name: r.name,
+    count: Number(r.count),
+    amount: Number(r.amount),
+    percentage: realized.count > 0 ? Math.round((Number(r.count) / realized.count) * 100) : 0,
+    color: asnafColorMap[r.name] || '#10b981'
+  }));
+  const programImpact = realized.programs.map(r => ({
+    id: r.name, name: r.name, category: r.name, target: 0, color: '#059669', desc: '',
+    realizedAmount: Number(r.amount), beneficiariesCount: Number(r.beneficiaries), percentage: 0,
   }));
 
-  // 5 Pilar distribution
-  const pilarConfig = [
-    { id: 'cerdas', name: 'Tangerang Cerdas', category: 'Pendidikan', target: 11_800_000_000, color: '#2563eb', desc: 'Pendidikan merata, beasiswa santri & siswa dhuafa' },
-    { id: 'makmur', name: 'Tangerang Makmur', category: 'Ekonomi', target: 8_500_000_000, color: '#059669', desc: 'Pemberdayaan UMKM, Z-Mart, Z-Auto, modal usaha' },
-    { id: 'sehat', name: 'Tangerang Sehat', category: 'Kesehatan', target: 6_200_000_000, color: '#dc2626', desc: 'Layanan ambulans 24 jam, pengobatan, stunting' },
-    { id: 'peduli', name: 'Tangerang Peduli', category: 'Kemanusiaan', target: 8_000_000_000, color: '#ea580c', desc: 'Bedah rumah RTLH, respon bencana, lansia' },
-    { id: 'takwa', name: 'Tangerang Takwa', category: 'Dakwah & Advokasi', target: 4_500_000_000, color: '#7c3aed', desc: 'Insentif guru ngaji, marbot, pembinaan muallaf' }
-  ];
-
-  const programRows = await db.all(`
-    SELECT program, COUNT(*) as count, COALESCE(SUM(approved_amount), 0) as amount
-    FROM mustahik
-    GROUP BY program
-  `);
-
-  const programImpact = pilarConfig.map(p => {
-    const matched = programRows.find(r => r.program?.toLowerCase().includes(p.category.toLowerCase()) || r.program?.toLowerCase().includes(p.name.toLowerCase()));
-    const realAmount = matched ? parseFloat(matched.amount) : 0;
-    const count = matched ? parseInt(matched.count, 10) : 0;
-    const finalAmount = realAmount > 0 ? realAmount : Math.round(p.target * 0.78);
-    const finalCount = count > 0 ? count : Math.round(finalAmount / 1500000);
-    return {
-      ...p,
-      realizedAmount: finalAmount,
-      beneficiariesCount: finalCount,
-      percentage: Math.min(100, Math.round((finalAmount / p.target) * 100))
-    };
-  });
-
   // Action Rail / Queue alerts
-  const stagesCount = await getMustahikStageCounts();
+  const stagesCount = await getMustahikStageCounts(db);
   const queueItems = await db.all(`
     SELECT id, name, file_no, nik, kecamatan, status, recommended_amount, asnaf, program, created_at
     FROM mustahik
@@ -1166,29 +1153,32 @@ export async function getPenyaluranOverview(period = '30d') {
     LIMIT 6
   `);
 
-  const recentLogs = await getActivityLogs(null, 8);
+  const recentLogs = await getActivityLogs(null, 8, db);
 
   return {
+    dataStatus: realized.count > 0 ? 'ready' : 'empty',
     period,
+    dateRange: { start, end },
+    unavailableMetrics: ['targetRkat', 'efektivitasPenyaluran', 'balance', 'growthRate', 'slaComplianceRate', 'monthlyTrend.target', 'programImpact.target', 'programImpact.percentage', 'actionRail.slaCounts.lewatSla', 'actionRail.slaCounts.dokumenKurang'],
     metrics: {
-      totalPenyaluran: totalDisalurkan,
-      penyaluranBulanIni,
-      totalMustahik,
-      totalJiwa,
-      efektivitasPenyaluran,
-      targetRkat,
-      balance,
-      growthRate: 12.8,
-      slaComplianceRate: 96.4
+      totalPenyaluran: realized.amount,
+      penyaluranBulanIni: Number(realized.monthly.find(r => r.month === end.slice(0, 7))?.amount || 0),
+      totalMustahik: realized.count,
+      totalJiwa: realized.beneficiaries,
+      efektivitasPenyaluran: 0,
+      targetRkat: 0,
+      balance: 0,
+      growthRate: 0,
+      slaComplianceRate: 0
     },
-    monthlyTrend: monthlyData,
+    monthlyTrend: realized.monthly.map(r => ({ month: r.month, realisasi: Number(r.amount) / 1_000_000_000, target: 0, mustahik: Number(r.count) })),
     asnafBreakdown,
     programImpact,
     actionRail: {
       slaCounts: {
         perluTindakan: stagesCount.diajukan + stagesCount.verifikasi,
-        lewatSla: Math.max(1, Math.round(stagesCount.diajukan * 0.2)),
-        dokumenKurang: Math.max(2, Math.round(stagesCount.verifikasi * 0.3))
+        lewatSla: 0,
+        dokumenKurang: 0
       },
       queueItems: queueItems.map(formatMustahikRow),
       recentActivities: recentLogs
@@ -1694,8 +1684,8 @@ export async function deletePilarInitiative(id) {
 /**
  * 4. Mustahik Stage Counts for Tab Rails
  */
-export async function getMustahikStageCounts() {
-  const db = await getDb();
+export async function getMustahikStageCounts(dbOverride = null) {
+  const db = dbOverride || await getDb();
   const rows = await db.all(`
     SELECT status, COUNT(*) as count
     FROM mustahik
@@ -1929,8 +1919,8 @@ export async function appendActivityLog({
   return result.lastID;
 }
 
-export async function getActivityLogs(mustahikId = null, limit = 20) {
-  const db = await getDb();
+export async function getActivityLogs(mustahikId = null, limit = 20, dbOverride = null) {
+  const db = dbOverride || await getDb();
   let query = 'SELECT * FROM activity_logs';
   const params = [];
 
@@ -1952,8 +1942,9 @@ export async function getActivityLogs(mustahikId = null, limit = 20) {
 /**
  * 8. Laporan Penyaluran Catalog & Export
  */
-export async function getLaporanList(filters = {}) {
-  const db = await getDb();
+export async function getLaporanList(filters = {}, dbOverride = null, now = new Date()) {
+  const range = getReportRange(filters.period, now);
+  const db = dbOverride || await getDb();
   let query = 'SELECT * FROM reports';
   const conditions = [];
   const params = [];
@@ -1979,14 +1970,13 @@ export async function getLaporanList(filters = {}) {
     params.push(...allowed);
   }
 
-  // Robust period filter: if it's "2026-08" or "Agustus 2026", match both
-  if (filters.period && filters.period !== 'all' && filters.period !== 'Semua') {
-    let pTerm = filters.period.trim();
-    if (pTerm === '2026-08') pTerm = 'Agustus 2026';
-    params.push(`%${pTerm}%`, `%${pTerm}%`);
-    const p1 = `$${params.length - 1}`;
-    const p2 = `$${params.length}`;
-    conditions.push(`(period ILIKE ${p1} OR updated_at ILIKE ${p2} OR period ILIKE '%2026%')`);
+  // A catalogue's reporting month is distinct from its modification timestamp.
+  if (range.aliases) {
+    params.push(...range.aliases.map(p => p.toLowerCase()));
+    conditions.push(`LOWER(period) IN ($${params.length - 1}, $${params.length})`);
+  } else if (filters.period && ['7d', '30d', '1y'].includes(filters.period)) {
+    params.push(range.start, range.end);
+    conditions.push(`updated_at >= $${params.length - 1} AND updated_at <= $${params.length}`);
   }
 
   if (filters.search) {
@@ -2021,8 +2011,7 @@ export async function getLaporanList(filters = {}) {
     metrics: safeJsonParse(r.metrics_json, {})
   }));
 
-  // Fetch all reports for category counts
-  const allRows = await db.all('SELECT category FROM reports');
+  // Counts describe the same filtered catalogue as the returned reports.
   const categoryCounts = {
     'Ringkasan': 0,
     'Per Program': 0,
@@ -2030,39 +2019,38 @@ export async function getLaporanList(filters = {}) {
     'Per Kecamatan': 0,
     'Audit & LPJ': 0
   };
-  for (const r of allRows) {
+  for (const r of reports) {
     const norm = normalizeOutputCat(r.category);
     if (categoryCounts[norm] !== undefined) categoryCounts[norm]++;
     else categoryCounts['Ringkasan']++;
   }
 
-  // Summary KPIs for Laporan page
+  // Financial figures use the same realized date range as the overview. Report
+  // snapshots can overlap; summing metrics_json would double-count payments.
+  const realized = await getRealizedAggregates(db, range.start, range.end);
+  const rupiah = amount => `Rp ${Number(amount).toLocaleString('id-ID')}`;
+  const readyCount = reports.filter(r => r.status === 'Siap diekspor').length;
   const kpis = [
-    { label: 'Total realisasi laporan', value: 'Rp 29,84 M', detail: 'Dari target RKAT Rp 32 M', trend: '↑ 93,25% tercapai' },
-    { label: 'Dokumen terverifikasi', value: `${reports.length * 28 + 120} berkas`, detail: '100% lampiran sah & tervalidasi', trend: '↑ 98,4% kepatuhan' },
-    { label: 'Tingkat kepatuhan SLA', value: '96,4%', detail: 'Standar audit syariah & keuangan', trend: 'Aman · predikat WTP' },
-    { label: 'Laporan siap ekspor', value: `${reports.filter(r => r.status === 'Siap diekspor').length} dokumen`, detail: 'Format PDF & Excel resmi', trend: 'Siap unduh' }
+    { key: 'totalRealisasi', label: 'Total realisasi laporan', rawValue: realized.amount, value: rupiah(realized.amount), detail: 'Penyaluran disetujui dengan tanggal pencairan dalam periode', trend: '' },
+    { key: 'totalMustahik', label: 'Mustahik tersalurkan', rawValue: realized.count, value: `${realized.count} mustahik`, detail: 'Catatan penyaluran dalam periode', trend: '' },
+    { key: 'totalLaporan', label: 'Laporan tercatat', rawValue: reports.length, value: `${reports.length} dokumen`, detail: 'Sesuai filter katalog', trend: '' },
+    { key: 'laporanSiapEkspor', label: 'Laporan siap ekspor', rawValue: readyCount, value: `${readyCount} dokumen`, detail: 'Status tersimpan: Siap diekspor', trend: '' }
   ];
-
-  // 5 Pilar Allocation
-  const programAllocation = [
-    { label: 'Tangerang Cerdas', value: 'Rp 8,62 M', percentage: 29, tone: 'emerald' },
-    { label: 'Tangerang Makmur', value: 'Rp 6,48 M', percentage: 22, tone: 'sky' },
-    { label: 'Tangerang Peduli', value: 'Rp 6,24 M', percentage: 21, tone: 'amber' },
-    { label: 'Tangerang Sehat', value: 'Rp 5,12 M', percentage: 17, tone: 'rose' },
-    { label: 'Tangerang Takwa', value: 'Rp 3,38 M', percentage: 11, tone: 'violet' }
-  ];
-
-  // Asnaf Distribution
-  const asnafDistribution = [
-    { label: 'Fakir', value: '14.226 jiwa', percentage: 37, tone: 'emerald' },
-    { label: 'Miskin', value: '15.187 jiwa', percentage: 40, tone: 'sky' },
-    { label: 'Fisabilillah', value: '3.691 jiwa', percentage: 10, tone: 'violet' },
-    { label: 'Gharimin', value: '2.153 jiwa', percentage: 6, tone: 'amber' },
-    { label: 'Ibnu Sabil & Lainnya', value: '2.693 jiwa', percentage: 7, tone: 'rose' }
-  ];
+  const programAllocation = realized.programs.map(r => ({
+    label: r.name, amount: Number(r.amount), value: rupiah(r.amount),
+    percentage: realized.amount > 0 ? Math.round(Number(r.amount) / realized.amount * 100) : 0,
+    tone: 'emerald',
+  }));
+  const asnafDistribution = realized.asnaf.map(r => ({
+    label: r.name, count: Number(r.beneficiaries), value: `${Number(r.beneficiaries).toLocaleString('id-ID')} jiwa`,
+    percentage: realized.beneficiaries > 0 ? Math.round(Number(r.beneficiaries) / realized.beneficiaries * 100) : 0,
+    tone: 'emerald',
+  }));
 
   return {
+    dataStatus: reports.length > 0 || realized.count > 0 ? 'ready' : 'empty',
+    period: filters.period || 'all',
+    dateRange: { start: range.start, end: range.end },
     reports,
     categoryCounts,
     kpis,
