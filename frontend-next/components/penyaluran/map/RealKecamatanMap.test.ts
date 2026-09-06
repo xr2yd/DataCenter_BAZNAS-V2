@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getCalloutDecisionContext, getCalloutLayoutMode, getCalloutPositionEvents, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getCalloutDecisionContext, getCalloutLayoutMode, getCalloutPositionEvents, getConnectedCalloutPlacement, getConnectorPixelRoute, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -89,6 +89,14 @@ describe('shouldRenderMapConnector', () => {
 
   it('recalculates the single connector only when the map size changes', () => {
     expect(getCalloutPositionEvents()).toEqual(['resize']);
+  });
+
+  it('uses one deterministic leader route from the card to the selected area', () => {
+    expect(getConnectorPixelRoute({ x: 240, y: 74 }, { x: 900, y: 264 })).toEqual([
+      { x: 240, y: 74 },
+      { x: 336, y: 74 },
+      { x: 900, y: 264 },
+    ]);
   });
 });
 

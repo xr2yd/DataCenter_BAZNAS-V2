@@ -12,6 +12,9 @@ import type { MapPeriodData } from '../dashboard/dashboard-data';
 const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
 const SOURCE_ID = 'kecamatan-boundaries';
 const FILL_ID = 'kecamatan-fill';
+const CONNECTOR_SOURCE_ID = 'selected-kecamatan-connector';
+const CONNECTOR_LINE_ID = 'selected-kecamatan-connector-line';
+const CONNECTOR_ANCHOR_ID = 'selected-kecamatan-connector-anchor';
 const CALLOUT_WIDTH = 224;
 const CALLOUT_HEIGHT = 188;
 const CALLOUT_MARGIN = 16;
@@ -40,6 +43,11 @@ export function shouldShowMapLoadError(isReady: boolean, isStyleLoaded: boolean)
 export function shouldRenderMapConnector(width: number): boolean { return width >= 640; }
 export function getCalloutLayoutMode(width: number): 'compact' | 'desktop' { return shouldRenderMapConnector(width) ? 'desktop' : 'compact'; }
 export function getCalloutPositionEvents(): readonly ['resize'] { return ['resize']; }
+export function getConnectorPixelRoute(start: PixelPoint, anchor: PixelPoint): PixelPoint[] {
+  const direction = anchor.x >= start.x ? 1 : -1;
+  const elbowDistance = Math.min(96, Math.max(48, Math.abs(anchor.x - start.x) * 0.22));
+  return [start, { x: start.x + direction * elbowDistance, y: start.y }, anchor];
+}
 export function getFillOpacityExpression(): ExpressionSpecification { return ['case', ['boolean', ['feature-state', 'hover'], false], 0.95, ['get', 'fillOpacity']]; }
 export function getSelectionFocusStyle(isSelected: boolean) { return isSelected ? { fillOpacity: 0.94, outlineColor: '#047857', outlineWidth: 3 } : { fillOpacity: 0.42, outlineColor: '#ffffff', outlineWidth: 1 }; }
 
@@ -93,6 +101,24 @@ function getFeatureGeographicCenter(feature: Feature<Geometry, Props>): [number,
   return Number.isFinite(bounds.west) ? [(bounds.west + bounds.east) / 2, (bounds.south + bounds.north) / 2] : [106.6319, -6.1783];
 }
 
+function setNativeConnector(map: MapboxMap, start?: PixelPoint, anchor?: PixelPoint) {
+  const source = map.getSource(CONNECTOR_SOURCE_ID) as GeoJSONSource | undefined;
+  if (!source) return;
+  if (!start || !anchor) { source.setData({ type: 'FeatureCollection', features: [] }); return; }
+  const route = getConnectorPixelRoute(start, anchor).map((point) => {
+    const coordinates = map.unproject([point.x, point.y]);
+    return [coordinates.lng, coordinates.lat];
+  });
+  const marker = map.unproject([anchor.x, anchor.y]);
+  source.setData({
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', properties: { kind: 'connector' }, geometry: { type: 'LineString', coordinates: route } },
+      { type: 'Feature', properties: { kind: 'anchor' }, geometry: { type: 'Point', coordinates: [marker.lng, marker.lat] } },
+    ],
+  } as FeatureCollection);
+}
+
 export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, onSelectKecamatan, liveData, periodData, mapboxAccessToken }: { metric?: MapMetric; selectedKecamatan?: string | null; onSelectKecamatan?: (name: string) => void; liveData?: PenyaluranByKecamatan[]; periodData?: MapPeriodData; mapboxAccessToken?: string }) {
   const container = useRef<HTMLDivElement | null>(null); const mapRef = useRef<MapboxMap | null>(null); const onSelect = useRef(onSelectKecamatan);
   const calloutRef = useRef<Callout | null>(null);
@@ -105,15 +131,15 @@ export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, 
     if (!container.current || !config.accessToken || mapRef.current) return;
     const map = new mapboxgl.Map({ container: container.current, accessToken: config.accessToken, style: config.style, center: [106.6319, -6.1783], zoom: 11.8, minZoom: 10, maxZoom: 15 });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right'); map.scrollZoom.disable();
-    map.once(MAP_READY_EVENT, () => { map.addSource(SOURCE_ID, { type: 'geojson', data, generateId: true }); map.addLayer({ id: FILL_ID, type: 'fill', source: SOURCE_ID, paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': getFillOpacityExpression() } }); map.addLayer({ id: 'kecamatan-outline', type: 'line', source: SOURCE_ID, paint: { 'line-color': ['get', 'outlineColor'], 'line-width': ['get', 'outlineWidth'], 'line-opacity': .95 } }); map.on('mouseenter', FILL_ID, () => { map.getCanvas().style.cursor = 'pointer'; }); map.on('mouseleave', FILL_ID, () => { map.getCanvas().style.cursor = ''; }); map.on('click', FILL_ID, (event: MapMouseEvent) => { const name = event.features?.[0]?.properties?.name; if (name) { setLastSelected(name); onSelect.current?.(name); } }); setError(false); setReady(true); });
+    map.once(MAP_READY_EVENT, () => { map.addSource(SOURCE_ID, { type: 'geojson', data, generateId: true }); map.addLayer({ id: FILL_ID, type: 'fill', source: SOURCE_ID, paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': getFillOpacityExpression() } }); map.addLayer({ id: 'kecamatan-outline', type: 'line', source: SOURCE_ID, paint: { 'line-color': ['get', 'outlineColor'], 'line-width': ['get', 'outlineWidth'], 'line-opacity': .95 } }); map.addSource(CONNECTOR_SOURCE_ID, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } }); map.addLayer({ id: CONNECTOR_LINE_ID, type: 'line', source: CONNECTOR_SOURCE_ID, filter: ['==', ['get', 'kind'], 'connector'], paint: { 'line-color': '#059669', 'line-width': 2.5, 'line-opacity': 0.9 } }); map.addLayer({ id: CONNECTOR_ANCHOR_ID, type: 'circle', source: CONNECTOR_SOURCE_ID, filter: ['==', ['get', 'kind'], 'anchor'], paint: { 'circle-radius': 5, 'circle-color': '#047857', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } }); map.on('mouseenter', FILL_ID, () => { map.getCanvas().style.cursor = 'pointer'; }); map.on('mouseleave', FILL_ID, () => { map.getCanvas().style.cursor = ''; }); map.on('click', FILL_ID, (event: MapMouseEvent) => { const name = event.features?.[0]?.properties?.name; if (name) { setLastSelected(name); onSelect.current?.(name); } }); setError(false); setReady(true); });
     map.on('error', () => { if (shouldShowMapLoadError(false, map.isStyleLoaded())) setError(true); }); mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
   }, [config.accessToken, config.style]);
   useEffect(() => { if (ready) (mapRef.current?.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(data); }, [data, ready]);
   useEffect(() => {
-    const map = mapRef.current; if (!map || !ready || !lastSelected) { calloutRef.current = null; setCallout(null); return; }
+    const map = mapRef.current; if (!map || !ready || !lastSelected) { if (map) setNativeConnector(map); calloutRef.current = null; setCallout(null); return; }
     const selectionKey = `${lastSelected}-${metric}`;
-    const updateCallout = () => { const feature = data.features.find((candidate) => candidate.properties.name.toLowerCase() === lastSelected.toLowerCase()); if (!feature) { calloutRef.current = null; setCallout(null); return; } const viewport = { width: map.getContainer().clientWidth, height: map.getContainer().clientHeight }; const projected = map.project(getFeatureGeographicCenter(feature)); const point = { x: projected.x, y: projected.y }; const nextCallout = { point, viewport, placement: getConnectedCalloutPlacement(point, viewport), selectionKey, selectedKecamatan: lastSelected }; calloutRef.current = nextCallout; setCallout(nextCallout); };
+    const updateCallout = () => { const feature = data.features.find((candidate) => candidate.properties.name.toLowerCase() === lastSelected.toLowerCase()); if (!feature) { setNativeConnector(map); calloutRef.current = null; setCallout(null); return; } const viewport = { width: map.getContainer().clientWidth, height: map.getContainer().clientHeight }; const projected = map.project(getFeatureGeographicCenter(feature)); const point = { x: projected.x, y: projected.y }; const nextCallout = { point, viewport, placement: getConnectedCalloutPlacement(point, viewport), selectionKey, selectedKecamatan: lastSelected }; const position = getResolvedCalloutCardPosition(nextCallout.placement, viewport); const start = { x: nextCallout.placement.side === 'left' ? position.left + CALLOUT_WIDTH : position.left, y: position.top + 74 }; setNativeConnector(map, shouldRenderMapConnector(viewport.width) ? start : undefined, shouldRenderMapConnector(viewport.width) ? point : undefined); calloutRef.current = nextCallout; setCallout(nextCallout); };
     updateCallout(); getCalloutPositionEvents().forEach((eventName) => map.on(eventName, updateCallout));
     return () => { getCalloutPositionEvents().forEach((eventName) => map.off(eventName, updateCallout)); };
   }, [data, lastSelected, metric, ready]);
@@ -122,13 +148,10 @@ export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, 
   const formatValue = metric === 'funds' ? `Rp ${(focusedValue / 1_000_000_000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} M` : `${focusedValue.toLocaleString('id-ID')} ${metric === 'beneficiaries' ? 'jiwa' : 'KK'}`;
   const decisionContext = lastSelected ? getCalloutDecisionContext(lastSelected, liveData, periodData) : { mustahik: 0, topProgram: '' };
   const resolvedCalloutPosition = callout ? getResolvedCalloutCardPosition(callout.placement, callout.viewport) : null;
-  const calloutLeft = resolvedCalloutPosition?.left ?? 0; const calloutTop = resolvedCalloutPosition?.top ?? 0; const connectorStart = callout ? { x: callout.placement.side === 'left' ? calloutLeft + CALLOUT_WIDTH : calloutLeft, y: calloutTop + 74 } : null;
-  const connectorPath = callout && connectorStart ? `M ${connectorStart.x} ${connectorStart.y} C ${(connectorStart.x + callout.point.x) / 2} ${connectorStart.y}, ${(connectorStart.x + callout.point.x) / 2} ${callout.point.y}, ${callout.point.x} ${callout.point.y}` : '';
   return <div className="relative h-[430px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-emerald-50/30 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
     <div ref={container} className="h-full w-full" aria-label="Peta interaktif Kota Tangerang" />
     {!ready && !error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 text-xs text-zinc-500">Memuat peta Kota Tangerang...</div>}
     {error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm font-semibold text-rose-700">Peta Mapbox tidak dapat dimuat.</div>}
-    {ready && lastSelected && callout && connectorStart && shouldRenderMapConnector(callout.viewport.width) && <svg key={callout.selectionKey} aria-hidden="true" className="map-connector pointer-events-none absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${callout.viewport.width} ${callout.viewport.height}`} preserveAspectRatio="none"><defs><linearGradient id="map-callout-gradient" x1="0" x2="1"><stop stopColor="#059669" /><stop offset="1" stopColor="#34d399" /></linearGradient></defs><path className="map-connector-path" d={connectorPath} pathLength="1" fill="none" stroke="url(#map-callout-gradient)" strokeWidth="2" strokeLinecap="round" /><circle className="map-connector-pulse" cx={callout.point.x} cy={callout.point.y} r="7" /><circle cx={callout.point.x} cy={callout.point.y} r="3.5" fill="#047857" stroke="white" strokeWidth="2" /></svg>}
     {ready && lastSelected && callout && resolvedCalloutPosition && <div key={callout.selectionKey} className={`map-focus-card-position absolute z-20 ${getCalloutLayoutMode(callout.viewport.width) === 'compact' ? 'map-focus-card-compact' : ''}`} style={{ left: resolvedCalloutPosition.left, top: resolvedCalloutPosition.top }}><div className="map-focus-card h-[188px] w-56 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(6,78,59,0.16)] backdrop-blur"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700">Fokus wilayah</p><p className="mt-1 text-sm font-extrabold text-slate-950">{lastSelected}</p><p className="mt-0.5 truncate text-xs font-semibold text-emerald-700">{presentation.label} · {formatValue}</p><dl className="mt-2 grid grid-cols-2 gap-2 border-t border-emerald-50 pt-2 text-[10px]"><div><dt className="font-semibold text-slate-400">Mustahik</dt><dd className="font-extrabold text-slate-800">{decisionContext.mustahik.toLocaleString('id-ID')}</dd></div><div><dt className="font-semibold text-slate-400">Program</dt><dd className="truncate font-extrabold text-slate-800" title={decisionContext.topProgram}>{decisionContext.topProgram}</dd></div></dl><a href={`/penyaluran/mustahik?kecamatan=${encodeURIComponent(lastSelected)}`} className="mt-3 inline-flex text-xs font-extrabold text-emerald-700 transition hover:text-emerald-900">Lihat detail <span aria-hidden="true">→</span></a></div></div>}
     <div className={`map-map-legend absolute left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm ${callout && getCalloutLayoutMode(callout.viewport.width) === 'compact' ? 'map-map-legend-compact' : ''}`}><p className="mb-1.5 font-bold text-zinc-900">Intensitas {presentation.label.toLowerCase()}</p><div className="flex gap-2 text-zinc-600"><span>Rendah</span><span>Menengah</span><span>Tinggi</span></div></div>
   </div>;

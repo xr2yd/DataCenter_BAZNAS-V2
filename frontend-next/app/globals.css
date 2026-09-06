@@ -156,28 +156,6 @@ body {
   animation: map-focus-card-enter 280ms cubic-bezier(.2, .85, .3, 1) both;
 }
 
-.map-connector-path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: map-connector-draw 420ms cubic-bezier(.2, .85, .3, 1) both;
-}
-
-.map-connector-pulse {
-  fill: rgba(16, 185, 129, .22);
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: map-connector-pulse 1.8s ease-out infinite;
-}
-
-@keyframes map-connector-draw {
-  to { stroke-dashoffset: 0; }
-}
-
-@keyframes map-connector-pulse {
-  0%, 70% { opacity: .9; transform: scale(.65); }
-  100% { opacity: 0; transform: scale(1.8); }
-}
-
 .map-map-legend {
   bottom: 1rem;
 }
@@ -197,11 +175,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .leaflet-container .leaflet-interactive,
   .map-detail-enter,
-  .map-focus-card,
-  .map-connector-path,
-  .map-connector-pulse { animation: none; transition: none; }
-
-  .map-connector-path { stroke-dashoffset: 0; }
+  .map-focus-card { animation: none; transition: none; }
 }
 
 @keyframes mustahik-row-enter {
