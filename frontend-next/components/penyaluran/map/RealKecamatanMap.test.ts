@@ -16,4 +16,11 @@ describe('getKecamatanStyle', () => {
   it('uses MapTiler Light when the domain-restricted public key is configured', () => {
     expect(getTileLayerConfig('restricted-key').url).toContain('api.maptiler.com/maps/streets-v2-light');
   });
+
+  it('prefers CARTO Voyager when a CARTO access token is configured', () => {
+    const tileLayer = getTileLayerConfig(undefined, 'carto-token');
+
+    expect(tileLayer.url).toContain('basemaps.cartocdn.com/rastertiles/voyager');
+    expect(tileLayer.url).toContain('api_key=carto-token');
+  });
 });

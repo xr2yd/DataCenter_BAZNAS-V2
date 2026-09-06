@@ -38,7 +38,14 @@ export function getKecamatanStyle(
   };
 }
 
-export function getTileLayerConfig(mapTilerKey?: string) {
+export function getTileLayerConfig(mapTilerKey?: string, cartoAccessToken?: string) {
+  if (cartoAccessToken) {
+    return {
+      url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?api_key=${cartoAccessToken}`,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    };
+  }
+
   if (mapTilerKey) {
     return {
       url: `https://api.maptiler.com/maps/streets-v2-light/{z}/{x}/{y}.png?key=${mapTilerKey}`,
@@ -100,7 +107,10 @@ export default function RealKecamatanMap({
   periodData?: MapPeriodData;
 }) {
   const [mounted, setMounted] = useState(false);
-  const tileLayer = getTileLayerConfig(process.env.NEXT_PUBLIC_MAPTILER_KEY);
+  const tileLayer = getTileLayerConfig(
+    process.env.NEXT_PUBLIC_MAPTILER_KEY,
+    process.env.NEXT_PUBLIC_CARTO_ACCESS_TOKEN,
+  );
   const geoJsonRef = useRef<LeafletGeoJSON | null>(null);
   const selectedRef = useRef(selectedKecamatan);
   const onSelectRef = useRef(onSelectKecamatan);
