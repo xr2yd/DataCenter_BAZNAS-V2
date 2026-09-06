@@ -22,6 +22,36 @@ type KecamatanFeatureLayer = Path & {
   setTooltipContent?: (content: string) => void;
 };
 
+export function getKecamatanStyle(
+  feature: { name: string },
+  selectedKecamatan: string | null | undefined,
+  colorScaleValue: number,
+) {
+  const isSelected = selectedKecamatan?.toLowerCase() === feature.name.toLowerCase();
+
+  return {
+    fillColor: getChoroplethColor(colorScaleValue),
+    weight: isSelected ? 3 : 1,
+    opacity: 1,
+    color: isSelected ? '#047857' : '#ffffff',
+    fillOpacity: isSelected ? 0.88 : 0.75,
+  };
+}
+
+export function getTileLayerConfig(mapTilerKey?: string) {
+  if (mapTilerKey) {
+    return {
+      url: `https://api.maptiler.com/maps/streets-v2-light/{z}/{x}/{y}.png?key=${mapTilerKey}`,
+      attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    };
+  }
+
+  return {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  };
+}
+
 function MapSelectionFocus({
   selectedKecamatan,
   geoJsonRef,
@@ -70,6 +100,7 @@ export default function RealKecamatanMap({
   periodData?: MapPeriodData;
 }) {
   const [mounted, setMounted] = useState(false);
+  const tileLayer = getTileLayerConfig(process.env.NEXT_PUBLIC_MAPTILER_KEY);
   const geoJsonRef = useRef<LeafletGeoJSON | null>(null);
   const selectedRef = useRef(selectedKecamatan);
   const onSelectRef = useRef(onSelectKecamatan);
@@ -98,16 +129,9 @@ export default function RealKecamatanMap({
   const styleFeature = (feature?: Feature<Geometry, { name: string }>) => {
     if (!feature || !feature.properties) return {};
     const name = feature.properties.name;
-    const isSelected = selectedKecamatan?.toLowerCase() === name.toLowerCase();
     const metricValue = getMetricValue(name);
 
-    return {
-      fillColor: getChoroplethColor(toColorScaleValue(metricValue)),
-      weight: isSelected ? 2.5 : 1,
-      opacity: 1,
-      color: isSelected ? '#09090b' : '#ffffff',
-      fillOpacity: isSelected ? 0.9 : 0.75,
-    };
+    return getKecamatanStyle({ name }, selectedKecamatan, toColorScaleValue(metricValue));
   };
 
   useEffect(() => {
@@ -143,8 +167,8 @@ export default function RealKecamatanMap({
         const l = e.target;
         const isSelected = selectedRef.current?.toLowerCase() === name.toLowerCase();
         l.setStyle({
-          fillOpacity: isSelected ? 0.9 : 0.75,
-          weight: isSelected ? 2.5 : 1,
+          fillOpacity: isSelected ? 0.88 : 0.75,
+          weight: isSelected ? 3 : 1,
         });
       },
     });
@@ -170,8 +194,8 @@ export default function RealKecamatanMap({
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution={tileLayer.attribution}
+          url={tileLayer.url}
         />
         <GeoJSON
           ref={geoJsonRef}

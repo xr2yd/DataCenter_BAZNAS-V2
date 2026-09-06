@@ -130,6 +130,13 @@ body {
   transition: fill 180ms ease-out, fill-opacity 180ms ease-out, stroke 180ms ease-out, stroke-width 180ms ease-out;
 }
 
+/* Leaflet applies a browser focus rectangle to SVG areas after click. The selected
+   area already has a distinct green stroke, so the extra rectangle adds noise. */
+.leaflet-container .leaflet-interactive:focus,
+.leaflet-container .leaflet-interactive:focus-visible {
+  outline: none;
+}
+
 @keyframes map-detail-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
