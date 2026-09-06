@@ -8,6 +8,7 @@ describe('LaporanPenyaluranWorkspace', () => {
   let exportResponse: Response;
 
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
     downloaded = [];
     exportRequests = [];
     localStorage.setItem('baznas_auth_token', 'test-session-token');
@@ -30,6 +31,7 @@ describe('LaporanPenyaluranWorkspace', () => {
   });
 
   afterEach(() => {
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
     cleanup();
     vi.useRealTimers();
     vi.restoreAllMocks();
