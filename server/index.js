@@ -331,6 +331,7 @@ app.post('/api/cache/clear', authenticateToken, requireRole('admin'), (req, res)
   });
 });
 
+
 // ==========================================
 // AUTHENTICATION & MULTI-ROLE ACCESS CONTROL
 // ==========================================
@@ -346,7 +347,7 @@ export function authenticateToken(req, res, next) {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ success: false, message: 'Sesi berakhir atau token tidak valid. Silakan login kembali.' });
+      return res.status(401).json({ success: false, message: 'Sesi berakhir atau token tidak valid. Silakan login kembali.' });
     }
     req.user = user;
     return requireAuth(req, res, next);

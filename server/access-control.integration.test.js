@@ -254,3 +254,10 @@ test('denies a report export without a Bearer token and permits an Amil token', 
   assert.equal((await request('/api/penyaluran/laporan/export/lap-1?format=json')).status, 401);
   assert.equal((await request('/api/penyaluran/laporan/export/lap-1?format=json', { token: tokenFor('penyaluran') })).status, 200);
 });
+
+test('returns 401 when the authentication token is invalid or expired', async () => {
+  const response = await request('/api/cache/stats', { token: 'invalid.jwt.token' });
+  assert.equal(response.status, 401);
+  const body = await response.json();
+  assert.equal(body.message.includes('login kembali'), true);
+});
