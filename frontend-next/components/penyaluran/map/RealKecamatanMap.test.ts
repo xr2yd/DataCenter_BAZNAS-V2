@@ -33,6 +33,7 @@ describe('getKecamatanStyle', () => {
 
   it('does not cover a loaded map for a non-fatal Mapbox resource error', () => {
     expect(shouldShowMapLoadError(true, true)).toBe(false);
+    expect(shouldShowMapLoadError(true, false)).toBe(false);
     expect(shouldShowMapLoadError(false, false)).toBe(true);
   });
 });
