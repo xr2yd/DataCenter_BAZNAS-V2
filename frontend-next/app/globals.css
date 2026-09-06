@@ -196,15 +196,20 @@ svg.map-callout-exit {
   to { opacity: 0; }
 }
 
-@media (max-width: 639px) {
-  .map-connector { display: none; }
+.map-map-legend {
+  bottom: 1rem;
+}
 
-  .map-focus-card-position {
-    bottom: 1rem;
-    left: 50% !important;
-    top: auto !important;
-    transform: translateX(-50%);
-  }
+.map-focus-card-compact {
+  bottom: 1rem;
+  left: 50% !important;
+  top: auto !important;
+  transform: translateX(-50%);
+}
+
+.map-map-legend-compact {
+  bottom: auto;
+  top: 1rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

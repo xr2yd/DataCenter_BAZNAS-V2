@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl, { type ExpressionSpecification, type GeoJSONSource, type Map as MapboxMap, type MapMouseEvent } from 'mapbox-gl';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
-import { getChoroplethColor, getKecamatanInsight, getMapMetricPresentation, getMapMetricValue, type MapMetric } from './map-data';
+import { DEMO_KECAMATAN_DATA, getChoroplethColor, getKecamatanInsight, getMapMetricPresentation, getMapMetricValue, type MapMetric } from './map-data';
 import type { PenyaluranByKecamatan } from '@/lib/api/types';
 import type { MapPeriodData } from '../dashboard/dashboard-data';
 
@@ -13,7 +13,7 @@ const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
 const SOURCE_ID = 'kecamatan-boundaries';
 const FILL_ID = 'kecamatan-fill';
 const CALLOUT_WIDTH = 224;
-const CALLOUT_HEIGHT = 156;
+const CALLOUT_HEIGHT = 188;
 const CALLOUT_MARGIN = 16;
 const MAPBOX_CONTROL_WIDTH = 64;
 const MAPBOX_CONTROL_HEIGHT = 104;
@@ -38,8 +38,19 @@ export function getTileLayerConfig(mapTilerKey?: string, cartoAccessToken?: stri
 export function getMapboxStyleConfig(accessToken?: string) { return { accessToken, style: 'mapbox://styles/mapbox/light-v11' }; }
 export function shouldShowMapLoadError(isReady: boolean, isStyleLoaded: boolean) { return !isReady && !isStyleLoaded; }
 export function shouldRenderMapConnector(width: number): boolean { return width >= 640; }
+export function getCalloutLayoutMode(width: number): 'compact' | 'desktop' { return shouldRenderMapConnector(width) ? 'desktop' : 'compact'; }
 export function getFillOpacityExpression(): ExpressionSpecification { return ['case', ['boolean', ['feature-state', 'hover'], false], 0.95, ['get', 'fillOpacity']]; }
 export function getSelectionFocusStyle(isSelected: boolean) { return isSelected ? { fillOpacity: 0.94, outlineColor: '#047857', outlineWidth: 3 } : { fillOpacity: 0.42, outlineColor: '#ffffff', outlineWidth: 1 }; }
+
+export function getCalloutDecisionContext(name: string, liveData?: PenyaluranByKecamatan[], periodData?: MapPeriodData) {
+  const liveValue = liveData?.find((item) => item.name.toLowerCase() === name.toLowerCase());
+  const periodValue = periodData?.[name];
+  const demoValue = DEMO_KECAMATAN_DATA[name];
+  return {
+    mustahik: liveValue?.totalMustahik ?? periodValue?.beneficiaries ?? demoValue?.totalMustahik ?? 0,
+    topProgram: liveValue?.topProgram ?? periodValue?.program ?? demoValue?.topProgram ?? getKecamatanInsight(name).topProgram,
+  };
+}
 
 export function getConnectedCalloutPlacement(point: PixelPoint, viewport: { width: number; height: number }): { card: { left: string; top: string }; anchor: PixelPoint; side: 'left' | 'right' } {
   const side = point.x >= viewport.width / 2 ? 'left' : 'right';
@@ -109,7 +120,7 @@ export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, 
   if (!config.accessToken) return <div className="flex h-[360px] items-center justify-center rounded-xl bg-zinc-100 text-xs text-zinc-500">Token Mapbox belum terpasang.</div>;
   const focusedFeature = data.features.find((feature) => feature.properties.name.toLowerCase() === lastSelected?.toLowerCase()); const focusedValue = focusedFeature?.properties.metricValue ?? 0;
   const formatValue = metric === 'funds' ? `Rp ${(focusedValue / 1_000_000_000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} M` : `${focusedValue.toLocaleString('id-ID')} ${metric === 'beneficiaries' ? 'jiwa' : 'KK'}`;
-  const focusedLiveData = liveData?.find((item) => item.name.toLowerCase() === lastSelected?.toLowerCase()); const mustahik = lastSelected ? focusedLiveData?.totalMustahik ?? getMapMetricValue(lastSelected, 'beneficiaries') : 0; const topProgram = lastSelected ? focusedLiveData?.topProgram ?? getKecamatanInsight(lastSelected).topProgram : '';
+  const decisionContext = lastSelected ? getCalloutDecisionContext(lastSelected, liveData, periodData) : { mustahik: 0, topProgram: '' };
   const resolvedCalloutPosition = callout ? getResolvedCalloutCardPosition(callout.placement, callout.viewport) : null;
   const calloutLeft = resolvedCalloutPosition?.left ?? 0; const calloutTop = resolvedCalloutPosition?.top ?? 0; const connectorStart = callout ? { x: callout.placement.side === 'left' ? calloutLeft + CALLOUT_WIDTH : calloutLeft, y: calloutTop + 74 } : null;
   const connectorPath = callout && connectorStart ? `M ${connectorStart.x} ${connectorStart.y} C ${(connectorStart.x + callout.point.x) / 2} ${connectorStart.y}, ${(connectorStart.x + callout.point.x) / 2} ${callout.point.y}, ${callout.point.x} ${callout.point.y}` : '';
@@ -122,8 +133,8 @@ export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, 
     {error && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm font-semibold text-rose-700">Peta Mapbox tidak dapat dimuat.</div>}
     {exitingCallout && exitingConnectorStart && shouldRenderMapConnector(exitingCallout.viewport.width) && <svg key={`exit-${exitingCallout.selectionKey}`} aria-hidden="true" className="map-connector map-callout-exit pointer-events-none absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${exitingCallout.viewport.width} ${exitingCallout.viewport.height}`} preserveAspectRatio="none"><path d={exitingConnectorPath} fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" /></svg>}
     {ready && lastSelected && callout && connectorStart && shouldRenderMapConnector(callout.viewport.width) && <svg key={callout.selectionKey} aria-hidden="true" className="map-connector pointer-events-none absolute inset-0 z-10 h-full w-full" viewBox={`0 0 ${callout.viewport.width} ${callout.viewport.height}`} preserveAspectRatio="none"><defs><linearGradient id="map-callout-gradient" x1="0" x2="1"><stop stopColor="#059669" /><stop offset="1" stopColor="#34d399" /></linearGradient></defs><path className="map-connector-path" d={connectorPath} pathLength="1" fill="none" stroke="url(#map-callout-gradient)" strokeWidth="2" strokeLinecap="round" /><circle className="map-connector-pulse" cx={callout.point.x} cy={callout.point.y} r="7" /><circle cx={callout.point.x} cy={callout.point.y} r="3.5" fill="#047857" stroke="white" strokeWidth="2" /></svg>}
-    {exitingCallout && exitingCalloutPosition && <div className="map-focus-card-position absolute z-20" style={{ left: exitingCalloutPosition.left, top: exitingCalloutPosition.top }}><div className="map-focus-card map-callout-exit w-56 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(6,78,59,0.16)]"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700">Fokus wilayah</p><p className="mt-1 text-sm font-extrabold text-slate-950">{exitingCallout.selectedKecamatan}</p></div></div>}
-    {ready && lastSelected && callout && resolvedCalloutPosition && <div key={callout.selectionKey} className="map-focus-card-position absolute z-20" style={{ left: resolvedCalloutPosition.left, top: resolvedCalloutPosition.top }}><div className="map-focus-card w-56 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(6,78,59,0.16)] backdrop-blur"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700">Fokus wilayah</p><p className="mt-1 text-sm font-extrabold text-slate-950">{lastSelected}</p><p className="mt-0.5 text-xs font-semibold text-emerald-700">{presentation.label} · {formatValue}</p><dl className="mt-2 grid grid-cols-2 gap-2 border-t border-emerald-50 pt-2 text-[10px]"><div><dt className="font-semibold text-slate-400">Mustahik</dt><dd className="font-extrabold text-slate-800">{mustahik.toLocaleString('id-ID')}</dd></div><div><dt className="font-semibold text-slate-400">Program</dt><dd className="truncate font-extrabold text-slate-800" title={topProgram}>{topProgram}</dd></div></dl><a href={`/penyaluran/mustahik?kecamatan=${encodeURIComponent(lastSelected)}`} className="mt-3 inline-flex text-xs font-extrabold text-emerald-700 transition hover:text-emerald-900">Lihat detail <span aria-hidden="true">→</span></a></div></div>}
-    <div className="absolute bottom-4 left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm"><p className="mb-1.5 font-bold text-zinc-900">Intensitas {presentation.label.toLowerCase()}</p><div className="flex gap-2 text-zinc-600"><span>Rendah</span><span>Menengah</span><span>Tinggi</span></div></div>
+    {exitingCallout && exitingCalloutPosition && <div className={`map-focus-card-position absolute z-20 ${getCalloutLayoutMode(exitingCallout.viewport.width) === 'compact' ? 'map-focus-card-compact' : ''}`} style={{ left: exitingCalloutPosition.left, top: exitingCalloutPosition.top }}><div className="map-focus-card map-callout-exit h-[188px] w-56 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(6,78,59,0.16)]"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700">Fokus wilayah</p><p className="mt-1 text-sm font-extrabold text-slate-950">{exitingCallout.selectedKecamatan}</p></div></div>}
+    {ready && lastSelected && callout && resolvedCalloutPosition && <div key={callout.selectionKey} className={`map-focus-card-position absolute z-20 ${getCalloutLayoutMode(callout.viewport.width) === 'compact' ? 'map-focus-card-compact' : ''}`} style={{ left: resolvedCalloutPosition.left, top: resolvedCalloutPosition.top }}><div className="map-focus-card h-[188px] w-56 rounded-2xl border border-emerald-100 bg-white/95 px-4 py-3 shadow-[0_14px_32px_rgba(6,78,59,0.16)] backdrop-blur"><p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-emerald-700">Fokus wilayah</p><p className="mt-1 text-sm font-extrabold text-slate-950">{lastSelected}</p><p className="mt-0.5 truncate text-xs font-semibold text-emerald-700">{presentation.label} · {formatValue}</p><dl className="mt-2 grid grid-cols-2 gap-2 border-t border-emerald-50 pt-2 text-[10px]"><div><dt className="font-semibold text-slate-400">Mustahik</dt><dd className="font-extrabold text-slate-800">{decisionContext.mustahik.toLocaleString('id-ID')}</dd></div><div><dt className="font-semibold text-slate-400">Program</dt><dd className="truncate font-extrabold text-slate-800" title={decisionContext.topProgram}>{decisionContext.topProgram}</dd></div></dl><a href={`/penyaluran/mustahik?kecamatan=${encodeURIComponent(lastSelected)}`} className="mt-3 inline-flex text-xs font-extrabold text-emerald-700 transition hover:text-emerald-900">Lihat detail <span aria-hidden="true">→</span></a></div></div>}
+    <div className={`map-map-legend absolute left-4 z-10 rounded-xl border border-zinc-200 bg-white/95 p-3 text-[11px] shadow-sm ${callout && getCalloutLayoutMode(callout.viewport.width) === 'compact' ? 'map-map-legend-compact' : ''}`}><p className="mb-1.5 font-bold text-zinc-900">Intensitas {presentation.label.toLowerCase()}</p><div className="flex gap-2 text-zinc-600"><span>Rendah</span><span>Menengah</span><span>Tinggi</span></div></div>
   </div>;
 }

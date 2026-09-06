@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAP_READY_EVENT, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
+import { MAP_READY_EVENT, getCalloutDecisionContext, getCalloutLayoutMode, getConnectedCalloutPlacement, getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getResolvedCalloutCardPosition, getSelectionFocusStyle, getTileLayerConfig, shouldRenderMapConnector, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -81,6 +81,11 @@ describe('shouldRenderMapConnector', () => {
     expect(shouldRenderMapConnector(639)).toBe(false);
     expect(shouldRenderMapConnector(640)).toBe(true);
   });
+
+  it('uses the same container-width threshold for compact callout layout', () => {
+    expect(getCalloutLayoutMode(639)).toBe('compact');
+    expect(getCalloutLayoutMode(640)).toBe('desktop');
+  });
 });
 
 describe('getResolvedCalloutCardPosition', () => {
@@ -94,6 +99,14 @@ describe('getResolvedCalloutCardPosition', () => {
     const placement = getConnectedCalloutPlacement({ x: 500, y: 380 }, { width: 640, height: 430 });
 
     expect(placement.card).toEqual({ left: '4%', top: '60%' });
-    expect(getResolvedCalloutCardPosition(placement, { width: 640, height: 430 })).toEqual({ left: 25.6, top: 188 });
+    expect(getResolvedCalloutCardPosition(placement, { width: 640, height: 430 })).toEqual({ left: 25.6, top: 156 });
+  });
+});
+
+describe('getCalloutDecisionContext', () => {
+  it('uses the active period snapshot before demo data when live data is unavailable', () => {
+    expect(getCalloutDecisionContext('Cipondoh', undefined, {
+      Cipondoh: { amount: 42_000_000, beneficiaries: 27, program: 'Tangerang Takwa' },
+    })).toEqual({ mustahik: 27, topProgram: 'Tangerang Takwa' });
   });
 });
