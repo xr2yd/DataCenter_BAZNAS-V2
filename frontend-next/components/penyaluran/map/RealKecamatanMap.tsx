@@ -2,7 +2,7 @@
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import mapboxgl, { type GeoJSONSource, type Map as MapboxMap, type MapMouseEvent } from 'mapbox-gl';
+import mapboxgl, { type ExpressionSpecification, type GeoJSONSource, type Map as MapboxMap, type MapMouseEvent } from 'mapbox-gl';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
 import { getChoroplethColor, getMapMetricPresentation, getMapMetricValue, type MapMetric } from './map-data';
@@ -29,6 +29,10 @@ export function shouldShowMapLoadError(isReady: boolean, isStyleLoaded: boolean)
   return !isReady && !isStyleLoaded;
 }
 
+export function getFillOpacityExpression(): ExpressionSpecification {
+  return ['case', ['boolean', ['feature-state', 'hover'], false], 0.95, ['case', ['get', 'isSelected'], 0.88, 0.75]];
+}
+
 function boundsFor(feature: Feature<Geometry, Props>) {
   const bounds = new mapboxgl.LngLatBounds();
   const visit = (v: unknown): void => { if (!Array.isArray(v)) return; if (typeof v[0] === 'number' && typeof v[1] === 'number') bounds.extend([v[0], v[1]]); else v.forEach(visit); };
@@ -40,7 +44,7 @@ export default function RealKecamatanMap({ metric = 'funds', selectedKecamatan, 
   const presentation = getMapMetricPresentation(metric); const config = getMapboxStyleConfig(mapboxAccessToken ?? process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN);
   const data = useMemo(() => ({ ...geojsonData, features: geojsonData.features.map((feature) => { const name = (feature.properties as Props).name; const raw = getMapMetricValue(name, metric, liveData, periodData); const scale = metric === 'funds' ? raw / 1_000_000 : metric === 'asnafNeed' ? raw * 2 : raw; const style = getKecamatanStyle({ name }, selectedKecamatan, scale); return { ...feature, properties: { ...feature.properties, fillColor: style.fillColor, isSelected: style.color === '#047857', metricValue: raw } }; }) }) as FeatureCollection<Geometry, Props>, [liveData, metric, periodData, selectedKecamatan]);
   useEffect(() => { onSelect.current = onSelectKecamatan; }, [onSelectKecamatan]);
-  useEffect(() => { if (!container.current || !config.accessToken || mapRef.current) return; const map = new mapboxgl.Map({ container: container.current, accessToken: config.accessToken, style: config.style, center: [106.6319, -6.1783], zoom: 11.8, minZoom: 10, maxZoom: 15 }); map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right'); map.scrollZoom.disable(); map.on('load', () => { map.addSource(SOURCE_ID, { type: 'geojson', data, generateId: true }); map.addLayer({ id: FILL_ID, type: 'fill', source: SOURCE_ID, paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], ['case', ['get', 'isSelected'], .88, .75]] } }); map.addLayer({ id: 'kecamatan-outline', type: 'line', source: SOURCE_ID, paint: { 'line-color': ['case', ['get', 'isSelected'], '#047857', '#ffffff'], 'line-width': ['case', ['get', 'isSelected'], 3, 1], 'line-opacity': .95 } }); map.on('mouseenter', FILL_ID, () => map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', FILL_ID, () => map.getCanvas().style.cursor = ''); map.on('click', FILL_ID, (e: MapMouseEvent) => { const name = e.features?.[0]?.properties?.name; if (name) onSelect.current?.(name); }); setError(false); setReady(true); }); map.on('error', () => { if (shouldShowMapLoadError(false, map.isStyleLoaded())) setError(true); }); mapRef.current = map; return () => { map.remove(); mapRef.current = null; }; }, [config.accessToken, config.style]);
+  useEffect(() => { if (!container.current || !config.accessToken || mapRef.current) return; const map = new mapboxgl.Map({ container: container.current, accessToken: config.accessToken, style: config.style, center: [106.6319, -6.1783], zoom: 11.8, minZoom: 10, maxZoom: 15 }); map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right'); map.scrollZoom.disable(); map.on('load', () => { map.addSource(SOURCE_ID, { type: 'geojson', data, generateId: true }); map.addLayer({ id: FILL_ID, type: 'fill', source: SOURCE_ID, paint: { 'fill-color': ['get', 'fillColor'], 'fill-opacity': getFillOpacityExpression() } }); map.addLayer({ id: 'kecamatan-outline', type: 'line', source: SOURCE_ID, paint: { 'line-color': ['case', ['get', 'isSelected'], '#047857', '#ffffff'], 'line-width': ['case', ['get', 'isSelected'], 3, 1], 'line-opacity': .95 } }); map.on('mouseenter', FILL_ID, () => map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', FILL_ID, () => map.getCanvas().style.cursor = ''); map.on('click', FILL_ID, (e: MapMouseEvent) => { const name = e.features?.[0]?.properties?.name; if (name) onSelect.current?.(name); }); setError(false); setReady(true); }); map.on('error', () => { if (shouldShowMapLoadError(false, map.isStyleLoaded())) setError(true); }); mapRef.current = map; return () => { map.remove(); mapRef.current = null; }; }, [config.accessToken, config.style]);
   useEffect(() => { if (ready) (mapRef.current?.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(data); }, [data, ready]);
   useEffect(() => { if (firstFocus.current) { firstFocus.current = false; return; } if (!ready || !selectedKecamatan) return; const feature = data.features.find(f => f.properties.name.toLowerCase() === selectedKecamatan.toLowerCase()); if (feature) mapRef.current?.fitBounds(boundsFor(feature), { padding: 44, duration: 420, maxZoom: 13 }); }, [data, ready, selectedKecamatan]);
   if (!config.accessToken) return <div className="flex h-[360px] items-center justify-center rounded-xl bg-zinc-100 text-xs text-zinc-500">Token Mapbox belum terpasang.</div>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
+import { getFillOpacityExpression, getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -35,5 +35,14 @@ describe('getKecamatanStyle', () => {
     expect(shouldShowMapLoadError(true, true)).toBe(false);
     expect(shouldShowMapLoadError(true, false)).toBe(false);
     expect(shouldShowMapLoadError(false, false)).toBe(true);
+  });
+
+  it('uses a complete Mapbox case expression for polygon opacity', () => {
+    expect(getFillOpacityExpression()).toEqual([
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      0.95,
+      ['case', ['get', 'isSelected'], 0.88, 0.75],
+    ]);
   });
 });
