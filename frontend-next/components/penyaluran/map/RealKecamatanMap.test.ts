@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig } from './RealKecamatanMap';
+import { getKecamatanStyle, getMapboxStyleConfig, getTileLayerConfig, shouldShowMapLoadError } from './RealKecamatanMap';
 
 describe('getKecamatanStyle', () => {
   it('uses a BAZNAS green focus border instead of a harsh black border', () => {
@@ -29,5 +29,10 @@ describe('getKecamatanStyle', () => {
       accessToken: 'mapbox-public-token',
       style: 'mapbox://styles/mapbox/light-v11',
     });
+  });
+
+  it('does not cover a loaded map for a non-fatal Mapbox resource error', () => {
+    expect(shouldShowMapLoadError(true, true)).toBe(false);
+    expect(shouldShowMapLoadError(false, false)).toBe(true);
   });
 });
