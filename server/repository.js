@@ -390,15 +390,7 @@ export async function trackApplication(query) {
     [q, q, q, q]
   );
 
-  if (!mustahik) {
-    // Try partial search
-    const partial = await db.get(
-      `SELECT * FROM mustahik WHERE file_no ILIKE $1 OR nik ILIKE $2 ORDER BY id DESC LIMIT 1`,
-      [`%${q}%`, `%${q}%`]
-    );
-    if (!partial) return null;
-    return trackApplication(partial.file_no);
-  }
+  if (!mustahik) return null;
 
   const applications = await db.all('SELECT * FROM applications WHERE mustahik_id = $1 ORDER BY applied_at DESC', [mustahik.id]);
   const assessments = await db.all('SELECT * FROM assessments WHERE mustahik_id = $1 ORDER BY created_at DESC', [mustahik.id]);
@@ -1901,6 +1893,33 @@ export async function importMustahikBatch(items = []) {
 /**
  * 7. Activity Logs
  */
+export async function appendActivityLog({
+  mustahikId = null,
+  actor,
+  action,
+  target,
+  title,
+  description = '',
+}, dbOverride = null) {
+  const db = dbOverride || await getDb();
+  const actorName = actor?.name || actor?.email || 'Pengguna tidak dikenal';
+  const actorRole = actor?.role || 'unknown';
+  const actorId = actor?.id ?? 'unknown';
+  const result = await db.run(
+    `INSERT INTO activity_logs (mustahik_id, actor_name, action_type, title, description)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id`,
+    [
+      mustahikId,
+      `${actorName} [${actorRole}] (#${actorId})`,
+      action,
+      title,
+      `Target: ${target}.${description ? ` ${description}` : ''}`,
+    ]
+  );
+  return result.lastID;
+}
+
 export async function getActivityLogs(mustahikId = null, limit = 20) {
   const db = await getDb();
   let query = 'SELECT * FROM activity_logs';

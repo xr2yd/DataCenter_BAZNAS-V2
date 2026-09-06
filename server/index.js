@@ -7,6 +7,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
+import { pathToFileURL } from 'url';
 import { initDb } from './db.js';
 import {
   listMustahik,
@@ -46,6 +48,7 @@ import {
   submitMustahikDecision,
   getApprovalDecisions,
   importMustahikBatch,
+  appendActivityLog,
   getActivityLogs,
   getLaporanList,
   generateLaporan,
@@ -53,7 +56,6 @@ import {
 } from './repository.js';
 import { generateExcelReport, generatePdfReport } from './report_generator.js';
 import { requireAnyRole, requireAuth, requireProductionSecret } from './access-policy.js';
-import './bot.js';
 
 dotenv.config();
 
@@ -221,10 +223,39 @@ app.use(compression({
   }
 }));
 
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+const LOCAL_DEVELOPMENT_ORIGINS = Object.freeze([
+  'http://localhost:3000',
+  'http://localhost:5173',
+]);
+
+export function buildCorsOptions({
+  nodeEnv = process.env.NODE_ENV,
+  frontendUrl = process.env.FRONTEND_URL,
+} = {}) {
+  const configuredOrigins = String(frontendUrl || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowedOrigins = new Set([
+    ...configuredOrigins,
+    ...(nodeEnv === 'production' ? [] : LOCAL_DEVELOPMENT_ORIGINS),
+  ]);
+
+  return {
+    credentials: true,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+      const error = new Error('Origin tidak diizinkan');
+      error.code = 'CORS_ORIGIN_DENIED';
+      error.status = 403;
+      return callback(error);
+    },
+  };
+}
+
+app.use(cors(buildCorsOptions()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(uploadDir));
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -233,15 +264,38 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    const extension = path.extname(path.basename(file.originalname)).toLowerCase();
+    const unique = `${randomUUID()}${extension}`;
     cb(null, unique);
   },
 });
 
+const UPLOAD_EXTENSIONS_BY_MIME = Object.freeze({
+  'application/pdf': ['.pdf'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+});
+
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max per file
+  limits: { fileSize: 10 * 1024 * 1024, files: 5 },
+  fileFilter: (_req, file, callback) => {
+    const allowedExtensions = UPLOAD_EXTENSIONS_BY_MIME[file.mimetype];
+    const extension = path.extname(path.basename(file.originalname)).toLowerCase();
+    if (!allowedExtensions?.includes(extension)) {
+      const error = new Error('Jenis file tidak didukung. Gunakan PDF, JPEG, atau PNG.');
+      error.code = 'UPLOAD_VALIDATION_FAILED';
+      error.status = 422;
+      return callback(error);
+    }
+    return callback(null, true);
+  },
 });
+
+app.locals.dataAccessRepository = {
+  createPublicApplication,
+  trackApplication,
+};
 
 // ==========================================
 // HEALTH & CACHE DIAGNOSTIC APIS
@@ -253,13 +307,12 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: 'BAZNAS AI Agent API is running with PostgreSQL Turbo Engine & Compression',
     timestamp: new Date().toISOString(),
-    compression: 'active (gzip/deflate)',
-    cache_stats: memoryCache.getStats()
+    compression: 'active (gzip/deflate)'
   });
 });
 
 // Cache Stats & Telemetry
-app.get('/api/cache/stats', (req, res) => {
+app.get('/api/cache/stats', authenticateToken, requireRole('admin'), (req, res) => {
   res.json({
     success: true,
     data: memoryCache.getStats()
@@ -267,7 +320,7 @@ app.get('/api/cache/stats', (req, res) => {
 });
 
 // Cache Flush
-app.post('/api/cache/clear', (req, res) => {
+app.post('/api/cache/clear', authenticateToken, requireRole('admin'), (req, res) => {
   memoryCache.clear();
   res.json({
     success: true,
@@ -301,6 +354,8 @@ export function authenticateToken(req, res, next) {
 export function requireRole(...allowedRoles) {
   return requireAnyRole(...allowedRoles);
 }
+
+app.use('/uploads', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), express.static(uploadDir));
 
 // 1. Login Endpoint
 app.post('/api/auth/login', async (req, res) => {
@@ -390,7 +445,7 @@ app.get('/api/auth/users', authenticateToken, requireRole('admin'), async (req, 
 // ==========================================
 
 // Mustahik Aggregate Stats (KPI cards, charts, breakdowns)
-app.get('/api/mustahik/stats', cacheMiddleware(60), async (req, res) => {
+app.get('/api/mustahik/stats', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(60), async (req, res) => {
   try {
     const data = await getMustahikStats();
     res.json({ success: true, data });
@@ -401,7 +456,7 @@ app.get('/api/mustahik/stats', cacheMiddleware(60), async (req, res) => {
 });
 
 // Enterprise Data Overview (All entities summary)
-app.get('/api/data/overview', cacheMiddleware(60), async (req, res) => {
+app.get('/api/data/overview', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(60), async (req, res) => {
   try {
     const data = await getDataOverview();
     res.json({ success: true, data });
@@ -416,7 +471,7 @@ app.get('/api/data/overview', cacheMiddleware(60), async (req, res) => {
 // ==========================================
 
 // Penyaluran Overview & Dashboard Data (Period-aware)
-app.get('/api/penyaluran/overview', cacheMiddleware(30), async (req, res) => {
+app.get('/api/penyaluran/overview', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(30), async (req, res) => {
   try {
     const data = await getPenyaluranOverview(req.query.period || '30d');
     res.json({ success: true, data });
@@ -427,7 +482,7 @@ app.get('/api/penyaluran/overview', cacheMiddleware(30), async (req, res) => {
 });
 
 // Penyaluran By 13 Kecamatan Kota Tangerang (Geospatial)
-app.get('/api/penyaluran/by-kecamatan', cacheMiddleware(30), async (req, res) => {
+app.get('/api/penyaluran/by-kecamatan', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(30), async (req, res) => {
   try {
     const data = await getPenyaluranByKecamatan();
     res.json({ success: true, data });
@@ -438,7 +493,7 @@ app.get('/api/penyaluran/by-kecamatan', cacheMiddleware(30), async (req, res) =>
 });
 
 // Read-only Penyaluran transaction journal from PPD records
-app.get('/api/penyaluran/transaksi', cacheMiddleware(15), async (req, res) => {
+app.get('/api/penyaluran/transaksi', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(15), async (req, res) => {
   try {
     const data = await listPenyaluranTransactions({
       status: req.query.status,
@@ -496,7 +551,7 @@ app.get('/api/public/master-data', async (req, res) => {
 });
 
 // 5 Pilar Programs & Initiatives
-app.get('/api/penyaluran/program', cacheMiddleware(30), async (req, res) => {
+app.get('/api/penyaluran/program', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(30), async (req, res) => {
   try {
     const data = await getPilarPrograms();
     res.json({ success: true, data });
@@ -507,7 +562,7 @@ app.get('/api/penyaluran/program', cacheMiddleware(30), async (req, res) => {
 });
 
 // Create Pilar Initiative
-app.post('/api/penyaluran/program/initiatives', async (req, res) => {
+app.post('/api/penyaluran/program/initiatives', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const id = await addPilarInitiative(req.body);
     invalidateCache();
@@ -519,7 +574,7 @@ app.post('/api/penyaluran/program/initiatives', async (req, res) => {
 });
 
 // Update Pilar Initiative
-app.put('/api/penyaluran/program/initiatives/:id', async (req, res) => {
+app.put('/api/penyaluran/program/initiatives/:id', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const ok = await updatePilarInitiative(req.params.id, req.body);
     if (!ok) return res.status(404).json({ success: false, message: 'Inisiatif tidak ditemukan' });
@@ -532,7 +587,7 @@ app.put('/api/penyaluran/program/initiatives/:id', async (req, res) => {
 });
 
 // Delete Pilar Initiative
-app.delete('/api/penyaluran/program/initiatives/:id', async (req, res) => {
+app.delete('/api/penyaluran/program/initiatives/:id', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     await deletePilarInitiative(req.params.id);
     invalidateCache();
@@ -544,7 +599,7 @@ app.delete('/api/penyaluran/program/initiatives/:id', async (req, res) => {
 });
 
 // Mustahik Stage Counts
-app.get('/api/mustahik/stages/count', cacheMiddleware(15), async (req, res) => {
+app.get('/api/mustahik/stages/count', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(15), async (req, res) => {
   try {
     const data = await getMustahikStageCounts();
     res.json({ success: true, data });
@@ -593,7 +648,7 @@ app.get('/api/penyaluran/audit-decisions', authenticateToken, requireRole('admin
 });
 
 // Batch Import Mustahik
-app.post('/api/mustahik/import', async (req, res) => {
+app.post('/api/mustahik/import', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const items = req.body.items || (Array.isArray(req.body) ? req.body : []);
     const result = await importMustahikBatch(items);
@@ -606,7 +661,7 @@ app.post('/api/mustahik/import', async (req, res) => {
 });
 
 // Laporan Penyaluran Catalog & Insights
-app.get('/api/penyaluran/laporan', cacheMiddleware(30), async (req, res) => {
+app.get('/api/penyaluran/laporan', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(30), async (req, res) => {
   try {
     const data = await getLaporanList(req.query);
     res.json({ success: true, ...data });
@@ -617,7 +672,7 @@ app.get('/api/penyaluran/laporan', cacheMiddleware(30), async (req, res) => {
 });
 
 // Generate New Laporan
-app.post('/api/penyaluran/laporan/generate', async (req, res) => {
+app.post('/api/penyaluran/laporan/generate', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const result = await generateLaporan(req.body);
     invalidateCache();
@@ -629,7 +684,7 @@ app.post('/api/penyaluran/laporan/generate', async (req, res) => {
 });
 
 // Export Laporan Data (Excel .xlsx, PDF .pdf, CSV, or JSON)
-app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
+app.get('/api/penyaluran/laporan/export/:id', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const format = (req.query.format || 'xlsx').toLowerCase();
     const db = await (await import('./db.js')).getDb();
@@ -642,9 +697,17 @@ app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
       period: req.query.period || 'Agustus 2026',
       scope: req.query.scope || '13 Kecamatan Kota Tangerang'
     };
+    const auditExport = () => appendActivityLog({
+      actor: req.user,
+      action: 'REPORT_EXPORT',
+      target: `laporan:${req.params.id}`,
+      title: 'Ekspor laporan penyaluran',
+      description: `Format: ${format}`,
+    });
 
     if (format === 'excel' || format === 'xlsx') {
       const excelBuffer = await generateExcelReport(reportMeta, mustahikList);
+      await auditExport();
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="Laporan-Penyaluran-BAZNAS-${req.params.id}.xlsx"`);
       return res.send(excelBuffer);
@@ -652,6 +715,7 @@ app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
 
     if (format === 'pdf') {
       const pdfBuffer = await generatePdfReport(reportMeta, mustahikList);
+      await auditExport();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="Laporan-Penyaluran-BAZNAS-${req.params.id}.pdf"`);
       return res.send(pdfBuffer);
@@ -659,6 +723,7 @@ app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
 
     if (format === 'json') {
       const reportData = await exportLaporanData(req.params.id, 'json');
+      await auditExport();
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.json"`);
       return res.json(reportData);
@@ -666,6 +731,7 @@ app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
 
     // Default CSV
     const csvContent = await exportLaporanData(req.params.id, 'csv');
+    await auditExport();
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="laporan-${req.params.id}.csv"`);
     res.send(csvContent);
@@ -676,7 +742,7 @@ app.get('/api/penyaluran/laporan/export/:id', async (req, res) => {
 });
 
 // Activity Logs
-app.get('/api/activity-logs', cacheMiddleware(15), async (req, res) => {
+app.get('/api/activity-logs', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(15), async (req, res) => {
   try {
     const data = await getActivityLogs(req.query.mustahik_id, parseInt(req.query.limit || '20', 10));
     res.json({ success: true, data });
@@ -693,7 +759,7 @@ app.get('/api/activity-logs', cacheMiddleware(15), async (req, res) => {
 // Public Application Submission with file uploads
 app.post('/api/public/pengajuan', upload.any(), async (req, res) => {
   try {
-    const result = await createPublicApplication(req.body, req.files || []);
+    const result = await req.app.locals.dataAccessRepository.createPublicApplication(req.body, req.files || []);
     invalidateCache();
     res.status(201).json({
       success: true,
@@ -706,17 +772,52 @@ app.post('/api/public/pengajuan', upload.any(), async (req, res) => {
   }
 });
 
+export function toPublicTrackingResult(data) {
+  const mustahik = data.mustahik || {};
+  const nameParts = String(mustahik.name || '').trim().split(/\s+/).filter(Boolean);
+  const maskedName = nameParts.length === 0
+    ? 'Pemohon'
+    : nameParts.length === 1
+      ? `${nameParts[0].slice(0, 1)}…`
+      : `${nameParts[0]} ${nameParts[1].slice(0, 1)}.`;
+
+  return {
+    mustahik: {
+      name: maskedName,
+      file_no: mustahik.file_no,
+      kecamatan: mustahik.kecamatan,
+      program: mustahik.program,
+      status: mustahik.status,
+      received_date: mustahik.received_date,
+    },
+    status: data.status,
+    is_rejected: Boolean(data.is_rejected),
+    rejection_reason: data.rejection_reason || '',
+    timeline: (data.timeline || []).map((item) => ({
+      phase: item.phase,
+      name: item.name,
+      description: item.description,
+      date: item.date,
+      status: item.status,
+    })),
+  };
+}
+
 // Public Tracking by file_no, NIK, or phone
 app.get('/api/public/lacak/:query', async (req, res) => {
   try {
-    const data = await trackApplication(req.params.query);
+    const query = String(req.params.query || '').trim();
+    if (query.length < 8) {
+      return res.status(422).json({ success: false, message: 'Kata kunci pelacakan tidak valid.' });
+    }
+    const data = await req.app.locals.dataAccessRepository.trackApplication(query);
     if (!data) {
       return res.status(404).json({
         success: false,
-        message: `Pengajuan dengan kata kunci "${req.params.query}" tidak ditemukan.`
+        message: 'Pengajuan tidak ditemukan.'
       });
     }
-    res.json({ success: true, data });
+    res.json({ success: true, data: toPublicTrackingResult(data) });
   } catch (err) {
     console.error('Track error:', err);
     res.status(500).json({ success: false, message: err.message });
@@ -728,9 +829,16 @@ app.get('/api/public/lacak/:query', async (req, res) => {
 // ==========================================
 
 // Export 60 Master Columns JSON (Cached for high throughput)
-app.get('/api/mustahik/export/data', cacheMiddleware(60), async (req, res) => {
+app.get('/api/mustahik/export/data', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const data = await exportMustahikData();
+    await appendActivityLog({
+      actor: req.user,
+      action: 'MUSTAHIK_EXPORT',
+      target: 'mustahik:all',
+      title: 'Ekspor data mustahik',
+      description: `Jumlah rekaman: ${data.length}`,
+    });
     res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error('Export error:', err);
@@ -739,7 +847,7 @@ app.get('/api/mustahik/export/data', cacheMiddleware(60), async (req, res) => {
 });
 
 // List all mustahik with query filter support (Cached per query)
-app.get('/api/mustahik', cacheMiddleware(30), async (req, res) => {
+app.get('/api/mustahik', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), cacheMiddleware(30), async (req, res) => {
   try {
     const filters = {
       status: req.query.status,
@@ -755,7 +863,7 @@ app.get('/api/mustahik', cacheMiddleware(30), async (req, res) => {
 });
 
 // Detail Mustahik (with relations)
-app.get('/api/mustahik/:id', async (req, res) => {
+app.get('/api/mustahik/:id', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), async (req, res) => {
   try {
     const data = await getMustahikById(req.params.id);
     if (!data) return res.status(404).json({ success: false, message: 'Mustahik tidak ditemukan' });
@@ -767,7 +875,7 @@ app.get('/api/mustahik/:id', async (req, res) => {
 });
 
 // Create Mustahik
-app.post('/api/mustahik', async (req, res) => {
+app.post('/api/mustahik', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const id = await createMustahik(req.body);
     invalidateCache();
@@ -779,7 +887,7 @@ app.post('/api/mustahik', async (req, res) => {
 });
 
 // Update Mustahik
-app.put('/api/mustahik/:id', async (req, res) => {
+app.put('/api/mustahik/:id', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const ok = await updateMustahik(req.params.id, req.body);
     if (!ok) return res.status(404).json({ success: false, message: 'Mustahik tidak ditemukan atau tidak ada perubahan' });
@@ -792,7 +900,7 @@ app.put('/api/mustahik/:id', async (req, res) => {
 });
 
 // Delete Mustahik
-app.delete('/api/mustahik/:id', async (req, res) => {
+app.delete('/api/mustahik/:id', authenticateToken, requireRole('admin'), async (req, res) => {
   try {
     await deleteMustahik(req.params.id);
     invalidateCache();
@@ -818,11 +926,11 @@ const handleAssessment = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-app.post('/api/mustahik/:id/assessment', handleAssessment);
-app.post('/api/mustahik/:id/assessments', handleAssessment);
+app.post('/api/mustahik/:id/assessment', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), handleAssessment);
+app.post('/api/mustahik/:id/assessments', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), handleAssessment);
 
 // Add MPZIS (F-BPP/06)
-app.post('/api/mustahik/:id/mpzis', async (req, res) => {
+app.post('/api/mustahik/:id/mpzis', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const mpzisId = await addMpzis(req.params.id, req.body);
     invalidateCache();
@@ -834,7 +942,7 @@ app.post('/api/mustahik/:id/mpzis', async (req, res) => {
 });
 
 // Add PPD (F-PKP/03)
-app.post('/api/mustahik/:id/ppd', async (req, res) => {
+app.post('/api/mustahik/:id/ppd', authenticateToken, requireRole('admin', 'penyaluran'), async (req, res) => {
   try {
     const ppdId = await addPpd(req.params.id, req.body);
     invalidateCache();
@@ -846,7 +954,7 @@ app.post('/api/mustahik/:id/ppd', async (req, res) => {
 });
 
 // Trigger WhatsApp Notification (5 Phases)
-app.post('/api/mustahik/:id/whatsapp', async (req, res) => {
+app.post('/api/mustahik/:id/whatsapp', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), async (req, res) => {
   try {
     const mustahik = await getMustahikById(req.params.id);
     if (!mustahik) {
@@ -892,7 +1000,7 @@ app.post('/api/mustahik/:id/whatsapp', async (req, res) => {
 });
 
 // Get WhatsApp Logs
-app.get('/api/mustahik/:id/whatsapp', async (req, res) => {
+app.get('/api/mustahik/:id/whatsapp', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), async (req, res) => {
   try {
     const logs = await getWaLogs(req.params.id);
     res.json({ success: true, data: logs });
@@ -906,7 +1014,7 @@ app.get('/api/mustahik/:id/whatsapp', async (req, res) => {
 // ==========================================
 
 // General Single File Upload
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
   res.json({
     success: true,
@@ -919,7 +1027,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 });
 
 // Add Mustahik Document
-app.post('/api/mustahik/:id/documents', async (req, res) => {
+app.post('/api/mustahik/:id/documents', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), async (req, res) => {
   try {
     const docId = await addDocument(req.params.id, req.body);
     invalidateCache();
@@ -931,7 +1039,7 @@ app.post('/api/mustahik/:id/documents', async (req, res) => {
 });
 
 // List Mustahik Documents
-app.get('/api/mustahik/:id/documents', async (req, res) => {
+app.get('/api/mustahik/:id/documents', authenticateToken, requireRole('admin', 'penyaluran', 'surveyor'), async (req, res) => {
   try {
     const docs = await getDocuments(req.params.id);
     res.json({ success: true, data: docs });
@@ -941,17 +1049,41 @@ app.get('/api/mustahik/:id/documents', async (req, res) => {
   }
 });
 
-// Initialize DB and start Express server
-await initDb();
-
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`⚡ BAZNAS Data Center V2 API Turbo Server on port ${PORT}`);
-  console.log(`🚀 Compression: Gzip/Deflate enabled`);
-  console.log(`⚡ In-Memory Cache: Active (TTL 60s)`);
-  console.log(`📊 Aggregates: /api/mustahik/stats & /api/data/overview (<5ms)`);
-  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`====================================================`);
+app.use((err, _req, res, _next) => {
+  if (err?.code === 'CORS_ORIGIN_DENIED') {
+    return res.status(403).json({ success: false, message: 'Origin tidak diizinkan' });
+  }
+  if (err instanceof multer.MulterError) {
+    const isTooLarge = err.code === 'LIMIT_FILE_SIZE';
+    return res.status(isTooLarge ? 413 : 422).json({
+      success: false,
+      message: isTooLarge ? 'Ukuran file melebihi batas 10 MB.' : 'Unggahan file tidak valid.',
+    });
+  }
+  if (err?.code === 'UPLOAD_VALIDATION_FAILED') {
+    return res.status(422).json({ success: false, message: err.message });
+  }
+  console.error('Unhandled request error:', err?.message || 'Unknown error');
+  return res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem.' });
 });
+
+export async function startServer(port = PORT) {
+  await initDb();
+  await import('./bot.js');
+  return app.listen(port, () => {
+    console.log(`====================================================`);
+    console.log(`⚡ BAZNAS Data Center V2 API Turbo Server on port ${port}`);
+    console.log(`🚀 Compression: Gzip/Deflate enabled`);
+    console.log(`⚡ In-Memory Cache: Active (TTL 60s)`);
+    console.log(`📊 Aggregates: /api/mustahik/stats & /api/data/overview (<5ms)`);
+    console.log(`🩺 Health check: http://localhost:${port}/api/health`);
+    console.log(`====================================================`);
+  });
+}
+
+const entryPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';
+if (entryPath === import.meta.url) {
+  await startServer();
+}
 
 export default app;
