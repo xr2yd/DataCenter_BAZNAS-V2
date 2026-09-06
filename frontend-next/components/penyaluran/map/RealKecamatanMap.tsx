@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import type { FeatureCollection, Feature, Geometry } from 'geojson';
+import type { GeoJSON as LeafletGeoJSON, Path } from 'leaflet';
 import tangerangGeoJsonRaw from '@/data/tangerangKecamatan';
 import {
   getChoroplethColor,
@@ -14,6 +15,46 @@ import type { PenyaluranByKecamatan } from '@/lib/api/types';
 import type { MapPeriodData } from '../dashboard/dashboard-data';
 
 const geojsonData = tangerangGeoJsonRaw as unknown as FeatureCollection;
+
+type KecamatanFeatureLayer = Path & {
+  feature?: Feature<Geometry, { name: string }>;
+  getBounds: () => ReturnType<LeafletGeoJSON['getBounds']>;
+  setTooltipContent?: (content: string) => void;
+};
+
+function MapSelectionFocus({
+  selectedKecamatan,
+  geoJsonRef,
+}: {
+  selectedKecamatan?: string | null;
+  geoJsonRef: React.RefObject<LeafletGeoJSON | null>;
+}) {
+  const map = useMap();
+  const skipInitialFocus = useRef(true);
+
+  useEffect(() => {
+    if (skipInitialFocus.current) {
+      skipInitialFocus.current = false;
+      return;
+    }
+    if (!selectedKecamatan || !geoJsonRef.current) return;
+
+    const selectedLayer = geoJsonRef.current.getLayers().find((layer) => {
+      const feature = (layer as KecamatanFeatureLayer).feature;
+      return feature?.properties?.name?.toLowerCase() === selectedKecamatan.toLowerCase();
+    }) as KecamatanFeatureLayer | undefined;
+    if (!selectedLayer) return;
+
+    map.flyToBounds(selectedLayer.getBounds(), {
+      padding: [44, 44],
+      duration: 0.42,
+      easeLinearity: 0.25,
+      maxZoom: 13,
+    });
+  }, [geoJsonRef, map, selectedKecamatan]);
+
+  return null;
+}
 
 export default function RealKecamatanMap({
   metric = 'funds',
@@ -29,6 +70,9 @@ export default function RealKecamatanMap({
   periodData?: MapPeriodData;
 }) {
   const [mounted, setMounted] = useState(false);
+  const geoJsonRef = useRef<LeafletGeoJSON | null>(null);
+  const selectedRef = useRef(selectedKecamatan);
+  const onSelectRef = useRef(onSelectKecamatan);
 
   useEffect(() => {
     setMounted(true);
@@ -46,15 +90,6 @@ export default function RealKecamatanMap({
 
   const getMetricValue = (name: string) => getMapMetricValue(name, metric, liveData, periodData);
 
-  // GeoJSON binds Leaflet tooltips imperatively. Recreate it when the input
-  // data changes so tooltip copy stays aligned with the visible choropleth.
-  const geoJsonKey = [
-    metric,
-    selectedKecamatan?.toLowerCase() ?? 'none',
-    liveData?.map((item) => `${item.name}:${item.totalDisalurkan}:${item.totalMustahik}:${item.desil1Count}`).join('|') ?? 'demo',
-    periodData ? Object.entries(periodData).map(([name, value]) => `${name}:${value.amount}:${value.beneficiaries}`).join('|') : 'no-period',
-  ].join('::');
-
   const toColorScaleValue = (value: number) => {
     if (metric === 'funds') return value / 1_000_000;
     if (metric === 'asnafNeed') return value * 2;
@@ -65,6 +100,8 @@ export default function RealKecamatanMap({
     if (metric === 'funds') return `Rp ${(value / 1_000_000_000).toFixed(2).replace('.', ',')} M`;
     return `${value.toLocaleString('id-ID')} ${metricPresentation.unit}`;
   };
+
+  const tooltipCopy = (name: string, metricValue: number) => `<div class="p-1 text-xs"><strong class="text-zinc-900">${name}</strong><div class="text-[10px] text-zinc-600">${metricPresentation.label}: ${formatMetricValue(metricValue)}</div></div>`;
 
   const styleFeature = (feature?: Feature<Geometry, { name: string }>) => {
     if (!feature || !feature.properties) return {};
@@ -81,13 +118,30 @@ export default function RealKecamatanMap({
     };
   };
 
+  useEffect(() => {
+    selectedRef.current = selectedKecamatan;
+    onSelectRef.current = onSelectKecamatan;
+  }, [onSelectKecamatan, selectedKecamatan]);
+
+  useEffect(() => {
+    geoJsonRef.current?.eachLayer((layer) => {
+      const featureLayer = layer as KecamatanFeatureLayer;
+      const feature = featureLayer.feature;
+      if (!feature?.properties) return;
+      const name = feature.properties.name;
+      const metricValue = getMetricValue(name);
+      featureLayer.setStyle(styleFeature(feature));
+      featureLayer.setTooltipContent?.(tooltipCopy(name, metricValue));
+    });
+  }, [liveData, metric, periodData, selectedKecamatan]);
+
   const onEachFeature = (feature: Feature<Geometry, { name: string }>, layer: any) => {
     const name = feature.properties.name;
     const metricValue = getMetricValue(name);
 
     layer.on({
       click: () => {
-        if (onSelectKecamatan) onSelectKecamatan(name);
+        onSelectRef.current?.(name);
       },
       mouseover: (e: any) => {
         const l = e.target;
@@ -95,7 +149,7 @@ export default function RealKecamatanMap({
       },
       mouseout: (e: any) => {
         const l = e.target;
-        const isSelected = selectedKecamatan?.toLowerCase() === name.toLowerCase();
+        const isSelected = selectedRef.current?.toLowerCase() === name.toLowerCase();
         l.setStyle({
           fillOpacity: isSelected ? 0.9 : 0.75,
           weight: isSelected ? 2.5 : 1,
@@ -103,13 +157,7 @@ export default function RealKecamatanMap({
       },
     });
 
-    layer.bindTooltip(
-      `<div class="p-1 text-xs">
-        <strong class="text-zinc-900">${name}</strong>
-        <div class="text-[10px] text-zinc-600">${metricPresentation.label}: ${formatMetricValue(metricValue)}</div>
-      </div>`,
-      { sticky: true, className: 'leaflet-custom-tooltip' }
-    );
+    layer.bindTooltip(tooltipCopy(name, metricValue), { sticky: true, className: 'leaflet-custom-tooltip' });
   };
 
   return (
@@ -126,11 +174,12 @@ export default function RealKecamatanMap({
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
         <GeoJSON
-          key={geoJsonKey}
+          ref={geoJsonRef}
           data={geojsonData}
           style={styleFeature as any}
           onEachFeature={onEachFeature}
         />
+        <MapSelectionFocus selectedKecamatan={selectedKecamatan} geoJsonRef={geoJsonRef} />
       </MapContainer>
 
       {/* Legend Badge */}
