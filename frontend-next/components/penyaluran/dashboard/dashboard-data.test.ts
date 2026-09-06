@@ -28,4 +28,3 @@ describe('getDashboardData', () => {
     expect(dashboard.dataStatus).toBe('empty');
   });
 });
-
