@@ -52,6 +52,7 @@ import {
   exportLaporanData,
 } from './repository.js';
 import { generateExcelReport, generatePdfReport } from './report_generator.js';
+import { requireAnyRole, requireAuth, requireProductionSecret } from './access-policy.js';
 import './bot.js';
 
 dotenv.config();
@@ -278,7 +279,7 @@ app.post('/api/cache/clear', (req, res) => {
 // ==========================================
 // AUTHENTICATION & MULTI-ROLE ACCESS CONTROL
 // ==========================================
-const JWT_SECRET = process.env.JWT_SECRET || 'baznas_tangkot_super_secret_jwt_key_2026';
+const JWT_SECRET = requireProductionSecret();
 
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -293,23 +294,12 @@ export function authenticateToken(req, res, next) {
       return res.status(403).json({ success: false, message: 'Sesi berakhir atau token tidak valid. Silakan login kembali.' });
     }
     req.user = user;
-    next();
+    return requireAuth(req, res, next);
   });
 }
 
 export function requireRole(...allowedRoles) {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Tidak terotentikasi' });
-    }
-    if (req.user.role === 'admin' || allowedRoles.includes(req.user.role)) {
-      return next();
-    }
-    return res.status(403).json({
-      success: false,
-      message: `Akses dibatasi. Fitur ini memerlukan hak akses divisi: ${allowedRoles.join(', ')}`
-    });
-  };
+  return requireAnyRole(...allowedRoles);
 }
 
 // 1. Login Endpoint
