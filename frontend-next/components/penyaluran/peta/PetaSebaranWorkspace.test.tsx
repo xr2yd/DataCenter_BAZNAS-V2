@@ -39,6 +39,14 @@ describe('PetaSebaranWorkspace', () => {
     expect(screen.getAllByText('Mustahik terbantu')).not.toHaveLength(0);
   });
 
+  it('does not present a program filter before filtering is available', async () => {
+    render(<PetaSebaranWorkspace />);
+
+    await screen.findByRole('button', { name: 'Realisasi dana' });
+
+    expect(screen.queryByRole('button', { name: 'Semua program' })).not.toBeInTheDocument();
+  });
+
   it('uses the current API top program in the selected area detail', async () => {
     getPenyaluranByKecamatan.mockResolvedValue({
       data: [{

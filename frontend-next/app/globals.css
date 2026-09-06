@@ -126,6 +126,24 @@ body {
   z-index: 1;
 }
 
+.leaflet-container .leaflet-interactive {
+  transition: fill 180ms ease-out, fill-opacity 180ms ease-out, stroke 180ms ease-out, stroke-width 180ms ease-out;
+}
+
+@keyframes map-detail-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.map-detail-enter {
+  animation: map-detail-enter 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-container .leaflet-interactive,
+  .map-detail-enter { animation: none; transition: none; }
+}
+
 @keyframes mustahik-row-enter {
   from {
     opacity: 0;
